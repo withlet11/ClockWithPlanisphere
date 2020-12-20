@@ -1,3 +1,24 @@
+/*
+ * SkyPanel.kt
+ *
+ * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package io.github.withlet11.skyclock.widget
 
 import android.content.Context
@@ -6,11 +27,16 @@ import android.graphics.Paint
 import android.graphics.Path
 import io.github.withlet11.skyclock.R
 import io.github.withlet11.skyclock.model.AbstractSkyModel
-import kotlin.math.*
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sign
+import kotlin.math.sin
 
 class SkyPanel(context: Context) : AbstractPanel() {
     private var starGeometryList = listOf<AbstractSkyModel.StarGeometry>()
     private var constellationLineList = listOf<AbstractSkyModel.ConstellationLineGeometry>()
+    private var northMilkyWayDotList = listOf<AbstractSkyModel.MilkyWayDot>()
+    private var southMilkyWayDotList = listOf<AbstractSkyModel.MilkyWayDot>()
     private var equatorial = listOf<Pair<Int, Float>>()
     private var ecliptic = listOf<Pair<Float, Float>>()
 
@@ -19,13 +45,13 @@ class SkyPanel(context: Context) : AbstractPanel() {
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val path = Path()
-    private val equatorColor = context.getColor(R.color.raspberry)
-    private val declinationLineColor = context.getColor(R.color.lightGray)
-    private val eclipticColor = context.getColor(R.color.lemon)
-    private val starColor = context.getColor(R.color.lightGray)
-    private val constellationLineColor = context.getColor(R.color.lightGray)
-    private val rectAscensionLineColor = context.getColor(R.color.lightGray)
-    private val rectAscensionRing = context.getColor(R.color.lightGray)
+    private val equatorColor = context.getColor(R.color.sprintRed)
+    private val declinationLineColor = context.getColor(R.color.silver)
+    private val eclipticColor = context.getColor(R.color.dandelion)
+    private val starColor = context.getColor(R.color.silver)
+    private val constellationLineColor = context.getColor(R.color.silver)
+    private val rightAscensionLineColor = context.getColor(R.color.silver)
+    private val rightAscensionRing = context.getColor(R.color.silver)
 
     fun draw() {
         draw(Canvas(bmp))
@@ -38,9 +64,10 @@ class SkyPanel(context: Context) : AbstractPanel() {
             drawEquatorial()
             drawEcliptic()
             drawStars()
+            drawMilkyWay()
             drawConstellationLines()
-            drawRectAscensionLines()
-            drawRectAscensionRing()
+            drawRightAscensionLines()
+            drawRightAscensionRing()
         }
     }
 
@@ -77,6 +104,20 @@ class SkyPanel(context: Context) : AbstractPanel() {
         }
     }
 
+    private fun Canvas.drawMilkyWay() {
+        paint.style = Paint.Style.FILL
+        (if (tenMinuteGridStep > 0) northMilkyWayDotList else southMilkyWayDotList).forEach { (x, y, v) ->
+            paint.color = v
+            drawRect(
+                x.toCanvas(),
+                y.toCanvas(),
+                (x + 1f / 150f).toCanvas(),
+                (y + 1f / 150f).toCanvas(),
+                paint
+            )
+        }
+    }
+
     private fun Canvas.drawConstellationLines() {
         paint.strokeWidth = 1f
         paint.color = constellationLineColor
@@ -85,9 +126,9 @@ class SkyPanel(context: Context) : AbstractPanel() {
         }
     }
 
-    private fun Canvas.drawRectAscensionLines() {
+    private fun Canvas.drawRightAscensionLines() {
         paint.strokeWidth = 0.75f
-        paint.color = rectAscensionLineColor
+        paint.color = rightAscensionLineColor
         for (i in 1..6) {
             val angle = i / 6.0 * PI
             val x = cos(angle).toFloat().toCanvas()
@@ -96,9 +137,9 @@ class SkyPanel(context: Context) : AbstractPanel() {
         }
     }
 
-    private fun Canvas.drawRectAscensionRing() {
+    private fun Canvas.drawRightAscensionRing() {
         paint.textSize = 16f
-        paint.color = rectAscensionRing
+        paint.color = rightAscensionRing
         paint.style = Paint.Style.FILL
         val fontMetrics = paint.fontMetrics
 
@@ -128,12 +169,16 @@ class SkyPanel(context: Context) : AbstractPanel() {
     fun set(
         starGeometryList: List<AbstractSkyModel.StarGeometry>,
         constellationLineGeometry: List<AbstractSkyModel.ConstellationLineGeometry>,
+        northMilkyWayDotList: List<AbstractSkyModel.MilkyWayDot>,
+        southMilkyWayDotList: List<AbstractSkyModel.MilkyWayDot>,
         equatorial: List<Pair<Int, Float>>,
         ecliptic: List<Pair<Float, Float>>,
         tenMinuteGridStep: Float
     ) {
         this.starGeometryList = starGeometryList
         this.constellationLineList = constellationLineGeometry
+        this.northMilkyWayDotList = northMilkyWayDotList
+        this.southMilkyWayDotList = southMilkyWayDotList
         this.equatorial = equatorial
         this.ecliptic = ecliptic
         this.tenMinuteGridStep = tenMinuteGridStep

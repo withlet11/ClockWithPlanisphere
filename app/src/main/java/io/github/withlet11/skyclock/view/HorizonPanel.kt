@@ -36,8 +36,8 @@ class HorizonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(cont
     private val path = Path()
     private val dottedLine = DashPathEffect(floatArrayOf(2f, 2f), 0f)
     private val horizonColor = context?.getColor(R.color.smoke) ?: 0
-    private val altAzimuthLineColor = context?.getColor(R.color.skyBlue) ?: 0
-    private val directionLetterColor = context?.getColor(R.color.lightGray) ?: 0
+    private val altAzimuthLineColor = context?.getColor(R.color.veryLightAzure) ?: 0
+    private val directionLetterColor = context?.getColor(R.color.silver) ?: 0
     private val siderealTimeIndicatorColor = context?.getColor(R.color.yellow) ?: 0
 
     override fun onDraw(canvas: Canvas?) {

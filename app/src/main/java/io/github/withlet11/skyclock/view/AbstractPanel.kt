@@ -1,5 +1,5 @@
 /*
- * ClockBasePanel.kt
+ * AbstractPanel.kt
  *
  * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
@@ -33,6 +33,10 @@ abstract class AbstractPanel(context: Context?, attrs: AttributeSet?) : View(con
         private const val PREFERRED_SIZE = 800f
         const val CENTER = PREFERRED_SIZE * 0.5f
         private const val CIRCLE_RADIUS = PREFERRED_SIZE * 0.4f
+        const val MOON_AGE_RING_RADIUS = 40f
+        const val MOON_AGE_RING_THICKNESS = 20f
+        const val MOON_AGE_HAND_THICKNESS = 5f
+        const val MOON_RADIUS = 10f
         const val BEZEL_RADIUS = 400f
         const val DATE_PANEL_RADIUS = 368f
         const val SKY_BACKGROUND_RADIUS = 336f

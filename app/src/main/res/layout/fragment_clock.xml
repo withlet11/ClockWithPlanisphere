@@ -31,6 +31,12 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|center_vertical" />
 
+        <io.github.withlet11.skyclock.view.MoonPanel
+            android:id="@+id/moonPanel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|center_vertical" />
+
         <io.github.withlet11.skyclock.view.HorizonPanel
             android:id="@+id/horizonPanel"
             android:layout_width="wrap_content"

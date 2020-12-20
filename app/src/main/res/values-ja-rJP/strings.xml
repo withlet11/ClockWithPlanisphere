@@ -25,7 +25,7 @@
 プライバシポリシーにつきましてご質問がある場合は<a href="mailto:withlet11@gmail.com">withlet11@gmail.com</a>にお問い合わせ下さい。</string>
     <string name="clock_base_panel">時計文字盤パネル</string>
     <string name="sky_panel">星空パネル</string>
-    <string name="sun_panel">太陽パネル</string>
+    <string name="sun_and_moon_panel">太陽・月パネル</string>
     <string name="horizon_panel">地平線パネル</string>
     <string name="clock_hands_panel">時計針パネル</string>
 </resources>

@@ -26,6 +26,7 @@ import android.graphics.*
 import android.util.AttributeSet
 import io.github.withlet11.skyclock.R
 import io.github.withlet11.skyclock.model.AbstractSkyModel.ConstellationLineGeometry
+import io.github.withlet11.skyclock.model.AbstractSkyModel.MilkyWayDot
 import io.github.withlet11.skyclock.model.AbstractSkyModel.StarGeometry
 import kotlin.math.*
 
@@ -33,6 +34,8 @@ import kotlin.math.*
 class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
     private var starGeometryList = listOf<StarGeometry>()
     private var constellationLineList = listOf<ConstellationLineGeometry>()
+    private var northMilkyWayDotList = listOf<MilkyWayDot>()
+    private var southMilkyWayDotList = listOf<MilkyWayDot>()
     private var equatorial = listOf<Pair<Int, Float>>()
     private var ecliptic = listOf<Pair<Float, Float>>()
 
@@ -46,13 +49,13 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val path = Path()
-    private val equatorColor = context?.getColor(R.color.raspberry) ?: 0
-    private val declinationLineColor = context?.getColor(R.color.lightGray) ?: 0
-    private val eclipticColor = context?.getColor(R.color.lemon) ?: 0
-    private val starColor = context?.getColor(R.color.lightGray) ?: 0
-    private val constellationLineColor = context?.getColor(R.color.lightGray) ?: 0
-    private val rectAscensionLineColor = context?.getColor(R.color.lightGray) ?: 0
-    private val rectAscensionRing = context?.getColor(R.color.lightGray) ?: 0
+    private val equatorColor = context?.getColor(R.color.sprintRed) ?: 0
+    private val declinationLineColor = context?.getColor(R.color.silver) ?: 0
+    private val eclipticColor = context?.getColor(R.color.dandelion) ?: 0
+    private val starColor = context?.getColor(R.color.silver) ?: 0
+    private val constellationLineColor = context?.getColor(R.color.silver) ?: 0
+    private val rightAscensionLineColor = context?.getColor(R.color.silver) ?: 0
+    private val rightAscensionRing = context?.getColor(R.color.silver) ?: 0
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
@@ -61,9 +64,10 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
             drawEquatorial()
             drawEcliptic()
             drawStars()
+            drawMilkyWay()
             drawConstellationLines()
-            drawRectAscensionLines()
-            drawRectAscensionRing()
+            drawRightAscensionLines()
+            drawRightAscensionRing()
         }
     }
 
@@ -100,6 +104,20 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
         }
     }
 
+    private fun Canvas.drawMilkyWay() {
+        paint.style = Paint.Style.FILL
+        (if (tenMinuteGridStep > 0) northMilkyWayDotList else southMilkyWayDotList).forEach { (x, y, v) ->
+            paint.color = v
+            drawRect(
+                x.toCanvas(),
+                y.toCanvas(),
+                (x + 1f / 150f).toCanvas(),
+                (y + 1f / 150f).toCanvas(),
+                paint
+            )
+        }
+    }
+
     private fun Canvas.drawConstellationLines() {
         paint.strokeWidth = 1f
         paint.color = constellationLineColor
@@ -108,9 +126,9 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
         }
     }
 
-    private fun Canvas.drawRectAscensionLines() {
+    private fun Canvas.drawRightAscensionLines() {
         paint.strokeWidth = 0.75f
-        paint.color = rectAscensionLineColor
+        paint.color = rightAscensionLineColor
         for (i in 1..6) {
             val angle = i / 6.0 * PI
             val x = cos(angle).toFloat().toCanvas()
@@ -119,9 +137,9 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
         }
     }
 
-    private fun Canvas.drawRectAscensionRing() {
+    private fun Canvas.drawRightAscensionRing() {
         paint.textSize = 16f
-        paint.color = rectAscensionRing
+        paint.color = rightAscensionRing
         paint.style = Paint.Style.FILL
         val fontMetrics = paint.fontMetrics
 
@@ -151,12 +169,16 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
     fun set(
         starGeometryList: List<StarGeometry>,
         constellationLineGeometry: List<ConstellationLineGeometry>,
+        northMilkyWayDotList: List<MilkyWayDot>,
+        southMilkyWayDotList: List<MilkyWayDot>,
         equatorial: List<Pair<Int, Float>>,
         ecliptic: List<Pair<Float, Float>>,
         tenMinuteGridStep: Float
     ) {
         this.starGeometryList = starGeometryList
         this.constellationLineList = constellationLineGeometry
+        this.northMilkyWayDotList = northMilkyWayDotList
+        this.southMilkyWayDotList = southMilkyWayDotList
         this.equatorial = equatorial
         this.ecliptic = ecliptic
         this.tenMinuteGridStep = tenMinuteGridStep

@@ -23,6 +23,7 @@ package io.github.withlet11.skyclock.model
 
 import android.content.Context
 import io.github.withlet11.skyclock.model.AbstractSkyModel.ConstellationLineGeometry
+import io.github.withlet11.skyclock.model.AbstractSkyModel.MilkyWayDot
 import io.github.withlet11.skyclock.model.AbstractSkyModel.StarGeometry
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -36,13 +37,13 @@ class SkyViewModel(
     longitude: Double
 ) {
     private val horizonModel = HorizonModel(skyModel)
-    private val sunModel = SunModel(skyModel)
+    private val sunAndSkyModel = SunAndMoonModel(skyModel)
     private val solarAndSiderealTime = SolarAndSiderealTime()
 
     var latitude = 0.0
         private set(value) {
             skyModel.latitude = value
-            sunModel.latitude = value
+            sunAndSkyModel.latitude = value
             horizonModel.latitude = value
             field = value
         }
@@ -86,6 +87,12 @@ class SkyViewModel(
     val constellationLineList: List<ConstellationLineGeometry>
         get() = skyModel.constellationLineList
 
+    val northMilkyWayDotList: List<MilkyWayDot>
+        get() = skyModel.northMilkyWayDotList
+
+    val southMilkyWayDotList: List<MilkyWayDot>
+        get() = skyModel.southMilkyWayDotList
+
     val equatorial: List<Pair<Int, Float>>
         get() = skyModel.equatorial
 
@@ -93,13 +100,16 @@ class SkyViewModel(
         get() = skyModel.ecliptic
 
     val analemma: List<Pair<Float, Float>>
-        get() = sunModel.analemmaGeometryList
+        get() = sunAndSkyModel.analemmaGeometryList
 
     val monthlySunPositionList: List<Pair<Float, Float>>
-        get() = sunModel.monthlyPositionList
+        get() = sunAndSkyModel.monthlyPositionList
 
-    val currentSunPosition: Pair<Float, Float>
-        get() = sunModel.getSunPosition(solarAndSiderealTime.jc)
+    val currentSunPosition: Pair<Pair<Float, Float>, Double>
+        get() = sunAndSkyModel.getSunPosition(solarAndSiderealTime.jc)
+
+    val currentMoonPosition: Pair<Pair<Float, Float>, Double>
+        get() = sunAndSkyModel.getMoonPosition(solarAndSiderealTime.jc)
 
     val tenMinuteGridStep: Float
         get() = skyModel.tenMinuteGridStep
@@ -114,6 +124,7 @@ class SkyViewModel(
         with(skyModel) {
             loadStarCatalog(context)
             loadConstellationLine(context)
+            loadMilkyWayData(context)
             updatePositionList()
         }
     }

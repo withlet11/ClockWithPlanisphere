@@ -1,3 +1,24 @@
+/*
+ * SkyClockWidget.kt
+ *
+ * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package io.github.withlet11.skyclock.widget
 
 import android.app.AlarmManager
@@ -158,7 +179,7 @@ internal fun updateAppWidget(
         )
     val clockBasePanel = ClockBasePanel(context)
     val skyPanel = SkyPanel(context)
-    val sunPanel = SunPanel(context)
+    val sunAndMoonPanel = SunAndMoonPanel(context)
     val horizonPanel = HorizonPanel(context)
     val clockHandsPanel = ClockHandsPanel(context)
 
@@ -167,16 +188,20 @@ internal fun updateAppWidget(
         skyPanel.set(
             starGeometryList,
             constellationLineList,
+            northMilkyWayDotList,
+            southMilkyWayDotList,
             equatorial,
             ecliptic,
             tenMinuteGridStep
         )
-        sunPanel.set(
+        sunAndMoonPanel.set(
             analemma,
             monthlySunPositionList,
             currentSunPosition,
+            currentMoonPosition,
             tenMinuteGridStep
         )
+
         horizonPanel.set(horizon, altAzimuth, directionLetters)
     }
 
@@ -184,12 +209,13 @@ internal fun updateAppWidget(
     clockBasePanel.currentDate = skyViewModel.localDate
     clockHandsPanel.localTime = skyViewModel.localTime
     skyPanel.siderealAngle = skyViewModel.siderealAngle
-    sunPanel.solarAngle = skyViewModel.solarAngle
+    sunAndMoonPanel.solarAngle = skyViewModel.solarAngle
+    sunAndMoonPanel.siderealAngle = skyViewModel.siderealAngle
 
     // Draws panels
     clockBasePanel.draw()
     skyPanel.draw()
-    sunPanel.draw()
+    sunAndMoonPanel.draw()
     horizonPanel.draw()
     clockHandsPanel.draw()
 
@@ -199,7 +225,7 @@ internal fun updateAppWidget(
     // Adds panels to views
     remoteViews.setImageViewBitmap(R.id.widgetClockBasePanel, clockBasePanel.bmp)
     remoteViews.setImageViewBitmap(R.id.widgetSkyPanel, skyPanel.bmp)
-    remoteViews.setImageViewBitmap(R.id.widgetSunPanel, sunPanel.bmp)
+    remoteViews.setImageViewBitmap(R.id.widgetSunAndMoonPanel, sunAndMoonPanel.bmp)
     remoteViews.setImageViewBitmap(R.id.widgetHorizonPanel, horizonPanel.bmp)
     remoteViews.setImageViewBitmap(R.id.widgetClockHandsPanel, clockHandsPanel.bmp)
 

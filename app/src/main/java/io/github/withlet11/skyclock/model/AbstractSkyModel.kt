@@ -23,6 +23,7 @@ package io.github.withlet11.skyclock.model
 
 import android.content.Context
 import android.content.res.AssetManager
+import android.graphics.Color
 import java.io.*
 import java.util.ArrayList
 import kotlin.math.*
@@ -30,6 +31,7 @@ import kotlin.math.*
 abstract class AbstractSkyModel {
     data class StarGeometry(val x: Float, val y: Float, val r: Float)
     data class ConstellationLineGeometry(val x1: Float, val y1: Float, val x2: Float, val y2: Float)
+    data class MilkyWayDot(val x1: Float, val y1: Float, val color: Int)
 
     companion object {
         const val ANGLE_LIMIT = 155.0
@@ -37,6 +39,8 @@ abstract class AbstractSkyModel {
 
     private val hipLiteMajorFile = "hip_lite_major.csv"
     private val constellationLineFile = "hip_constellation_line.csv"
+    private val northMilkyWayFile = "milkyway-pattern-north200.csv"
+    private val southMilkyWayFile = "milkyway-pattern-south200.csv"
 
     abstract fun toAngle(declination: Double): Double
     abstract fun toDeclinationFromPole(angle: Int): Int
@@ -69,11 +73,19 @@ abstract class AbstractSkyModel {
 
     private val starCatalog = ArrayList<StarParameters?>()
     private val constellationLine = ArrayList<Pair<Int, Int>>()
+    private val northMilkyWayData = ArrayList<Triple<Float, Float, Int>>()
+    private val southMilkyWayData = ArrayList<Triple<Float, Float, Int>>()
 
     var starGeometryList = listOf<StarGeometry>()
         protected set
 
     var constellationLineList = listOf<ConstellationLineGeometry>()
+        protected set
+
+    var northMilkyWayDotList = listOf<MilkyWayDot>()
+        protected set
+
+    var southMilkyWayDotList = listOf<MilkyWayDot>()
         protected set
 
     fun updatePositionList() {
@@ -90,10 +102,19 @@ abstract class AbstractSkyModel {
                 xy2.second
             ) else null
         }
+
+        northMilkyWayDotList = northMilkyWayData.map(::makeMilkyWayDot)
+        southMilkyWayDotList = southMilkyWayData.map(::makeMilkyWayDot)
     }
 
-    private fun calculateStarPosition(dec: Double, ra: Double, magnitude: Double): StarGeometry? {
-        return when {
+    private fun makeMilkyWayDot(data: Triple<Float, Float, Int>): MilkyWayDot {
+        val alpha = min(128, data.third / 8 + 32)
+        val color = Color.argb(alpha, 192, 192, 192)
+        return MilkyWayDot(data.first, data.second, color)
+    }
+
+    private fun calculateStarPosition(dec: Double, ra: Double, magnitude: Double): StarGeometry? =
+        when {
             magnitude < 6.0 -> {
                 convertToXYPositionWithNull(dec, -ra)?.run {
                     val r = min(4.5, 6.0 * 0.65.pow(magnitude)).toFloat()
@@ -102,7 +123,6 @@ abstract class AbstractSkyModel {
             }
             else -> null
         }
-    }
 
     fun convertToXYPositionWithNull(dec: Double, ha: Double): Pair<Float, Float>? {
         val radius = toRadius(dec)
@@ -206,9 +226,6 @@ abstract class AbstractSkyModel {
             val inputStreamReader = InputStreamReader(inputStream)
             fileReader = BufferedReader(inputStreamReader)
 
-            // add position-0 data
-            starCatalog.add(null)
-
             // Read the file line by line starting from the second line
             line = fileReader.readLine()
             while (line != null) {
@@ -222,6 +239,61 @@ abstract class AbstractSkyModel {
                 line = fileReader.readLine()
             }
         } catch (e: IOException) {
+            println("Reading CSV Error!")
+            e.printStackTrace()
+        } finally {
+            try {
+                fileReader!!.close()
+            } catch (e: IOException) {
+                println("Closing fileReader Error!")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun loadMilkyWayData(context: Context) {
+        loadHalfMilkyWayData(context, northMilkyWayData, northMilkyWayFile)
+        loadHalfMilkyWayData(context, southMilkyWayData, southMilkyWayFile)
+    }
+
+    private fun loadHalfMilkyWayData(
+        context: Context,
+        milkyWayData: ArrayList<Triple<Float, Float, Int>>,
+        fileName: String
+    ) {
+        if (milkyWayData.isNotEmpty()) return
+
+        val assetManager: AssetManager = context.resources.assets
+        var fileReader: BufferedReader? = null
+
+        try {
+            var line: String?
+
+            val inputStream: InputStream = assetManager.open(fileName)
+            val inputStreamReader = InputStreamReader(inputStream)
+            fileReader = BufferedReader(inputStreamReader)
+
+            // Read CSV header
+            fileReader.readLine()
+
+            // Read the file line by line starting from the second line
+            line = fileReader.readLine()
+            while (line != null) {
+                val tokens = line.split(",").map { it.trim().toIntOrNull() }
+                if (tokens.isNotEmpty()) {
+                    tokens[0]?.let { x ->
+                        tokens[1]?.let { y ->
+                            tokens[2]?.let { v ->
+                                val elem = Triple(x / 150f, y / 150f, v)
+                                milkyWayData.add(elem)
+                            }
+                        }
+                    }
+                }
+
+                line = fileReader.readLine()
+            }
+        } catch (e: Exception) {
             println("Reading CSV Error!")
             e.printStackTrace()
         } finally {

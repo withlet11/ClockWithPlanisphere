@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">Sky Clock</string>
     <string name="locationSettings">Location Settings</string>
     <string name="license">License</string>
@@ -11,7 +11,7 @@
     <string name="modify">Modify</string>
     <string name="inGettingLocation">in getting location…</string>
     <string name="pleaseCheckIfGPSIsOn">Please check if GPS is on.</string>
-    <string name="app_license" translatable="false">Copyright 2020 Yasuhiro Yamakawa &lt;withlet11@gmail.com&gt;\n\n
+    <string name="app_license" translatable="false" tools:ignore="Typos">Copyright 2020 Yasuhiro Yamakawa &lt;withlet11@gmail.com&gt;\n\n
         Permission is hereby granted, free of charge, to any person obtaining a copy of this
         software and associated documentation files (the "Software"), to deal in the Software
         without restriction, including without limitation the rights to use, copy, modify, merge,
@@ -47,7 +47,7 @@
         Privacy Policies you can uninstall this app.\n\n
         <b>Contact Us</b>\n
         If there are any questions regarding this Privacy Policy you may contact us by email:
-        <a href="mailto:withlet11@gmail.com">withlet11@gmail.com</a>
+        <a href="mailto:withlet11@gmail.com" tools:ignore="Typos">withlet11@gmail.com</a>
     </string>
     <string name="north_label" translatable="false">N</string>
     <string name="south_label" translatable="false">S</string>
@@ -56,7 +56,7 @@
     <string name="no_permission_to_access_location_once">No permission to access the location service.</string>
     <string name="clock_base_panel">Clock base panel</string>
     <string name="sky_panel">Sky panel</string>
-    <string name="sun_panel">Sun panel</string>
+    <string name="sun_and_moon_panel">Sun and Moon panel</string>
     <string name="horizon_panel">Horizon panel</string>
     <string name="clock_hands_panel">Clock hands panel</string>
 </resources>

@@ -1,3 +1,24 @@
+/*
+ * ClockHandsPanel.kt
+ *
+ * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package io.github.withlet11.skyclock.widget
 
 import android.content.Context
@@ -9,9 +30,9 @@ class ClockHandsPanel(context: Context) : AbstractPanel() {
     var localTime: LocalTime = LocalTime.MIDNIGHT
     private val paint = Paint().apply { isAntiAlias = true }
     private val path = Path()
-    private val hourHandsColor = context.getColor(R.color.transparentBlue3)
+    private val hourHandsColor = context.getColor(R.color.transparentBlue2)
     private val minuteHandsColor = context.getColor(R.color.transparentBlue1)
-    // private val secondHandsColor = context.getColor(R.color.transparentWhite)
+    private val secondHandsColor = context.getColor(R.color.transparentWhite)
     private val shadow = context.getColor(R.color.smoke)
 
     private val hourHandGeometries = listOf(
@@ -175,36 +196,15 @@ class ClockHandsPanel(context: Context) : AbstractPanel() {
         restore()
     }
 
-    @Suppress("unused")
     private fun Canvas.drawSecondHand() {
         save()
         translate(5f, 5f)
-        /*
-        rotate(180f / 30f * (localTime.second + 30f))
-        paint.maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
-        paint.color = shadow
-        paint.style = Paint.Style.FILL
-        secondHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
-        secondHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-        drawPath(path, paint)
-        path.reset()
-         */
         paint.color = shadow
         paint.style = Paint.Style.FILL
         drawCircle(0f, 0f, 12f, paint)
         restore()
         save()
-        /*
-        rotate(180f / 30f * (localTime.second + 30f))
-        paint.maskFilter = null
         paint.color = secondHandsColor
-        paint.style = Paint.Style.FILL
-        secondHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
-        secondHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-        drawPath(path, paint)
-        path.reset()
-         */
-        paint.color = Color.LTGRAY
         paint.style = Paint.Style.FILL
         drawCircle(0f, 0f, 12f, paint)
         restore()

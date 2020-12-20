@@ -1,5 +1,5 @@
 /*
- * ClockBasePanel.kt
+ * ClockHandsPanel.kt
  *
  * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
@@ -43,11 +43,11 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val bezelColor = context?.getColor(R.color.darkBlue) ?: 0
-    private val minuteGridColor = context?.getColor(R.color.gray) ?: 0
-    private val datePanelColor = context?.getColor(R.color.lightGray) ?: 0
+    private val minuteGridColor = context?.getColor(R.color.titanium) ?: 0
+    private val datePanelColor = context?.getColor(R.color.silver) ?: 0
     private val todayGridColor = context?.getColor(R.color.red) ?: 0
     private val dayGridColor = context?.getColor(R.color.black) ?: 0
-    private val monthBorderColor = context?.getColor(R.color.darkGray) ?: 0
+    private val monthBorderColor = context?.getColor(R.color.graniteGray) ?: 0
     private val monthNameColor = context?.getColor(R.color.black) ?: 0
     private val skyBackGroundColor = context?.getColor(R.color.midnightBlue) ?: 0
 
