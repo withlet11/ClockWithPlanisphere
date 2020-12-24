@@ -122,9 +122,7 @@ class SkyViewModel(
         this.longitude = longitude
 
         with(skyModel) {
-            loadStarCatalog(context)
-            loadConstellationLine(context)
-            loadMilkyWayData(context)
+            loadDatabase(context)
             updatePositionList()
         }
     }

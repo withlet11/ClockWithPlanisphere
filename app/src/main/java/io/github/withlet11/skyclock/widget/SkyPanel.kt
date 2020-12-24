@@ -106,13 +106,13 @@ class SkyPanel(context: Context) : AbstractPanel() {
 
     private fun Canvas.drawMilkyWay() {
         paint.style = Paint.Style.FILL
-        (if (tenMinuteGridStep > 0) northMilkyWayDotList else southMilkyWayDotList).forEach { (x, y, v) ->
-            paint.color = v
+        (if (tenMinuteGridStep > 0) northMilkyWayDotList else southMilkyWayDotList).forEach { dot ->
+            paint.color = dot.magnitude
             drawRect(
-                x.toCanvas(),
-                y.toCanvas(),
-                (x + 1f / 150f).toCanvas(),
-                (y + 1f / 150f).toCanvas(),
+                dot.x1.toCanvas(),
+                dot.y1.toCanvas(),
+                (dot.x1 + 1f / 150f).toCanvas(),
+                (dot.y1 + 1f / 150f).toCanvas(),
                 paint
             )
         }

@@ -22,25 +22,53 @@
 package io.github.withlet11.skyclock.model
 
 import android.content.Context
-import android.content.res.AssetManager
 import android.graphics.Color
-import java.io.*
-import java.util.ArrayList
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import kotlin.math.*
 
 abstract class AbstractSkyModel {
     data class StarGeometry(val x: Float, val y: Float, val r: Float)
     data class ConstellationLineGeometry(val x1: Float, val y1: Float, val x2: Float, val y2: Float)
-    data class MilkyWayDot(val x1: Float, val y1: Float, val color: Int)
+    data class MilkyWayDot(val x1: Float, val y1: Float, val magnitude: Int)
+
+    @Entity(tableName = "hip_list")
+    data class HipEntry(
+        @PrimaryKey(autoGenerate = false) val hip: Int,
+        @ColumnInfo(name = "ra") val ra: Double,
+        @ColumnInfo(name = "dec") val dec: Double,
+        @ColumnInfo(name = "mag") val mag: Double,
+    )
+
+    @Entity(tableName = "constellation_lines")
+    data class ConstellationLineEntry(
+        @PrimaryKey(autoGenerate = false) val id: Int,
+        @ColumnInfo(name = "ra1") val ra1: Double,
+        @ColumnInfo(name = "dec1") val dec1: Double,
+        @ColumnInfo(name = "ra2") val ra2: Double,
+        @ColumnInfo(name = "dec2") val dec2: Double
+    )
+
+    @Entity(tableName = "milkyway_north")
+    data class NorthMilkyWayDotEntry(
+        @PrimaryKey(autoGenerate = false) val id: Int,
+        @ColumnInfo(name = "x_position") val x: Int,
+        @ColumnInfo(name = "y_position") val y: Int,
+        @ColumnInfo(name = "magnitude") val magnitude: Int
+    )
+
+    @Entity(tableName = "milkyway_south")
+    data class SouthMilkyWayDotEntry(
+        @PrimaryKey(autoGenerate = false) val id: Int,
+        @ColumnInfo(name = "x_position") val x: Int,
+        @ColumnInfo(name = "y_position") val y: Int,
+        @ColumnInfo(name = "magnitude") val magnitude: Int
+    )
 
     companion object {
         const val ANGLE_LIMIT = 155.0
     }
-
-    private val hipLiteMajorFile = "hip_lite_major.csv"
-    private val constellationLineFile = "hip_constellation_line.csv"
-    private val northMilkyWayFile = "milkyway-pattern-north200.csv"
-    private val southMilkyWayFile = "milkyway-pattern-south200.csv"
 
     abstract fun toAngle(declination: Double): Double
     abstract fun toDeclinationFromPole(angle: Int): Int
@@ -71,11 +99,6 @@ abstract class AbstractSkyModel {
     var equatorial = listOf<Pair<Int, Float>>()
     var ecliptic = listOf<Pair<Float, Float>>()
 
-    private val starCatalog = ArrayList<StarParameters?>()
-    private val constellationLine = ArrayList<Pair<Int, Int>>()
-    private val northMilkyWayData = ArrayList<Triple<Float, Float, Int>>()
-    private val southMilkyWayData = ArrayList<Triple<Float, Float, Int>>()
-
     var starGeometryList = listOf<StarGeometry>()
         protected set
 
@@ -88,13 +111,23 @@ abstract class AbstractSkyModel {
     var southMilkyWayDotList = listOf<MilkyWayDot>()
         protected set
 
-    fun updatePositionList() {
-        starGeometryList =
-            starCatalog.mapNotNull { it?.run { calculateStarPosition(dec, ra, magnitude) } }
+    private lateinit var skyClockDao: SkyClockDao
+    private lateinit var db: SkyClockDataBase
 
-        constellationLineList = constellationLine.mapNotNull {
-            val xy1 = starCatalog[it.first]?.run { convertToXYPositionWithNull(dec, -ra) }
-            val xy2 = starCatalog[it.second]?.run { convertToXYPositionWithNull(dec, -ra) }
+
+    fun loadDatabase(context: Context) {
+        db = SkyClockDataBase.getInstance(context)
+        skyClockDao = db.skyClockDao()
+    }
+
+    fun updatePositionList() {
+        starGeometryList = skyClockDao.getAllHip().mapNotNull { (_, ra, dec, mag) ->
+            calculateStarPosition(dec, ra, mag)
+        }
+
+        constellationLineList = skyClockDao.getAllConstellationLines().mapNotNull { (_, ra1, dec1, ra2, dec2) ->
+            val xy1 = convertToXYPositionWithNull(dec1, -ra1)
+            val xy2 = convertToXYPositionWithNull(dec2, -ra2)
             if (xy1 != null && xy2 != null) ConstellationLineGeometry(
                 xy1.first,
                 xy1.second,
@@ -103,14 +136,19 @@ abstract class AbstractSkyModel {
             ) else null
         }
 
-        northMilkyWayDotList = northMilkyWayData.map(::makeMilkyWayDot)
-        southMilkyWayDotList = southMilkyWayData.map(::makeMilkyWayDot)
+        northMilkyWayDotList = skyClockDao.getNorthMilkyWay().map { (_, x, y, v) ->
+            makeMilkyWayDot(x, y, v)
+        }
+
+        southMilkyWayDotList = skyClockDao.getSouthMilkyWay().map { (_, x, y, v) ->
+            makeMilkyWayDot(x, y, v)
+        }
     }
 
-    private fun makeMilkyWayDot(data: Triple<Float, Float, Int>): MilkyWayDot {
-        val alpha = min(128, data.third / 8 + 32)
+    private fun makeMilkyWayDot(x: Int, y: Int, v: Int): MilkyWayDot {
+        val alpha = min(128, v / 8 + 32)
         val color = Color.argb(alpha, 192, 192, 192)
-        return MilkyWayDot(data.first, data.second, color)
+        return MilkyWayDot(x / 150f, y / 150f, color)
     }
 
     private fun calculateStarPosition(dec: Double, ra: Double, magnitude: Double): StarGeometry? =
@@ -152,157 +190,5 @@ abstract class AbstractSkyModel {
         val dec = asin(sin(Math.toRadians(obliquity)) * sin(eLong))
         val ra = acos(cos(eLong) / cos(dec)).let { if (eLong > PI) 2.0 * PI - it else it }
         return Math.toDegrees(dec) to Math.toDegrees(ra)
-    }
-
-    fun loadStarCatalog(context: Context) {
-        if (starCatalog.any { it != null }) return
-
-        val assetManager: AssetManager = context.resources.assets
-        var fileReader: BufferedReader? = null
-        var count = 0
-
-        try {
-            var line: String?
-
-            val inputStream: InputStream = assetManager.open(hipLiteMajorFile)
-            val inputStreamReader = InputStreamReader(inputStream)
-            fileReader = BufferedReader(inputStreamReader)
-
-            // Read CSV header
-            fileReader.readLine()
-
-            // add position-0 data
-            starCatalog.add(null)
-
-            // Read the file line by line starting from the second line
-            line = fileReader.readLine()
-            while (line != null) {
-                val tokens = line.split(",").map { it.trim() }
-                if (tokens.isNotEmpty()) {
-                    val star = StarParameters(
-                        tokens[0],
-                        tokens[1],
-                        tokens[2],
-                        tokens[3],
-                        tokens[4],
-                        tokens[5],
-                        tokens[6],
-                        tokens[7],
-                        tokens[8]
-                    )
-
-                    for (i in starCatalog.size until star.hipNumber + 1) {
-                        starCatalog.add(null)
-                    }
-                    starCatalog[star.hipNumber] = star
-                }
-
-                count++
-                line = fileReader.readLine()
-            }
-        } catch (e: Exception) {
-            println("Reading CSV Error!")
-            e.printStackTrace()
-        } finally {
-            try {
-                fileReader!!.close()
-            } catch (e: IOException) {
-                println("Closing fileReader Error!")
-                e.printStackTrace()
-            }
-        }
-    }
-
-    fun loadConstellationLine(context: Context) {
-        if (constellationLine.isNotEmpty()) return
-
-        val assetManager: AssetManager = context.resources.assets
-        var fileReader: BufferedReader? = null
-
-        try {
-            var line: String?
-
-            val inputStream: InputStream = assetManager.open(constellationLineFile)
-            val inputStreamReader = InputStreamReader(inputStream)
-            fileReader = BufferedReader(inputStreamReader)
-
-            // Read the file line by line starting from the second line
-            line = fileReader.readLine()
-            while (line != null) {
-                val tokens = line.split(",").map { it.trim() }
-                if (tokens.isNotEmpty()) {
-                    val star1 = tokens[1].toInt()
-                    val star2 = tokens[2].toInt()
-                    constellationLine.add(star1 to star2)
-                }
-
-                line = fileReader.readLine()
-            }
-        } catch (e: IOException) {
-            println("Reading CSV Error!")
-            e.printStackTrace()
-        } finally {
-            try {
-                fileReader!!.close()
-            } catch (e: IOException) {
-                println("Closing fileReader Error!")
-                e.printStackTrace()
-            }
-        }
-    }
-
-    fun loadMilkyWayData(context: Context) {
-        loadHalfMilkyWayData(context, northMilkyWayData, northMilkyWayFile)
-        loadHalfMilkyWayData(context, southMilkyWayData, southMilkyWayFile)
-    }
-
-    private fun loadHalfMilkyWayData(
-        context: Context,
-        milkyWayData: ArrayList<Triple<Float, Float, Int>>,
-        fileName: String
-    ) {
-        if (milkyWayData.isNotEmpty()) return
-
-        val assetManager: AssetManager = context.resources.assets
-        var fileReader: BufferedReader? = null
-
-        try {
-            var line: String?
-
-            val inputStream: InputStream = assetManager.open(fileName)
-            val inputStreamReader = InputStreamReader(inputStream)
-            fileReader = BufferedReader(inputStreamReader)
-
-            // Read CSV header
-            fileReader.readLine()
-
-            // Read the file line by line starting from the second line
-            line = fileReader.readLine()
-            while (line != null) {
-                val tokens = line.split(",").map { it.trim().toIntOrNull() }
-                if (tokens.isNotEmpty()) {
-                    tokens[0]?.let { x ->
-                        tokens[1]?.let { y ->
-                            tokens[2]?.let { v ->
-                                val elem = Triple(x / 150f, y / 150f, v)
-                                milkyWayData.add(elem)
-                            }
-                        }
-                    }
-                }
-
-                line = fileReader.readLine()
-            }
-        } catch (e: Exception) {
-            println("Reading CSV Error!")
-            e.printStackTrace()
-        } finally {
-            try {
-                fileReader!!.close()
-            } catch (e: IOException) {
-                println("Closing fileReader Error!")
-                e.printStackTrace()
-            }
-        }
     }
 }
