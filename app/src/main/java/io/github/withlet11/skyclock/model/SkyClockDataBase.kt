@@ -12,7 +12,8 @@ import androidx.room.RoomDatabase
         AbstractSkyModel.NorthMilkyWayDotEntry::class,
         AbstractSkyModel.SouthMilkyWayDotEntry::class
     ],
-    version = 3
+    version = 3,
+    exportSchema = false
 )
 abstract class SkyClockDataBase : RoomDatabase() {
     abstract fun skyClockDao(): SkyClockDao

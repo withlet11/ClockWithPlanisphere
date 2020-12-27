@@ -31,4 +31,11 @@ class NorthernSkyModel : AbstractSkyModel() {
     override fun toRadius(declination: Double): Double = (90.0 - declination) / maxAngle
     override fun toRadiansFromHours(hour: Double): Double = hour / 12.0 * PI
     override fun toRadiansFromDegrees(degree: Double): Double = toRadians(degree)
+
+    override fun updatePositionList() {
+        super.updatePositionList()
+        milkyWayDotList = skyClockDao.getNorthMilkyWay().mapNotNull { (_, x, y, argb) ->
+            makeMilkyWayDot(x, y, argb)
+        }
+    }
 }

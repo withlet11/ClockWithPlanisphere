@@ -37,13 +37,13 @@ class SkyViewModel(
     longitude: Double
 ) {
     private val horizonModel = HorizonModel(skyModel)
-    private val sunAndSkyModel = SunAndMoonModel(skyModel)
+    private val sunAndMoonModel = SunAndMoonModel(skyModel)
     private val solarAndSiderealTime = SolarAndSiderealTime()
 
     var latitude = 0.0
         private set(value) {
             skyModel.latitude = value
-            sunAndSkyModel.latitude = value
+            sunAndMoonModel.latitude = value
             horizonModel.latitude = value
             field = value
         }
@@ -87,11 +87,11 @@ class SkyViewModel(
     val constellationLineList: List<ConstellationLineGeometry>
         get() = skyModel.constellationLineList
 
-    val northMilkyWayDotList: List<MilkyWayDot>
-        get() = skyModel.northMilkyWayDotList
+    val milkyWayDotList: List<MilkyWayDot>
+        get() = skyModel.milkyWayDotList
 
-    val southMilkyWayDotList: List<MilkyWayDot>
-        get() = skyModel.southMilkyWayDotList
+    val milkyWayDotSize: Float
+        get() = skyModel.milkyWayDotSize
 
     val equatorial: List<Pair<Int, Float>>
         get() = skyModel.equatorial
@@ -100,16 +100,16 @@ class SkyViewModel(
         get() = skyModel.ecliptic
 
     val analemma: List<Pair<Float, Float>>
-        get() = sunAndSkyModel.analemmaGeometryList
+        get() = sunAndMoonModel.analemmaGeometryList
 
     val monthlySunPositionList: List<Pair<Float, Float>>
-        get() = sunAndSkyModel.monthlyPositionList
+        get() = sunAndMoonModel.monthlyPositionList
 
     val currentSunPosition: Pair<Pair<Float, Float>, Double>
-        get() = sunAndSkyModel.getSunPosition(solarAndSiderealTime.jc)
+        get() = sunAndMoonModel.getSunPosition(solarAndSiderealTime.jc)
 
     val currentMoonPosition: Pair<Pair<Float, Float>, Double>
-        get() = sunAndSkyModel.getMoonPosition(solarAndSiderealTime.jc)
+        get() = sunAndMoonModel.getMoonPosition(solarAndSiderealTime.jc)
 
     val tenMinuteGridStep: Float
         get() = skyModel.tenMinuteGridStep

@@ -34,8 +34,8 @@ import kotlin.math.*
 class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
     private var starGeometryList = listOf<StarGeometry>()
     private var constellationLineList = listOf<ConstellationLineGeometry>()
-    private var northMilkyWayDotList = listOf<MilkyWayDot>()
-    private var southMilkyWayDotList = listOf<MilkyWayDot>()
+    private var milkyWayDotList = listOf<MilkyWayDot>()
+    private var milkyWayDotSize = 0f
     private var equatorial = listOf<Pair<Int, Float>>()
     private var ecliptic = listOf<Pair<Float, Float>>()
 
@@ -99,20 +99,20 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
     private fun Canvas.drawStars() {
         paint.color = starColor
         paint.style = Paint.Style.FILL
-        starGeometryList.forEach { (x, y, size) ->
-            drawCircle(x.toCanvas(), y.toCanvas(), size, paint)
+        starGeometryList.forEach { (x, y, radius) ->
+            drawCircle(x.toCanvas(), y.toCanvas(), radius, paint)
         }
     }
 
     private fun Canvas.drawMilkyWay() {
         paint.style = Paint.Style.FILL
-        (if (tenMinuteGridStep > 0) northMilkyWayDotList else southMilkyWayDotList).forEach { dot ->
-            paint.color = dot.magnitude
+        milkyWayDotList.forEach { (x, y, color) ->
+            paint.color = color
             drawRect(
-                dot.x1.toCanvas(),
-                dot.y1.toCanvas(),
-                (dot.x1 + 1f / 150f).toCanvas(),
-                (dot.y1 + 1f / 150f).toCanvas(),
+                x.toCanvas(),
+                y.toCanvas(),
+                (x + milkyWayDotSize).toCanvas(),
+                (y + milkyWayDotSize).toCanvas(),
                 paint
             )
         }
@@ -169,16 +169,16 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
     fun set(
         starGeometryList: List<StarGeometry>,
         constellationLineGeometry: List<ConstellationLineGeometry>,
-        northMilkyWayDotList: List<MilkyWayDot>,
-        southMilkyWayDotList: List<MilkyWayDot>,
+        milkyWayDotList: List<MilkyWayDot>,
+        milkyWayDotSize: Float,
         equatorial: List<Pair<Int, Float>>,
         ecliptic: List<Pair<Float, Float>>,
         tenMinuteGridStep: Float
     ) {
         this.starGeometryList = starGeometryList
         this.constellationLineList = constellationLineGeometry
-        this.northMilkyWayDotList = northMilkyWayDotList
-        this.southMilkyWayDotList = southMilkyWayDotList
+        this.milkyWayDotList = milkyWayDotList
+        this.milkyWayDotSize = milkyWayDotSize
         this.equatorial = equatorial
         this.ecliptic = ecliptic
         this.tenMinuteGridStep = tenMinuteGridStep

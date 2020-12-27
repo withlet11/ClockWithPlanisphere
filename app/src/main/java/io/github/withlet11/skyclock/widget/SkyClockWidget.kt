@@ -188,8 +188,8 @@ internal fun updateAppWidget(
         skyPanel.set(
             starGeometryList,
             constellationLineList,
-            northMilkyWayDotList,
-            southMilkyWayDotList,
+            milkyWayDotList,
+            milkyWayDotSize,
             equatorial,
             ecliptic,
             tenMinuteGridStep

@@ -120,7 +120,6 @@ class SunAndMoonPanel(context: Context) : AbstractPanel() {
                     else differenceOfLongitude.toFloat()
         )
         paint.style = Paint.Style.FILL
-        println("difference: $differenceOfLongitude")
         val phase = abs(cos(Math.toRadians(differenceOfLongitude)).toFloat() * io.github.withlet11.skyclock.view.AbstractPanel.MOON_RADIUS)
         val (isFirstHalf, color) = when {
             differenceOfLongitude < 90 -> true to moonDarkSideColor

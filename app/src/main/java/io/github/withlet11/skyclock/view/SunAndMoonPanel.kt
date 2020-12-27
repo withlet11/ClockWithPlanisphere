@@ -1,5 +1,5 @@
 /*
- * MoonPanel.kt
+ * SunAndMoonPanel.kt
  *
  * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
@@ -31,7 +31,7 @@ import java.time.LocalDateTime
 import kotlin.math.*
 
 /** This class is a view that show the Moon. */
-class MoonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
+class SunAndMoonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
     private var moonPosition = 0f to 0f
     private var differenceOfLongitude = 0.0
     private val rotateAngleOfSun: Float get() = -solarAngle * sign(tenMinuteGridStep)
@@ -59,7 +59,6 @@ class MoonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context
                     else differenceOfLongitude.toFloat()
         )
         paint.style = Paint.Style.FILL
-        println("difference: $differenceOfLongitude")
         val phase = abs(cos(toRadians(differenceOfLongitude)).toFloat() * MOON_RADIUS)
         val (isFirstHalf, color) = when {
             differenceOfLongitude < 90 -> true to moonDarkSideColor

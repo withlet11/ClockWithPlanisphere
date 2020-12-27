@@ -56,7 +56,7 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
     // views
     private lateinit var skyPanel: SkyPanel
     private lateinit var sunPanel: SunPanel
-    private lateinit var moonPanel: MoonPanel
+    private lateinit var sunAndMoonPanel: SunAndMoonPanel
     private lateinit var horizonPanel: HorizonPanel
     private lateinit var clockBasePanel: ClockBasePanel
     private lateinit var clockHandsPanel: ClockHandsPanel
@@ -68,7 +68,7 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
             field = value
             skyPanel.isZoomed = value
             sunPanel.isZoomed = value
-            moonPanel.isZoomed = value
+            sunAndMoonPanel.isZoomed = value
             horizonPanel.isZoomed = value
             clockBasePanel.isZoomed = value
             clockHandsPanel.isZoomed = value
@@ -122,7 +122,7 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
         super.onViewCreated(view, savedInstanceState)
         skyPanel = view.findViewById(R.id.skyPanel)
         sunPanel = view.findViewById(R.id.sunPanel)
-        moonPanel = view.findViewById(R.id.moonPanel)
+        sunAndMoonPanel = view.findViewById(R.id.moonPanel)
         horizonPanel = view.findViewById(R.id.horizonPanel)
         clockBasePanel = view.findViewById(R.id.clockBasePanel)
         clockHandsPanel = view.findViewById(R.id.clockHandsPanel)
@@ -356,11 +356,11 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
             clockHandsPanel,
             skyPanel,
             sunPanel,
-            moonPanel,
+            sunAndMoonPanel,
             horizonPanel
-        ).forEach {
-            it.scrollX = x
-            it.scrollY = y
+        ).forEach { panel ->
+            panel.scrollX = x
+            panel.scrollY = y
         }
     }
 
@@ -369,8 +369,8 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
             skyPanel.set(
                 starGeometryList,
                 constellationLineList,
-                northMilkyWayDotList,
-                southMilkyWayDotList,
+                milkyWayDotList,
+                milkyWayDotSize,
                 equatorial,
                 ecliptic,
                 tenMinuteGridStep
@@ -383,7 +383,7 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
                 tenMinuteGridStep
             )
 
-            moonPanel.set(
+            sunAndMoonPanel.set(
                 currentMoonPosition,
                 currentSunPosition.second,
                 tenMinuteGridStep
@@ -452,13 +452,13 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
 
     private fun updateMoonPanel() {
         val siderealAngle = skyViewModel.siderealAngle
-        val difference = moonPanel.getAngleDifference(siderealAngle)
-        if (moonPanel.isDifferentDate(skyViewModel.localDate) || difference > MINIMUM_DEGREE) {
+        val difference = sunAndMoonPanel.getAngleDifference(siderealAngle)
+        if (sunAndMoonPanel.isDifferentDate(skyViewModel.localDate) || difference > MINIMUM_DEGREE) {
             val solarAngle = skyViewModel.solarAngle
             val currentMoonPosition = skyViewModel.currentMoonPosition
             val longitudeOfSun = skyViewModel.currentSunPosition.second
 
-            moonPanel.setSolarAngleAndCurrentPosition(
+            sunAndMoonPanel.setSolarAngleAndCurrentPosition(
                 solarAngle,
                 siderealAngle,
                 currentMoonPosition,

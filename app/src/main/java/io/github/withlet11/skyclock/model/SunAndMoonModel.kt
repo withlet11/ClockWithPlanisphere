@@ -89,13 +89,13 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
     fun getMoonPosition(jc: Double): Pair<Pair<Float, Float>, Double> {
         val t = jc * 100.0
         val inclination = toRadians(23.43658) // axial tilt
-        val a = parameterA.sumOf { it.first * sin(toRadians(it.second + it.third * t)) }
-        val b = parameterB.sumOf { it.first * sin(toRadians(it.second + it.third * t)) }
+        val a = parameterA.sumOf { (p, q, r) -> p * sin(toRadians(q + r * t)) }
+        val b = parameterB.sumOf { (p, q, r) -> p * sin(toRadians(q + r * t)) }
         val longitude = toRadians(218.3161 + 4812.67881 * t
                 + 6.2887 * sin(toRadians(134.961 + 4771.9886 * t + a))
-                + parameterLambda.sumOf { it.first * sin(toRadians(it.second + it.third * t)) })
+                + parameterLambda.sumOf { (p, q, r) -> p * sin(toRadians(q + r * t)) })
         val latitude = toRadians(5.1282 * sin(toRadians(93.273 + 4832.0202 * t + b))
-                + parameterBeta.sumOf { it.first * sin(toRadians(it.second + it.third * t)) })
+                + parameterBeta.sumOf { (p, q, r) -> p * sin(toRadians(q + r * t)) })
         val (declination, rightAscension) = eclipticToEquatorial(latitude, longitude, inclination)
         return skyModel.convertToXYPosition(declination, -rightAscension) to toDegrees(longitude) % 360.0
     }

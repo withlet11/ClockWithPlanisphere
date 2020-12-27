@@ -89,8 +89,8 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
 
             visibility?.run {
                 convertToEquatorialFromHorizontal(azimuth, -5.0).let { (dec, ha) ->
-                    skyModel.convertToXYPosition(dec, ha).let {
-                        Triple(text, it.first, it.second)
+                    skyModel.convertToXYPosition(dec, ha).let { (x, y) ->
+                        Triple(text, x, y)
                     }
                 }
             }

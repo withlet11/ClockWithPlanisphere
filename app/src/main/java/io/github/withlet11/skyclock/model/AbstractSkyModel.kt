@@ -22,23 +22,18 @@
 package io.github.withlet11.skyclock.model
 
 import android.content.Context
-import android.graphics.Color
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlin.math.*
 
 abstract class AbstractSkyModel {
-    data class StarGeometry(val x: Float, val y: Float, val r: Float)
-    data class ConstellationLineGeometry(val x1: Float, val y1: Float, val x2: Float, val y2: Float)
-    data class MilkyWayDot(val x1: Float, val y1: Float, val magnitude: Int)
-
     @Entity(tableName = "hip_list")
     data class HipEntry(
         @PrimaryKey(autoGenerate = false) val hip: Int,
         @ColumnInfo(name = "ra") val ra: Double,
         @ColumnInfo(name = "dec") val dec: Double,
-        @ColumnInfo(name = "mag") val mag: Double,
+        @ColumnInfo(name = "radius") val radius: Float,
     )
 
     @Entity(tableName = "constellation_lines")
@@ -53,18 +48,22 @@ abstract class AbstractSkyModel {
     @Entity(tableName = "milkyway_north")
     data class NorthMilkyWayDotEntry(
         @PrimaryKey(autoGenerate = false) val id: Int,
-        @ColumnInfo(name = "x_position") val x: Int,
-        @ColumnInfo(name = "y_position") val y: Int,
-        @ColumnInfo(name = "magnitude") val magnitude: Int
+        @ColumnInfo(name = "x_pos") val x: Float,
+        @ColumnInfo(name = "y_pos") val y: Float,
+        @ColumnInfo(name = "argb") val argb: Int
     )
 
     @Entity(tableName = "milkyway_south")
     data class SouthMilkyWayDotEntry(
         @PrimaryKey(autoGenerate = false) val id: Int,
-        @ColumnInfo(name = "x_position") val x: Int,
-        @ColumnInfo(name = "y_position") val y: Int,
-        @ColumnInfo(name = "magnitude") val magnitude: Int
+        @ColumnInfo(name = "x_pos") val x: Float,
+        @ColumnInfo(name = "y_pos") val y: Float,
+        @ColumnInfo(name = "argb") val argb: Int
     )
+
+    data class StarGeometry(val x: Float, val y: Float, val r: Float)
+    data class ConstellationLineGeometry(val x1: Float, val y1: Float, val x2: Float, val y2: Float)
+    data class MilkyWayDot(val x: Float, val y: Float, val color: Int)
 
     companion object {
         const val ANGLE_LIMIT = 155.0
@@ -80,6 +79,7 @@ abstract class AbstractSkyModel {
         set(value) {
             field = value
             maxAngle = min(toAngle(value) + 10.0, ANGLE_LIMIT)
+            milkyWayDotSize = (1.0 / maxAngle).toFloat()
             equatorial = List(5) {
                 val angle = (it + 1) * 30
                 val dec = toDeclinationFromPole(angle)
@@ -105,62 +105,47 @@ abstract class AbstractSkyModel {
     var constellationLineList = listOf<ConstellationLineGeometry>()
         protected set
 
-    var northMilkyWayDotList = listOf<MilkyWayDot>()
+    var milkyWayDotList = listOf<MilkyWayDot>()
         protected set
 
-    var southMilkyWayDotList = listOf<MilkyWayDot>()
-        protected set
+    var milkyWayDotSize = (1.0 / ANGLE_LIMIT).toFloat()
 
-    private lateinit var skyClockDao: SkyClockDao
-    private lateinit var db: SkyClockDataBase
-
+    protected lateinit var skyClockDao: SkyClockDao
+    private lateinit var dataBase: SkyClockDataBase
 
     fun loadDatabase(context: Context) {
-        db = SkyClockDataBase.getInstance(context)
-        skyClockDao = db.skyClockDao()
+        dataBase = SkyClockDataBase.getInstance(context)
+        skyClockDao = dataBase.skyClockDao()
     }
 
-    fun updatePositionList() {
-        starGeometryList = skyClockDao.getAllHip().mapNotNull { (_, ra, dec, mag) ->
-            calculateStarPosition(dec, ra, mag)
+    open fun updatePositionList() {
+        starGeometryList = skyClockDao.getAllHip().mapNotNull { (_, ra, dec, radius) ->
+            calculateStarPosition(dec, ra, radius)
         }
 
-        constellationLineList = skyClockDao.getAllConstellationLines().mapNotNull { (_, ra1, dec1, ra2, dec2) ->
-            val xy1 = convertToXYPositionWithNull(dec1, -ra1)
-            val xy2 = convertToXYPositionWithNull(dec2, -ra2)
-            if (xy1 != null && xy2 != null) ConstellationLineGeometry(
-                xy1.first,
-                xy1.second,
-                xy2.first,
-                xy2.second
-            ) else null
-        }
-
-        northMilkyWayDotList = skyClockDao.getNorthMilkyWay().map { (_, x, y, v) ->
-            makeMilkyWayDot(x, y, v)
-        }
-
-        southMilkyWayDotList = skyClockDao.getSouthMilkyWay().map { (_, x, y, v) ->
-            makeMilkyWayDot(x, y, v)
-        }
-    }
-
-    private fun makeMilkyWayDot(x: Int, y: Int, v: Int): MilkyWayDot {
-        val alpha = min(128, v / 8 + 32)
-        val color = Color.argb(alpha, 192, 192, 192)
-        return MilkyWayDot(x / 150f, y / 150f, color)
-    }
-
-    private fun calculateStarPosition(dec: Double, ra: Double, magnitude: Double): StarGeometry? =
-        when {
-            magnitude < 6.0 -> {
-                convertToXYPositionWithNull(dec, -ra)?.run {
-                    val r = min(4.5, 6.0 * 0.65.pow(magnitude)).toFloat()
-                    StarGeometry(first, second, r)
-                }
+        constellationLineList =
+            skyClockDao.getAllConstellationLines().mapNotNull { (_, ra1, dec1, ra2, dec2) ->
+                val xy1 = convertToXYPositionWithNull(dec1, -ra1)
+                val xy2 = convertToXYPositionWithNull(dec2, -ra2)
+                if (xy1 != null && xy2 != null) ConstellationLineGeometry(
+                    xy1.first,
+                    xy1.second,
+                    xy2.first,
+                    xy2.second
+                ) else null
             }
-            else -> null
-        }
+    }
+
+    protected fun makeMilkyWayDot(x: Float, y: Float, argb: Int): MilkyWayDot? {
+        val scale = (ANGLE_LIMIT / maxAngle).toFloat()
+        val scaledX = x * scale
+        val scaledY = y * scale
+        return if (scaledX * scaledX + scaledY * scaledY < 1f)
+            MilkyWayDot(scaledX, scaledY, argb) else null
+    }
+
+    private fun calculateStarPosition(dec: Double, ra: Double, radius: Float): StarGeometry? =
+        convertToXYPositionWithNull(dec, -ra)?.let { (x, y) -> StarGeometry(x, y, radius) }
 
     fun convertToXYPositionWithNull(dec: Double, ha: Double): Pair<Float, Float>? {
         val radius = toRadius(dec)
