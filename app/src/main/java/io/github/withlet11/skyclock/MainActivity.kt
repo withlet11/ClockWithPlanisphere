@@ -1,7 +1,7 @@
 /*
  * MainActivity.kt
  *
- * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2021 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -25,6 +25,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
@@ -38,11 +39,16 @@ import io.github.withlet11.skyclock.fragment.SouthernSkyClockFragment
 
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        const val AD_DISPLAY_DURATION = 10000L
+    }
+
     var latitude = 0.0
     private var longitude = 0.0
     var isClockHandsVisible = true
     private var isSouthernSky = false
-    private val handler = Handler()
+    // private val handler = Handler()
+    private val handler by lazy { Handler(Looper.getMainLooper()) }
     private var adView: AdView? = null
 
     interface LocationChangeObserver {
@@ -149,7 +155,7 @@ class MainActivity : AppCompatActivity() {
             adView = null
         }
 
-        handler.postDelayed(runnable, 10000)
+        handler.postDelayed(runnable, AD_DISPLAY_DURATION)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

@@ -1,7 +1,7 @@
 /*
  * PeriodicalUpdater.kt
  *
- * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2021 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -22,6 +22,7 @@
 package io.github.withlet11.skyclock
 
 import android.os.Handler
+import android.os.Looper
 import io.github.withlet11.skyclock.fragment.AbstractSkyClockFragment
 
 
@@ -31,7 +32,8 @@ class PeriodicalUpdater(private val skyClockFragment: AbstractSkyClockFragment) 
     }
 
     private lateinit var runnable: Runnable
-    private val handler = Handler()
+    // private val handler = Handler()
+    private val handler by lazy { Handler(Looper.getMainLooper()) }
 
     fun timerSet() {
         runnable = object : Runnable {

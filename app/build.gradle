@@ -28,8 +28,8 @@ android {
         applicationId "io.github.withlet11.skyclock"
         minSdkVersion 26
         targetSdkVersion 30
-        versionCode 8
-        versionName "4.2"
+        versionCode 9
+        versionName "5.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
