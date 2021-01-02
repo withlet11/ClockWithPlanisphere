@@ -2,7 +2,8 @@
 <resources>
     <string name="no_permission_to_access_location_permanent">位置情報へのアクセスの権限がありません。設定でアプリの権限についてご確認下さい。</string>
     <string name="no_permission_to_access_location_once">位置情報へのアクセスの権限がありません。</string>
-    <string name="modify">変更</string>
+    <string name="modify">変更する</string>
+    <string name="cancel">変更しない</string>
     <string name="license">使用許諾</string>
     <string name="locationSettings">観測地設定</string>
     <string name="opensource_licenses">オープンソースライセンス</string>

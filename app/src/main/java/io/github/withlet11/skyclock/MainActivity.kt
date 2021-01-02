@@ -30,6 +30,7 @@ import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
+import androidx.fragment.app.DialogFragment
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
@@ -38,7 +39,7 @@ import io.github.withlet11.skyclock.fragment.NorthernSkyClockFragment
 import io.github.withlet11.skyclock.fragment.SouthernSkyClockFragment
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettingDialogListener  {
     companion object {
         const val AD_DISPLAY_DURATION = 10000L
     }
@@ -83,10 +84,8 @@ class MainActivity : AppCompatActivity() {
         toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.item_settings -> {
-                    val intent = Intent(application, LocationSettingActivity::class.java)
-                    intent.putExtra("LATITUDE", latitude)
-                    intent.putExtra("LONGITUDE", longitude)
-                    startActivityForResult(intent, 2)
+                    val dialog = LocationSettingFragment()
+                    dialog.show(supportFragmentManager, "locationSetting")
                 }
                 R.id.item_privacy_policy -> {
                     startActivity(Intent(application, PrivacyPolicyActivity::class.java))
@@ -109,7 +108,7 @@ class MainActivity : AppCompatActivity() {
         val adRequest = AdRequest.Builder().build()
         adView?.loadAd(adRequest)
 
-        loadPreviousPosition()
+        loadPreviousSettings()
 
         val switch: SwitchCompat = findViewById(R.id.view_switch)
         switch.isChecked = isSouthernSky
@@ -158,28 +157,15 @@ class MainActivity : AppCompatActivity() {
         handler.postDelayed(runnable, AD_DISPLAY_DURATION)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        // check if the request code is same as what is passed here it is 2
-        if (requestCode == 2 && data != null) {
-
-            try {
-                latitude = data.getDoubleExtra("LATITUDE", 0.0)
-                longitude = data.getDoubleExtra("LONGITUDE", 0.0)
-            } catch (e: ClassCastException) {
-            } finally {
-                with(getSharedPreferences("observation_position", Context.MODE_PRIVATE).edit()) {
-                    putFloat("latitude", latitude.toFloat())
-                    putFloat("longitude", longitude.toFloat())
-                    commit()
-                }
-
-                notifyObservers()
-            }
-        }
+    override fun onDialogPositiveClick(dialog: DialogFragment) {
+        loadPreviousPosition()
     }
 
-    private fun loadPreviousPosition() {
+    override fun onDialogNegativeClick(dialog: DialogFragment) {
+        // Do nothing
+    }
+
+    private fun loadPreviousSettings() {
         val previous = getSharedPreferences("observation_position", Context.MODE_PRIVATE)
 
         try {
@@ -191,6 +177,20 @@ class MainActivity : AppCompatActivity() {
             longitude = 0.0
             isSouthernSky = false
         } finally {
+        }
+    }
+
+    private fun loadPreviousPosition() {
+        val previous = getSharedPreferences("observation_position", Context.MODE_PRIVATE)
+
+        try {
+            latitude = previous.getFloat("latitude", 0f).toDouble()
+            longitude = previous.getFloat("longitude", 0f).toDouble()
+        } catch (e: ClassCastException) {
+            latitude = 0.0
+            longitude = 0.0
+        } finally {
+            notifyObservers()
         }
     }
 }

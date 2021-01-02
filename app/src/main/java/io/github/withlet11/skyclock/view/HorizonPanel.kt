@@ -124,5 +124,6 @@ class HorizonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(cont
         this.horizon = horizon
         this.altAzimuth = altAzimuth
         this.directionLetters = directionLetters
+        invalidate()
     }
 }

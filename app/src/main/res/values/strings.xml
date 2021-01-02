@@ -9,6 +9,7 @@
     <string name="longitudeHint" translatable="false">+123.456</string>
     <string name="gps" translatable="false">GPS</string>
     <string name="modify">Modify</string>
+    <string name="cancel">Cancel</string>
     <string name="inGettingLocation">in getting location…</string>
     <string name="pleaseCheckIfGPSIsOn">Please check if GPS is on.</string>
     <string name="app_license" translatable="false" tools:ignore="Typos">Copyright 2020-2021 Yasuhiro Yamakawa &lt;withlet11@gmail.com&gt;\n\n
