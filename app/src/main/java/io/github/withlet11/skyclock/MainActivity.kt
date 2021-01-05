@@ -35,6 +35,7 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import io.github.withlet11.skyclock.fragment.LocationSettingFragment
 import io.github.withlet11.skyclock.fragment.NorthernSkyClockFragment
 import io.github.withlet11.skyclock.fragment.SouthernSkyClockFragment
 

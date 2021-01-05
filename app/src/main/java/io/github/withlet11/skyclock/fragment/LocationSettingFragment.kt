@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package io.github.withlet11.skyclock
+package io.github.withlet11.skyclock.fragment
 
 import android.Manifest
 import android.app.Dialog
@@ -37,6 +37,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.DialogFragment
 import com.google.android.gms.location.*
+import io.github.withlet11.skyclock.R
 
 
 class LocationSettingFragment : DialogFragment() {
