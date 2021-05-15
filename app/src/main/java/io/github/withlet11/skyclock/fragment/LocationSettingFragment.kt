@@ -27,6 +27,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.method.DigitsKeyListener
@@ -101,7 +102,7 @@ class LocationSettingFragment : DialogFragment() {
 
     override fun onStart() {
         super.onStart()
-        locationRequest = LocationRequest().apply {
+        locationRequest = LocationRequest.create().apply {
             interval = MAXIMUM_UPDATE_INTERVAL
             fastestInterval = MINIMUM_UPDATE_INTERVAL
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
@@ -222,7 +223,7 @@ class LocationSettingFragment : DialogFragment() {
                     fusedLocationClient.requestLocationUpdates(
                         locationRequest,
                         locationCallback,
-                        null
+                        Looper.getMainLooper()
                     )
                 } else {
                     unlockViewItems()
