@@ -61,11 +61,13 @@ class LocationSettingFragment : DialogFragment() {
         private const val MAXIMUM_UPDATE_INTERVAL = 10000L
         private const val MINIMUM_UPDATE_INTERVAL = 5000L
         private const val REQUEST_PERMISSION = 1000
+        const val DEFAULT_LATITUDE = 45.0
+        const val DEFAULT_LONGITUDE = 0.0
     }
 
     interface LocationSettingDialogListener {
-        fun onDialogPositiveClick(dialog: DialogFragment)
-        fun onDialogNegativeClick(dialog: DialogFragment)
+        fun onLocationDialogPositiveClick(dialog: DialogFragment)
+        fun onLocationDialogNegativeClick(dialog: DialogFragment)
     }
 
     private var listener: LocationSettingDialogListener? = null
@@ -78,21 +80,21 @@ class LocationSettingFragment : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = AlertDialog.Builder(activity!!)
-        val inflater = activity!!.layoutInflater
+        val builder = AlertDialog.Builder(requireActivity())
+        val inflater = requireActivity().layoutInflater
         val locationSettingView = inflater.inflate(R.layout.fragment_location_setting, null)
         builder.setView(locationSettingView)
             .setTitle(R.string.locationSettings)
             .setPositiveButton(context?.getText(R.string.modify)) { _, _ ->
                 context?.getSharedPreferences("observation_position", Context.MODE_PRIVATE)?.edit()
                     ?.run {
-                        putFloat("latitude", latitude?.toFloat() ?: 0f)
-                        putFloat("longitude", longitude?.toFloat() ?: 0f)
+                        putFloat("latitude", latitude?.toFloat() ?: DEFAULT_LATITUDE.toFloat())
+                        putFloat("longitude", longitude?.toFloat() ?: DEFAULT_LONGITUDE.toFloat())
                         commit()
                     }
-                listener?.onDialogPositiveClick(this)
+                listener?.onLocationDialogPositiveClick(this)
             }
-            .setNegativeButton(context?.getText(R.string.cancel)) { _, _ -> listener?.onDialogNegativeClick(this) }
+            .setNegativeButton(context?.getText(R.string.cancel)) { _, _ -> listener?.onLocationDialogNegativeClick(this) }
 
         getPreviousValues()
         prepareGUIComponents(locationSettingView)
@@ -131,8 +133,8 @@ class LocationSettingFragment : DialogFragment() {
 
     private fun getPreviousValues() {
         context?.getSharedPreferences("observation_position", Context.MODE_PRIVATE)?.run {
-            latitude = getFloat("latitude", 0f).toDouble()
-            longitude = getFloat("longitude", 0f).toDouble()
+            latitude = getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
+            longitude = getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
         }
     }
 
@@ -175,7 +177,7 @@ class LocationSettingFragment : DialogFragment() {
             })
         }
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(context!!)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
 
         getLocationButton = locationSettingView.findViewById<Button>(R.id.getLocationButton).apply {
             setOnClickListener { startGPS() }

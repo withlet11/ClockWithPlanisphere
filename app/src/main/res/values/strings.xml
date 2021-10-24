@@ -60,4 +60,22 @@
     <string name="sun_and_moon_panel">Sun and Moon panel</string>
     <string name="horizon_panel">Horizon panel</string>
     <string name="clock_hands_panel">Clock hands panel</string>
+    <string name="bg_color">Background color</string>
+    <string name="basic_colors">Basic Colors</string>
+    <string name="white">White</string>
+    <string name="silver">Silver</string>
+    <string name="gray">Gray</string>
+    <string name="black">Black</string>
+    <string name="red">Red</string>
+    <string name="maroon">Maroon</string>
+    <string name="yellow">Yellow</string>
+    <string name="olive">Olive</string>
+    <string name="lime">Lime</string>
+    <string name="green">Green</string>
+    <string name="aqua">Aqua</string>
+    <string name="teal">Teal</string>
+    <string name="blue">Blue</string>
+    <string name="navy">Navy</string>
+    <string name="fuchsia">Fuchsia</string>
+    <string name="purple">Purple</string>
 </resources>

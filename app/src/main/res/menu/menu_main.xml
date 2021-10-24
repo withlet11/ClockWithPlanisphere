@@ -10,6 +10,9 @@
         android:id="@+id/item_settings"
         android:title="@string/locationSettings" />
     <item
+        android:id="@+id/item_bg_color"
+        android:title="@string/bg_color" />
+    <item
         android:id="@+id/item_privacy_policy"
         android:title="@string/privacy_policy_header" />
     <item

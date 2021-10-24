@@ -5,21 +5,36 @@
     <color name="colorPrimaryDark">#082080</color>
     <color name="colorAccent">#1090FF</color>
     <color name="colorPlainText">#FFFFFF</color>
+    <color name="defaultBackGround">#C0E0FF</color>
 
     <!-- Standard colors -->
-    <color name="black">#000000</color>
     <color name="darkBlue">#040820</color>
     <color name="midnightBlue">#081040</color>
     <color name="veryLightAzure">#74BBFB</color>
-    <color name="silver">#C0C0C0</color>
     <color name="titanium">#878681</color>
     <color name="graniteGray">#676767</color>
     <color name="pastelYellow">#FDFD96</color>
-    <color name="yellow">#FFFF00</color>
     <color name="dandelion">#F0E130</color>
     <color name="ripeMango">#FFC324</color>
     <color name="sprintRed">#EC2131</color>
-    <color name="red">#ff0000</color>
+
+    <!-- CSS Standard colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="silver">#C0C0C0</color>
+    <color name="gray">#808080</color>
+    <color name="black">#000000</color>
+    <color name="red">#FF0000</color>
+    <color name="maroon">#800000</color>
+    <color name="yellow">#FFFF00</color>
+    <color name="olive">#808000</color>
+    <color name="lime">#00FF00</color>
+    <color name="green">#008000</color>
+    <color name="aqua">#00FFFF</color>
+    <color name="teal">#008080</color>
+    <color name="blue">#0000FF</color>
+    <color name="navy">#000080</color>
+    <color name="fuchsia">#FF00FF</color>
+    <color name="purple">#800080</color>
 
     <!-- Transparent -->
     <color name="smoke">#80000000</color>

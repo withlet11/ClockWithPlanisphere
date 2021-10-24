@@ -58,7 +58,7 @@ class SkyClockWidget : AppWidgetProvider() {
         private fun getAlarmIntent(context: Context): PendingIntent {
             val intent = Intent(context, SkyClockWidget::class.java)
             intent.action = ACTION_UPDATE
-            return PendingIntent.getBroadcast(context, 0, intent, 0)
+            return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
         }
 
         fun clearUpdate(context: Context) {
@@ -153,7 +153,7 @@ internal fun updateAppWidget(
 ) {
     val remoteViews = RemoteViews(context.packageName, R.layout.widget_clock)
     val intent = Intent(context, MainActivity::class.java)
-    val pendingIntent = PendingIntent.getActivity(context, 0, intent, 0)
+    val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
     remoteViews.setOnClickPendingIntent(R.id.launchButton, pendingIntent)
     appWidgetManager.updateAppWidget(appWidgetIds, remoteViews)
 

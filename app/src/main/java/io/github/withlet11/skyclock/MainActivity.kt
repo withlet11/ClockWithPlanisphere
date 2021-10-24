@@ -35,40 +35,48 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
-import io.github.withlet11.skyclock.fragment.LocationSettingFragment
-import io.github.withlet11.skyclock.fragment.NorthernSkyClockFragment
-import io.github.withlet11.skyclock.fragment.SouthernSkyClockFragment
+import io.github.withlet11.skyclock.fragment.*
 
 
-class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettingDialogListener  {
+class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettingDialogListener,
+    ColorSettingFragment.BackgroundColorSettingDialogListener {
     companion object {
         const val AD_DISPLAY_DURATION = 10000L
+        const val DEFAULT_LATITUDE = 45.0
+        const val DEFAULT_LONGITUDE = 0.0
     }
 
     var latitude = 0.0
     private var longitude = 0.0
     var isClockHandsVisible = true
+    private var backgroundColor = 0
     private var isSouthernSky = false
+
     // private val handler = Handler()
     private val handler by lazy { Handler(Looper.getMainLooper()) }
     private var adView: AdView? = null
 
-    interface LocationChangeObserver {
+    interface ChangeObserver {
         fun onLocationChange(latitude: Double, longitude: Double)
+        fun onColorChange(backgroundColor: Int)
     }
 
-    private val observers = mutableListOf<LocationChangeObserver>()
+    private val observers = mutableListOf<ChangeObserver>()
 
-    fun addObserver(observer: LocationChangeObserver) {
+    fun addObserver(observer: ChangeObserver) {
         observers.add(observer)
     }
 
-    fun removeObserver(observer: LocationChangeObserver) {
+    fun removeObserver(observer: ChangeObserver) {
         observers.remove(observer)
     }
 
-    private fun notifyObservers() {
+    private fun notifyLocationChange() {
         observers.forEach { it.onLocationChange(latitude, longitude) }
+    }
+
+    private fun notifyColorChange() {
+        observers.forEach { it.onColorChange(backgroundColor) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,6 +95,10 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
                 R.id.item_settings -> {
                     val dialog = LocationSettingFragment()
                     dialog.show(supportFragmentManager, "locationSetting")
+                }
+                R.id.item_bg_color -> {
+                    val dialog = ColorSettingFragment()
+                    dialog.show(supportFragmentManager, "backgroundColor")
                 }
                 R.id.item_privacy_policy -> {
                     startActivity(Intent(application, PrivacyPolicyActivity::class.java))
@@ -117,6 +129,7 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
             isSouthernSky = b
             with(getSharedPreferences("observation_position", Context.MODE_PRIVATE).edit()) {
                 putBoolean("isSouthernSky", isSouthernSky)
+                putInt("backgroundColor", backgroundColor)
                 commit()
             }
 
@@ -126,6 +139,7 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
                         putDouble("LATITUDE", latitude)
                         putDouble("LONGITUDE", longitude)
                         putBoolean("CLOCK_HANDS_VISIBILITY", isClockHandsVisible)
+                        putInt("BACKGROUND_COLOR", backgroundColor)
                     }
                 }
 
@@ -142,6 +156,7 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
                     putDouble("LATITUDE", latitude)
                     putDouble("LONGITUDE", longitude)
                     putBoolean("CLOCK_HANDS_VISIBILITY", isClockHandsVisible)
+                    putInt("BACKGROUND_COLOR", backgroundColor)
                 }
             }
 
@@ -158,11 +173,19 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
         handler.postDelayed(runnable, AD_DISPLAY_DURATION)
     }
 
-    override fun onDialogPositiveClick(dialog: DialogFragment) {
+    override fun onLocationDialogPositiveClick(dialog: DialogFragment) {
         loadPreviousPosition()
     }
 
-    override fun onDialogNegativeClick(dialog: DialogFragment) {
+    override fun onLocationDialogNegativeClick(dialog: DialogFragment) {
+        // Do nothing
+    }
+
+    override fun onColorDialogPositiveClick(dialog: DialogFragment) {
+        loadColorSettings()
+    }
+
+    override fun onColorDialogNegativeClick(dialog: DialogFragment) {
         // Do nothing
     }
 
@@ -170,13 +193,15 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
         val previous = getSharedPreferences("observation_position", Context.MODE_PRIVATE)
 
         try {
-            latitude = previous.getFloat("latitude", 0f).toDouble()
-            longitude = previous.getFloat("longitude", 0f).toDouble()
+            latitude = previous.getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
+            longitude = previous.getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
             isSouthernSky = previous.getBoolean("isSouthernSky", false)
+            backgroundColor = previous.getInt("backgroundColor", resources.getColor(R.color.defaultBackGround, null))
         } catch (e: ClassCastException) {
-            latitude = 0.0
-            longitude = 0.0
+            latitude = DEFAULT_LATITUDE
+            longitude = DEFAULT_LONGITUDE
             isSouthernSky = false
+            setDefaultColor()
         } finally {
         }
     }
@@ -185,13 +210,29 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
         val previous = getSharedPreferences("observation_position", Context.MODE_PRIVATE)
 
         try {
-            latitude = previous.getFloat("latitude", 0f).toDouble()
-            longitude = previous.getFloat("longitude", 0f).toDouble()
+            latitude = previous.getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
+            longitude = previous.getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
         } catch (e: ClassCastException) {
-            latitude = 0.0
-            longitude = 0.0
+            latitude = DEFAULT_LATITUDE
+            longitude = DEFAULT_LONGITUDE
         } finally {
-            notifyObservers()
+            notifyLocationChange()
         }
+    }
+
+    private fun loadColorSettings() {
+        val previous = getSharedPreferences("observation_position", Context.MODE_PRIVATE)
+
+        try {
+            backgroundColor = previous.getInt("backgroundColor", resources.getColor(R.color.defaultBackGround, null))
+        } catch (e: ClassCastException) {
+            setDefaultColor()
+        } finally {
+            notifyColorChange()
+        }
+    }
+
+    private fun setDefaultColor() {
+        backgroundColor = resources.getColor(R.color.defaultBackGround, null)
     }
 }

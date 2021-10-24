@@ -29,4 +29,22 @@
     <string name="sun_and_moon_panel">太陽・月パネル</string>
     <string name="horizon_panel">地平線パネル</string>
     <string name="clock_hands_panel">時計針パネル</string>
+    <string name="bg_color">背景色</string>
+    <string name="basic_colors">基本色</string>
+    <string name="white">白</string>
+    <string name="silver">銀色</string>
+    <string name="gray">灰色</string>
+    <string name="black">黒</string>
+    <string name="red">赤</string>
+    <string name="maroon">マルーン</string>
+    <string name="yellow">黄色</string>
+    <string name="olive">オリーブ</string>
+    <string name="lime">ライム</string>
+    <string name="green">緑</string>
+    <string name="aqua">水色</string>
+    <string name="teal">ティール</string>
+    <string name="blue">青</string>
+    <string name="navy">ネイビー</string>
+    <string name="fuchsia">フクシャ</string>
+    <string name="purple">紫</string>
 </resources>

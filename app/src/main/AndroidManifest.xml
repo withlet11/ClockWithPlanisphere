@@ -14,10 +14,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <receiver android:name=".widget.SkyClockWidget">
+        <receiver
+            android:name=".widget.SkyClockWidget"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <!-- action android:name="io.github.withlet11.skyclock.widget.SkyClockWidget.ACTION_UPDATE" / -->
             </intent-filter>
 
@@ -25,14 +27,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/sky_clock_widget_info" />
         </receiver>
+
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-6502278727709781~7686374599"/>
+            android:value="ca-app-pub-6502278727709781~7686374599" />
 
-        <activity android:name=".MainActivity">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

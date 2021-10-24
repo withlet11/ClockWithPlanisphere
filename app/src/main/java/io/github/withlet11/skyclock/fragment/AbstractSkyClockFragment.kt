@@ -39,10 +39,12 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 
-abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChangeObserver {
+abstract class AbstractSkyClockFragment : Fragment(), MainActivity.ChangeObserver {
     companion object {
         const val MINIMUM_DEGREE = 0.25f
         const val MINIMUM_SQUARE_DISTANCE = 0.005f * 0.005f
+        const val DEFAULT_LATITUDE = 45.0
+        const val DEFAULT_LONGITUDE = 0.0
     }
 
     private enum class SwipeStatus { ANYTHING, SUN, SKY_EDGE, DATE }
@@ -54,6 +56,7 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
     private lateinit var skyViewModel: SkyViewModel
 
     // views
+    private lateinit var background: View
     private lateinit var skyPanel: SkyPanel
     private lateinit var sunPanel: SunPanel
     private lateinit var sunAndMoonPanel: SunAndMoonPanel
@@ -120,6 +123,7 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        background = view
         skyPanel = view.findViewById(R.id.skyPanel)
         sunPanel = view.findViewById(R.id.sunPanel)
         sunAndMoonPanel = view.findViewById(R.id.moonPanel)
@@ -130,12 +134,16 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
 
         // get argument
         val args = arguments
-        val latitude = args?.getDouble("LATITUDE") ?: 45.0
-        val longitude = args?.getDouble("LONGITUDE") ?: 0.0
+        val latitude = args?.getDouble("LATITUDE", DEFAULT_LATITUDE) ?: DEFAULT_LATITUDE
+        val longitude = args?.getDouble("LONGITUDE", DEFAULT_LONGITUDE) ?: DEFAULT_LONGITUDE
         clockHandsPanel.isVisible = args?.getBoolean("CLOCK_HANDS_VISIBILITY") ?: true
+        val backgroundColor =
+            args?.getInt("BACKGROUND_COLOR", resources.getColor(R.color.defaultBackGround, null))
+                ?: resources.getColor(R.color.defaultBackGround, null)
 
         skyViewModel = prepareViewModel(activity?.applicationContext!!, latitude, longitude)
 
+        view.setBackgroundColor(backgroundColor)
         setPeriodicalUpdater()
         setOnTapListenerToPanel()
         setViewObserver()
@@ -470,7 +478,7 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
 
     /**
      * Receives location change signal from MainActivity.
-     * Implementation of [MainActivity.LocationChangeObserver.onLocationChange]
+     * Implementation of [MainActivity.ChangeObserver.onLocationChange]
      */
     override fun onLocationChange(latitude: Double, longitude: Double) {
         changeLocation(latitude, longitude)
@@ -480,6 +488,14 @@ abstract class AbstractSkyClockFragment : Fragment(), MainActivity.LocationChang
     private fun changeLocation(latitude: Double, longitude: Double) {
         skyViewModel.changeLocation(latitude, longitude)
         setHorizonPanel()
+    }
+
+    /**
+     * Receives color change signal from MainActivity.
+     * Implementation of [MainActivity.ChangeObserver.onColorChange]
+     */
+    override fun onColorChange(backgroundColor: Int) {
+        background.setBackgroundColor(backgroundColor)
     }
 
     /**
