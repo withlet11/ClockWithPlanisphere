@@ -118,7 +118,8 @@ class ColorSettingFragment : DialogFragment() {
                         fromUser: Boolean
                     ) {
                         bgColorRField.text = progress.toString()
-                        backgroundColor = rgb(progress, green(backgroundColor), blue(backgroundColor))
+                        backgroundColor =
+                            rgb(progress, green(backgroundColor), blue(backgroundColor))
                         colorPreview.setBackgroundColor(backgroundColor)
                         dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
                     }
@@ -184,7 +185,8 @@ class ColorSettingFragment : DialogFragment() {
                         fromUser: Boolean
                     ) {
                         bgColorBField.text = progress.toString()
-                        backgroundColor = rgb(red(backgroundColor), green(backgroundColor), progress)
+                        backgroundColor =
+                            rgb(red(backgroundColor), green(backgroundColor), progress)
                         colorPreview.setBackgroundColor(backgroundColor)
                         dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
                     }

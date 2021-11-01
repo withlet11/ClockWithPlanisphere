@@ -9,7 +9,11 @@
     <FrameLayout
         android:id="@+id/frameLayoutForAd"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -33,13 +37,14 @@
 
             </FrameLayout>
         </LinearLayout>
+
         <com.google.android.gms.ads.AdView
             android:id="@+id/adView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|center_horizontal"
             app:adSize="BANNER"
-            app:adUnitId="ca-app-pub-3940256099942544/6300978111" />
+            app:adUnitId="ca-app-pub-6502278727709781/9103220433" />
         <!--
             **** for Test
             app:adUnitId="ca-app-pub-3940256099942544/6300978111" />

@@ -94,7 +94,9 @@ class LocationSettingFragment : DialogFragment() {
                     }
                 listener?.onLocationDialogPositiveClick(this)
             }
-            .setNegativeButton(context?.getText(R.string.cancel)) { _, _ -> listener?.onLocationDialogNegativeClick(this) }
+            .setNegativeButton(context?.getText(R.string.cancel)) { _, _ ->
+                listener?.onLocationDialogNegativeClick(this)
+            }
 
         getPreviousValues()
         prepareGUIComponents(locationSettingView)

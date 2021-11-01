@@ -1,7 +1,7 @@
 /*
  * AbstractPanel.kt
  *
- * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2021 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -41,7 +41,8 @@ abstract class AbstractPanel {
         fun Float.toCanvas(): Float = this * CIRCLE_RADIUS
     }
 
-    val bmp: Bitmap = Bitmap.createBitmap(PREFERRED_SIZE.toInt(), PREFERRED_SIZE.toInt(), Bitmap.Config.ARGB_8888)
+    val bmp: Bitmap =
+        Bitmap.createBitmap(PREFERRED_SIZE.toInt(), PREFERRED_SIZE.toInt(), Bitmap.Config.ARGB_8888)
 
     open fun draw(canvas: Canvas) {
         canvas.translate(CENTER, CENTER)

@@ -1,7 +1,7 @@
 /*
- * SouthernSkyClockFragment.kt
+ * PaletteButton.kt
  *
- * Copyright 2020-2021 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2021 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -19,17 +19,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package io.github.withlet11.skyclock.fragment
+package io.github.withlet11.skyclock.view
 
 import android.content.Context
-import io.github.withlet11.skyclock.model.SkyViewModel
-import io.github.withlet11.skyclock.model.SouthernSkyModel
+import android.util.AttributeSet
+import kotlin.math.min
 
-class SouthernSkyClockFragment : AbstractSkyClockFragment() {
-    override fun prepareViewModel(
-        context: Context,
-        latitude: Double,
-        longitude: Double
-    ): SkyViewModel =
-        SkyViewModel(activity?.applicationContext!!, SouthernSkyModel(), latitude, longitude)
+
+class PaletteButton : androidx.appcompat.widget.AppCompatButton {
+    companion object {
+        const val MAX_FONT_SIZE = 13f
+        const val MARGIN = 0.8f
+    }
+
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
+        context,
+        attrs,
+        defStyleAttr
+    )
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, widthMeasureSpec)
+        val width = MeasureSpec.getSize(widthMeasureSpec)
+        setMeasuredDimension(width, width * 4 / 5)
+        paint.textSize = MAX_FONT_SIZE
+        val textWidth = paint.measureText(text.toString()) * paint.density
+        val textScale = min(1f, width * MARGIN / textWidth)
+        textSize = MAX_FONT_SIZE * textScale
+    }
 }

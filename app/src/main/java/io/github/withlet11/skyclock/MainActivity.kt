@@ -196,7 +196,10 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
             latitude = previous.getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
             longitude = previous.getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
             isSouthernSky = previous.getBoolean("isSouthernSky", false)
-            backgroundColor = previous.getInt("backgroundColor", resources.getColor(R.color.defaultBackGround, null))
+            backgroundColor = previous.getInt(
+                "backgroundColor",
+                resources.getColor(R.color.defaultBackGround, null)
+            )
         } catch (e: ClassCastException) {
             latitude = DEFAULT_LATITUDE
             longitude = DEFAULT_LONGITUDE
@@ -224,7 +227,10 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
         val previous = getSharedPreferences("observation_position", Context.MODE_PRIVATE)
 
         try {
-            backgroundColor = previous.getInt("backgroundColor", resources.getColor(R.color.defaultBackGround, null))
+            backgroundColor = previous.getInt(
+                "backgroundColor",
+                resources.getColor(R.color.defaultBackGround, null)
+            )
         } catch (e: ClassCastException) {
             setDefaultColor()
         } finally {

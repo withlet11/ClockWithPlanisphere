@@ -111,7 +111,8 @@
 
         <TableRow
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom">
 
             <io.github.withlet11.skyclock.view.PaletteButton
                 android:id="@+id/color01Button"
@@ -152,11 +153,6 @@
                 android:background="@color/black"
                 android:text="@string/black"
                 android:textColor="@color/white" />
-        </TableRow>
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
 
             <io.github.withlet11.skyclock.view.PaletteButton
                 android:id="@+id/color05Button"
@@ -244,11 +240,6 @@
                 android:background="@color/teal"
                 android:text="@string/teal"
                 android:textColor="@color/white" />
-        </TableRow>
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
 
             <io.github.withlet11.skyclock.view.PaletteButton
                 android:id="@+id/color13Button"

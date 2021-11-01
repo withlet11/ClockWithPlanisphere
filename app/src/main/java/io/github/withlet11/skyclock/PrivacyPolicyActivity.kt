@@ -1,7 +1,7 @@
 /*
  * LicenseActivity.kt
  *
- * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2021 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -36,7 +36,8 @@ class PrivacyPolicyActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.my_toolbar3)) // ToolBar instead of ActionBar
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        findViewById<TextView>(R.id.privacy_policy_text).movementMethod = LinkMovementMethod.getInstance()
+        findViewById<TextView>(R.id.privacy_policy_text).movementMethod =
+            LinkMovementMethod.getInstance()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

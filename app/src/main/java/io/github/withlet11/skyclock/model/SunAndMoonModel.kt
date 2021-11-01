@@ -1,7 +1,7 @@
 /*
  * SunAndMoonModel.kt
  *
- * Copyright 2020 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2021 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -45,9 +45,9 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
      */
     fun getSunPosition(jc: Double): Pair<Pair<Float, Float>, Double> {
         // orbital parameters
-        val epoch = SolarAndSiderealTime.getJc(2000, 1, 1, 12 * 60 * 60) // J2000.0
+        val epoch = SolarAndSiderealTime.getJc(2000, 1, 1, SECONDS_IN_HALF_DAY) // J2000.0
         val eccentricity = 0.0167086 // e
-        val inclination = toRadians(23.43658) // axial tilt
+        val inclination = toRadians(AXIAL_TILT)
         val longitudeOfPerihelion = toRadians(102.9 + 180.0) // ϖ
         val longitudeOfEpoch = toRadians(280.46645683) // λ
         val period = 365.256363004 // P
@@ -67,8 +67,8 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
         val equationOfTime = differenceOfAnomaly * direction - rightAscension
         return skyModel.convertToXYPosition(
             toDegrees(declination),
-            toDegrees(equationOfTime) / 15.0
-        ) to toDegrees(argumentOfLatitude) % 360.0
+            toDegrees(equationOfTime) / DEGREES_IN_HOUR
+        ) to toDegrees(argumentOfLatitude) % DEGREES_IN_CIRCLE
     }
 
     private fun updateAnalemma() {
@@ -76,10 +76,11 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
             val jc = SolarAndSiderealTime.getJc(2020, 1, 1, 0) + dayOfYear / 36525.0
             getSunPosition(jc).first
         }
-        monthlyPositionList = listOf(0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334).map { dayOfYear ->
-            val jc = SolarAndSiderealTime.getJc(2020, 1, 1, 0) + dayOfYear / 36525.0
-            getSunPosition(jc).first
-        }
+        monthlyPositionList =
+            listOf(0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334).map { dayOfYear ->
+                val jc = SolarAndSiderealTime.getJc(2020, 1, 1, 0) + dayOfYear / 36525.0
+                getSunPosition(jc).first
+            }
     }
 
     /**
@@ -88,7 +89,7 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
      */
     fun getMoonPosition(jc: Double): Pair<Pair<Float, Float>, Double> {
         val t = jc * 100.0
-        val inclination = toRadians(23.43658) // axial tilt
+        val inclination = toRadians(AXIAL_TILT)
         val a = parameterA.sumOf { (p, q, r) -> p * sin(toRadians(q + r * t)) }
         val b = parameterB.sumOf { (p, q, r) -> p * sin(toRadians(q + r * t)) }
         val longitude = toRadians(218.3161 + 4812.67881 * t
@@ -97,10 +98,18 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
         val latitude = toRadians(5.1282 * sin(toRadians(93.273 + 4832.0202 * t + b))
                 + parameterBeta.sumOf { (p, q, r) -> p * sin(toRadians(q + r * t)) })
         val (declination, rightAscension) = eclipticToEquatorial(latitude, longitude, inclination)
-        return skyModel.convertToXYPosition(declination, -rightAscension) to toDegrees(longitude) % 360.0
+        return skyModel.convertToXYPosition(
+            declination,
+            -rightAscension
+        ) to toDegrees(longitude) % DEGREES_IN_CIRCLE
     }
 
     companion object {
+        const val SECONDS_IN_HALF_DAY = 43200L // 12 * 60 * 60
+        const val AXIAL_TILT = 23.43658
+        const val DEGREES_IN_HOUR = 15.0
+        const val DEGREES_IN_CIRCLE = 360.0
+
         /**
          * Reduced latitude --> geocentric latitude
          * @return geocentric latitude
@@ -139,15 +148,25 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
          * @param longitude (radians)
          * @return pair of declination (degrees) and right ascension (hours)
          */
-        private fun eclipticToEquatorial(latitude: Double, longitude: Double, inclination: Double): Pair<Double, Double> {
+        private fun eclipticToEquatorial(
+            latitude: Double,
+            longitude: Double,
+            inclination: Double
+        ): Pair<Double, Double> {
             val rightAscension = toDegrees(
                 atan2(
-                    -sin(latitude) * sin(inclination) + cos(latitude) * sin(longitude) * cos(inclination),
+                    -sin(latitude) * sin(inclination) + cos(latitude) * sin(longitude) * cos(
+                        inclination
+                    ),
                     cos(latitude) * cos(longitude)
                 )
-            ) / 15.0
+            ) / DEGREES_IN_HOUR
             val declination = toDegrees(
-                asin(sin(latitude) * cos(inclination) + cos(latitude) * sin(longitude) * sin(inclination))
+                asin(
+                    sin(latitude) * cos(inclination) + cos(latitude) * sin(longitude) * sin(
+                        inclination
+                    )
+                )
             )
             return declination to rightAscension
         }
