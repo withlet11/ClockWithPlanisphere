@@ -112,11 +112,11 @@ class LocationSettingFragment : DialogFragment() {
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
         locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult?) {
-                val location = locationResult?.lastLocation ?: return
+            override fun onLocationResult(locationResult: LocationResult) {
+                val location = locationResult.lastLocation
 
-                latitude = location.latitude
-                longitude = location.longitude
+                latitude = location?.latitude
+                longitude = location?.longitude
                 latitudeField.text = "%+f".format(latitude)
                 longitudeField.text = "%+f".format(longitude)
                 unlockViewItems()

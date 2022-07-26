@@ -120,7 +120,10 @@ class SkyClockWidget : AppWidgetProvider() {
     override fun onReceive(context: Context?, intent: Intent) {
         if (context == null) super.onReceive(context, intent)
         else when (intent.action) {
-            ACTION_UPDATE -> onUpdate(context)
+            ACTION_UPDATE -> {
+                onUpdate(context)
+                super.onReceive(context, intent)
+            }
             Intent.ACTION_BOOT_COMPLETED -> {
                 val appWidgetManager = AppWidgetManager.getInstance(context)
                 val ids = appWidgetManager.getAppWidgetIds(
