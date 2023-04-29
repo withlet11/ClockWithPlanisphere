@@ -114,7 +114,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom">
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color01Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -124,7 +124,7 @@
                 android:text="@string/white"
                 android:textColor="@color/black" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color02Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -134,7 +134,7 @@
                 android:text="@string/silver"
                 android:textColor="@color/black" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color03Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -144,7 +144,7 @@
                 android:text="@string/gray"
                 android:textColor="@color/black" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color04Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -154,7 +154,7 @@
                 android:text="@string/black"
                 android:textColor="@color/white" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color05Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -165,7 +165,7 @@
                 android:textColor="@color/black"
                 tools:ignore="DuplicateSpeakableTextCheck" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color06Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -175,7 +175,7 @@
                 android:text="@string/maroon"
                 android:textColor="@color/white" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color07Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -185,7 +185,7 @@
                 android:text="@string/yellow"
                 android:textColor="@color/black" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color08Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -200,7 +200,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color09Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -210,7 +210,7 @@
                 android:text="@string/lime"
                 android:textColor="@color/black" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color10Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -221,7 +221,7 @@
                 android:textColor="@color/white"
                 tools:ignore="DuplicateSpeakableTextCheck" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color11Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -231,7 +231,7 @@
                 android:text="@string/aqua"
                 android:textColor="@color/black" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color12Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -241,7 +241,7 @@
                 android:text="@string/teal"
                 android:textColor="@color/white" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color13Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -252,7 +252,7 @@
                 android:textColor="@color/white"
                 tools:ignore="DuplicateSpeakableTextCheck" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color14Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -262,7 +262,7 @@
                 android:text="@string/navy"
                 android:textColor="@color/white" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color15Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -272,7 +272,7 @@
                 android:text="@string/fuchsia"
                 android:textColor="@color/black" />
 
-            <io.github.withlet11.skyclock.view.PaletteButton
+            <io.github.withlet11.clockwithplanisphere.view.PaletteButton
                 android:id="@+id/color16Button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"

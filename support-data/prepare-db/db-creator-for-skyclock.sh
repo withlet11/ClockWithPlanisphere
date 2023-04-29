@@ -1,5 +1,5 @@
 #!/bin/sh
-db_file="db/skyclock.db"
+db_file="db/clockwithplanisphere.db"
 csv_directory="modified-csv/"
 import_csv() {
     sqlite3 -separator , $db_file ".import ${csv_directory}$1 ${table_name}"

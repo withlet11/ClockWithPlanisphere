@@ -13,37 +13,37 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <io.github.withlet11.skyclock.view.ClockBasePanel
+        <io.github.withlet11.clockwithplanisphere.view.ClockBasePanel
             android:id="@+id/clockBasePanel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|center_vertical" />
 
-        <io.github.withlet11.skyclock.view.SkyPanel
+        <io.github.withlet11.clockwithplanisphere.view.SkyPanel
             android:id="@+id/skyPanel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|center_vertical" />
 
-        <io.github.withlet11.skyclock.view.SunPanel
+        <io.github.withlet11.clockwithplanisphere.view.SunPanel
             android:id="@+id/sunPanel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|center_vertical" />
 
-        <io.github.withlet11.skyclock.view.SunAndMoonPanel
+        <io.github.withlet11.clockwithplanisphere.view.SunAndMoonPanel
             android:id="@+id/moonPanel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|center_vertical" />
 
-        <io.github.withlet11.skyclock.view.HorizonPanel
+        <io.github.withlet11.clockwithplanisphere.view.HorizonPanel
             android:id="@+id/horizonPanel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|center_vertical" />
 
-        <io.github.withlet11.skyclock.view.ClockHandsPanel
+        <io.github.withlet11.clockwithplanisphere.view.ClockHandsPanel
             android:id="@+id/clockHandsPanel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

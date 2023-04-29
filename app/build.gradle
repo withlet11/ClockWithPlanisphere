@@ -44,17 +44,15 @@ android {
     buildFeatures {
         viewBinding true
     }
-    namespace 'io.github.withlet11.skyclock'
+    namespace 'io.github.withlet11.clockwithplanisphere'
 
     compileOptions {
-        // これらの compatibility options も 11 に合わせる
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
 kotlin {
-    // 例えば Java toolchain の設定が 11 なら
     jvmToolchain(11)
 }
 
