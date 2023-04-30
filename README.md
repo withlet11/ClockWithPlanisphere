@@ -1,5 +1,5 @@
 # Clock with Planisphere
-This is a clock application with a planisphere for Android. The planisphere shows the current sky at the observation location by setting the latitude and the longitude. You can switch the northern and southern celestial hemispheres.
+This is a clock application with a planisphere for Android. The planisphere shows the current sky at the observation location by setting the latitude and the longitude. You can switch the northern and southern celestial hemispheres. The application name was changed in April 2023.
 
 ## Requirement
 API 26 (Android 8.0) or later
