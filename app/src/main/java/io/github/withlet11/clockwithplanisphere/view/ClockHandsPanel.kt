@@ -1,7 +1,7 @@
 /*
  * ClockHandsPanel.kt
  *
- * Copyright 2020-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -159,10 +159,10 @@ class ClockHandsPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(c
         return super.performClick()
     }
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (isVisible) {
-            canvas?.run {
+            canvas.run {
                 // drawMoonAgeRing()
                 drawHourHand()
                 drawMinuteHand()

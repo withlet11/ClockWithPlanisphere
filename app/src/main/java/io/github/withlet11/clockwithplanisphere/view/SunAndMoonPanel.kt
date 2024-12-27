@@ -1,7 +1,7 @@
 /*
  * SunAndMoonPanel.kt
  *
- * Copyright 2020-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -45,9 +45,9 @@ class SunAndMoonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(c
     private val moonColor = context?.getColor(R.color.pastelYellow) ?: 0
     private val moonDarkSideColor = context?.getColor(R.color.darkBlue) ?: 0
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas?.drawMoon()
+        canvas.drawMoon()
     }
 
     private fun Canvas.drawMoon() {

@@ -1,7 +1,7 @@
 /*
  * CwpWidget.kt
  *
- * Copyright 2020-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -118,7 +118,7 @@ class CwpWidget : AppWidgetProvider() {
     }
 
     override fun onReceive(context: Context?, intent: Intent) {
-        if (context == null) super.onReceive(context, intent)
+        if (context == null) super.onReceive(null, intent)
         else when (intent.action) {
             ACTION_UPDATE -> {
                 onUpdate(context)

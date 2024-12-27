@@ -1,7 +1,7 @@
 /*
  * ClockHandsPanel.kt
  *
- * Copyright 2020-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -51,9 +51,9 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
     private val monthNameColor = context?.getColor(R.color.black) ?: 0
     private val skyBackGroundColor = context?.getColor(R.color.midnightBlue) ?: 0
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas?.run {
+        canvas.run {
             drawBackPanel()
             drawGrid()
             drawDate()

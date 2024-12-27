@@ -1,7 +1,7 @@
 /*
  * MainActivity.kt
  *
- * Copyright 2020-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
 
         loadPreviousSettings()
 
-        val switch: SwitchCompat = findViewById(R.id.view_switch)
+        val switch: SwitchCompat = toolbar.findViewById(R.id.view_switch)
         switch.isChecked = isSouthernSky
         switch.setOnCheckedChangeListener { _, b ->
             isSouthernSky = b

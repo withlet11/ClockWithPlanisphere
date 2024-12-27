@@ -1,7 +1,7 @@
 /**
  * ColorSettingFragment.kt
  *
- * Copyright 2021-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2021-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -117,7 +117,7 @@ class ColorSettingFragment : DialogFragment() {
                         progress: Int,
                         fromUser: Boolean
                     ) {
-                        bgColorRField.text = progress.toString()
+                        bgColorRField.text = "$progress"
                         backgroundColor =
                             rgb(progress, green(backgroundColor), blue(backgroundColor))
                         colorPreview.setBackgroundColor(backgroundColor)
@@ -151,7 +151,7 @@ class ColorSettingFragment : DialogFragment() {
                         progress: Int,
                         fromUser: Boolean
                     ) {
-                        bgColorGField.text = progress.toString()
+                        bgColorGField.text = "$progress"
                         backgroundColor = rgb(red(backgroundColor), progress, blue(backgroundColor))
                         colorPreview.setBackgroundColor(backgroundColor)
                         dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
@@ -184,7 +184,7 @@ class ColorSettingFragment : DialogFragment() {
                         progress: Int,
                         fromUser: Boolean
                     ) {
-                        bgColorBField.text = progress.toString()
+                        bgColorBField.text = "$progress"
                         backgroundColor =
                             rgb(red(backgroundColor), green(backgroundColor), progress)
                         colorPreview.setBackgroundColor(backgroundColor)

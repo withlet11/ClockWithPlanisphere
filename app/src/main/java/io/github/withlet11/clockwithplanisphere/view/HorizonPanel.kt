@@ -1,7 +1,7 @@
 /*
  * HorizonPanel.kt
  *
- * Copyright 2020-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -40,9 +40,9 @@ class HorizonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(cont
     private val directionLetterColor = context?.getColor(R.color.silver) ?: 0
     private val siderealTimeIndicatorColor = context?.getColor(R.color.yellow) ?: 0
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas?.run {
+        canvas.run {
             drawHorizon()
             drawAltitudeAndAzimuthLines()
             drawDirectionLetters()

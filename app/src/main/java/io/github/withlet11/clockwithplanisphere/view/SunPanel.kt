@@ -1,7 +1,7 @@
 /*
  * SunPanel.kt
  *
- * Copyright 2020-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -52,9 +52,9 @@ class SunPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
     private val eclipticColor = context?.getColor(R.color.dandelion) ?: 0
     private val sunColor = context?.getColor(R.color.ripeMango) ?: 0
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas?.run {
+        canvas.run {
             rotate(rotateAngle, 0f, 0f)
             drawAnalemma()
             drawMonthlyPosition()

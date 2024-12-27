@@ -1,7 +1,7 @@
 /**
  * LocationSettingFragment.kt
  *
- * Copyright 2021-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2021-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -106,11 +106,12 @@ class LocationSettingFragment : DialogFragment() {
 
     override fun onStart() {
         super.onStart()
-        locationRequest = LocationRequest.create().apply {
-            interval = MAXIMUM_UPDATE_INTERVAL
-            fastestInterval = MINIMUM_UPDATE_INTERVAL
-            priority = Priority.PRIORITY_HIGH_ACCURACY
-        }
+        locationRequest =
+            LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, MAXIMUM_UPDATE_INTERVAL)
+                .setMinUpdateIntervalMillis(MINIMUM_UPDATE_INTERVAL)
+                .setWaitForAccurateLocation(true)
+                .build()
+
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 val location = locationResult.lastLocation
@@ -205,14 +206,14 @@ class LocationSettingFragment : DialogFragment() {
     }
 
     private fun startGPS() {
-        context?.let { _context ->
+        context?.let {
             lockViewItems()
             statusField.text = getString(R.string.inGettingLocation)
             val isPermissionFineLocation = ActivityCompat.checkSelfPermission(
-                _context, Manifest.permission.ACCESS_FINE_LOCATION
+                it, Manifest.permission.ACCESS_FINE_LOCATION
             )
             val isPermissionCoarseLocation = ActivityCompat.checkSelfPermission(
-                _context, Manifest.permission.ACCESS_COARSE_LOCATION
+                it, Manifest.permission.ACCESS_COARSE_LOCATION
             )
 
             if (isPermissionFineLocation != PackageManager.PERMISSION_GRANTED &&
@@ -222,7 +223,7 @@ class LocationSettingFragment : DialogFragment() {
                 requestLocationPermission()
             } else {
                 val locationManager: LocationManager =
-                    _context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                    it.getSystemService(Context.LOCATION_SERVICE) as LocationManager
                 if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                     fusedLocationClient.requestLocationUpdates(
                         locationRequest,
@@ -238,16 +239,16 @@ class LocationSettingFragment : DialogFragment() {
     }
 
     private fun requestLocationPermission() {
-        activity?.let { _activity ->
+        activity?.let {
             if (ActivityCompat.shouldShowRequestPermissionRationale(
-                    _activity,
+                    it,
                     Manifest.permission.ACCESS_FINE_LOCATION
                 )
             ) {
                 statusField.text = getString(R.string.no_permission_to_access_location_permanent)
             } else {
                 ActivityCompat.requestPermissions(
-                    _activity,
+                    it,
                     arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                     REQUEST_PERMISSION
                 )
