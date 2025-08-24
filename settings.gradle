@@ -1,2 +1,20 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google() // Essential for Android Gradle Plugin and other Google plugins
+        mavenCentral() // Essential for many other Gradle plugins
+    }
+}
+
+dependencyResolutionManagement {
+    // This setting ensures that all repositories are declared here,
+    // preventing individual build.gradle files from adding their own.
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google() // <--- THIS IS CRUCIAL FOR ANDROIDX LIBRARIES LIKE CAMERA-BOM
+        mavenCentral() // <--- THIS IS CRUCIAL FOR MANY OTHER LIBRARIES
+    }
+}
+
 include ':app'
 rootProject.name = "Clock with Planisphere"
