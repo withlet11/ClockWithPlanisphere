@@ -5,6 +5,9 @@ pluginManagement {
         mavenCentral() // Essential for many other Gradle plugins
     }
 }
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
 
 dependencyResolutionManagement {
     // This setting ensures that all repositories are declared here,
