@@ -1,7 +1,7 @@
 /*
  * SolarAndSiderealTime.kt
  *
- * Copyright 2020-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -249,7 +249,7 @@ class SolarAndSiderealTime {
         ): Double =
             (getJd(year, monthValue, dayOfMonth, elapsedSeconds) - 2451545.0) / 36525.0
 
-        /** Normalizes degrees into the range between 0 to 360 */
+        /** Normalizes degrees into the range between 0 and 360 */
         fun normalizeDegree(angle: Double) = (angle % 360.0 + 360.0) % 360.0
     }
 }

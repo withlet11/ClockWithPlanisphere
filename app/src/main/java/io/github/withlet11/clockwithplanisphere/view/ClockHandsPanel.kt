@@ -1,7 +1,7 @@
 /*
  * ClockHandsPanel.kt
  *
- * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -27,6 +27,7 @@ import android.util.AttributeSet
 import io.github.withlet11.clockwithplanisphere.R
 import java.time.LocalDate
 import java.time.LocalTime
+import androidx.core.graphics.withSave
 
 class ClockHandsPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
     private var localDate = LocalDate.now()
@@ -172,143 +173,144 @@ class ClockHandsPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(c
     }
 
     private fun Canvas.drawMoonAgeRing() {
-        save()
-        rotate(localDate.dayOfYear / 29.530589f * 360f)
-        paint.color = moonAgeRingColor
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = MOON_AGE_RING_THICKNESS
-        // drawCircle(0f, 0f, MOON_AGE_RING_RADIUS, paint)
-        paint.strokeCap = Paint.Cap.BUTT
-        drawArc(
-            -MOON_AGE_RING_RADIUS,
-            -MOON_AGE_RING_RADIUS,
-            MOON_AGE_RING_RADIUS,
-            MOON_AGE_RING_RADIUS,
-            18f - 90f,
-            324f,
-            false,
-            paint
-        )
+        withSave {
+            rotate(localDate.dayOfYear / 29.530589f * 360f)
+            paint.color = moonAgeRingColor
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = MOON_AGE_RING_THICKNESS
+            // drawCircle(0f, 0f, MOON_AGE_RING_RADIUS, paint)
+            paint.strokeCap = Paint.Cap.BUTT
+            drawArc(
+                -MOON_AGE_RING_RADIUS,
+                -MOON_AGE_RING_RADIUS,
+                MOON_AGE_RING_RADIUS,
+                MOON_AGE_RING_RADIUS,
+                18f - 90f,
+                324f,
+                false,
+                paint
+            )
 
-        paint.color = moonAgeDirectionColor
-        paint.strokeWidth = MOON_AGE_RING_THICKNESS
-        drawArc(
-            -MOON_AGE_RING_RADIUS,
-            -MOON_AGE_RING_RADIUS,
-            MOON_AGE_RING_RADIUS,
-            MOON_AGE_RING_RADIUS,
-            -18f - 90f,
-            36f,
-            false,
-            paint
-        )
+            paint.color = moonAgeDirectionColor
+            paint.strokeWidth = MOON_AGE_RING_THICKNESS
+            drawArc(
+                -MOON_AGE_RING_RADIUS,
+                -MOON_AGE_RING_RADIUS,
+                MOON_AGE_RING_RADIUS,
+                MOON_AGE_RING_RADIUS,
+                -18f - 90f,
+                36f,
+                false,
+                paint
+            )
 
-        paint.textSize = 12f
-        paint.color = moonAgeGridColor
-        paint.style = Paint.Style.FILL
-        val fontMetrics = paint.fontMetrics
+            paint.textSize = 12f
+            paint.color = moonAgeGridColor
+            paint.style = Paint.Style.FILL
+            val fontMetrics = paint.fontMetrics
 
-        for (i in 0..29) {
-            when (i) {
-                5, 10, 15, 20, 25 -> {
-                    val text = i.toString()
-                    val textWidth = paint.measureText(text)
-                    drawText(
-                        text,
-                        -textWidth * 0.5f,
-                        fontMetrics.descent - MOON_AGE_RING_RADIUS,
-                        paint
-                    )
+            for (i in 0..29) {
+                when (i) {
+                    5, 10, 15, 20, 25 -> {
+                        val text = i.toString()
+                        val textWidth = paint.measureText(text)
+                        drawText(
+                            text,
+                            -textWidth * 0.5f,
+                            fontMetrics.descent - MOON_AGE_RING_RADIUS,
+                            paint
+                        )
+                    }
+
+                    else -> drawCircle(0f, -MOON_AGE_RING_RADIUS, 1.5f, paint)
                 }
-                else -> drawCircle(0f, -MOON_AGE_RING_RADIUS, 1.5f, paint)
+                rotate(360f / 29.530589f)
             }
-            rotate(360f / 29.530589f)
         }
-        restore()
-        save()
-        paint.color = moonAgeHandColor
-        paint.style = Paint.Style.STROKE
-        paint.strokeCap = Paint.Cap.ROUND
-        paint.strokeWidth = MOON_AGE_HAND_THICKNESS
-        rotate(180 - localTime.toSecondOfDay() / 86400f * 360f)
-        drawLine(0f, 0f, 0f, -MOON_AGE_RING_RADIUS - MOON_AGE_RING_THICKNESS * 0.4f, paint)
-        paint.strokeCap = Paint.Cap.SQUARE
-        restore()
+        withSave {
+            paint.color = moonAgeHandColor
+            paint.style = Paint.Style.STROKE
+            paint.strokeCap = Paint.Cap.ROUND
+            paint.strokeWidth = MOON_AGE_HAND_THICKNESS
+            rotate(180 - localTime.toSecondOfDay() / 86400f * 360f)
+            drawLine(0f, 0f, 0f, -MOON_AGE_RING_RADIUS - MOON_AGE_RING_THICKNESS * 0.4f, paint)
+            paint.strokeCap = Paint.Cap.SQUARE
+        }
     }
 
     private fun Canvas.drawHourHand() {
-        save()
-        translate(5f, 5f)
-        rotate(180f / 6f * (localTime.toSecondOfDay() / 3600f + 6f))
-        paint.maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
-        paint.color = shadow
-        paint.style = Paint.Style.FILL
-        hourHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
-        hourHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-        drawPath(path, paint)
-        path.reset()
-        restore()
-        save()
-        rotate(180f / 6f * (localTime.toSecondOfDay() / 3600f + 6f))
-        paint.maskFilter = null
-        paint.color = hourHandsColor
-        paint.style = Paint.Style.FILL
-        hourHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
-        hourHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-        drawPath(path, paint)
-        path.reset()
-        restore()
+        withSave {
+            translate(5f, 5f)
+            rotate(180f / 6f * (localTime.toSecondOfDay() / 3600f + 6f))
+            paint.maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
+            paint.color = shadow
+            paint.style = Paint.Style.FILL
+            hourHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
+            hourHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
+            drawPath(path, paint)
+            path.reset()
+        }
+        withSave {
+            rotate(180f / 6f * (localTime.toSecondOfDay() / 3600f + 6f))
+            paint.maskFilter = null
+            paint.color = hourHandsColor
+            paint.style = Paint.Style.FILL
+            hourHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
+            hourHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
+            drawPath(path, paint)
+            path.reset()
+        }
     }
 
     private fun Canvas.drawMinuteHand() {
-        save()
-        translate(5f, 5f)
-        rotate(180f / 30f * (localTime.minute + localTime.second / 60f + 30f))
-        paint.maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
-        paint.color = shadow
-        paint.style = Paint.Style.FILL
-        minuteHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
-        minuteHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-        drawPath(path, paint)
-        path.reset()
-        restore()
-        save()
-        rotate(180f / 30f * (localTime.minute + localTime.second / 60f + 30f))
-        paint.maskFilter = null
-        paint.color = minuteHandsColor
-        paint.style = Paint.Style.FILL
-        minuteHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
-        minuteHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-        drawPath(path, paint)
-        path.reset()
-        restore()
+        withSave {
+            translate(5f, 5f)
+            rotate(180f / 30f * (localTime.minute + localTime.second / 60f + 30f))
+            paint.maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
+            paint.color = shadow
+            paint.style = Paint.Style.FILL
+            minuteHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
+            minuteHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
+            drawPath(path, paint)
+            path.reset()
+        }
+        withSave {
+            rotate(180f / 30f * (localTime.minute + localTime.second / 60f + 30f))
+            paint.maskFilter = null
+            paint.color = minuteHandsColor
+            paint.style = Paint.Style.FILL
+            minuteHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
+            minuteHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
+            drawPath(path, paint)
+            path.reset()
+        }
     }
 
     private fun Canvas.drawSecondHand() {
-        save()
-        translate(5f, 5f)
-        rotate(180f / 30f * (localTime.second + 30f))
-        paint.maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
-        paint.color = shadow
-        paint.style = Paint.Style.FILL
-        secondHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
-        secondHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-        drawPath(path, paint)
-        path.reset()
-        restore()
-        save()
-        rotate(180f / 30f * (localTime.second + 30f))
-        paint.maskFilter = null
-        paint.color = secondHandsColor
-        paint.style = Paint.Style.FILL
-        secondHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
-        secondHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-        drawPath(path, paint)
-        path.reset()
-        restore()
+        withSave {
+            translate(5f, 5f)
+            rotate(180f / 30f * (localTime.second + 30f))
+            paint.maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
+            paint.color = shadow
+            paint.style = Paint.Style.FILL
+            secondHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
+            secondHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
+            drawPath(path, paint)
+            path.reset()
+        }
+        withSave {
+            rotate(180f / 30f * (localTime.second + 30f))
+            paint.maskFilter = null
+            paint.color = secondHandsColor
+            paint.style = Paint.Style.FILL
+            secondHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
+            secondHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
+            drawPath(path, paint)
+            path.reset()
+        }
     }
 
-    /** Checks if a position is on the center of the canvas. */
+    /** Checks if a position is in the center of the canvas. */
     fun isCenter(position: Pair<Float, Float>): Boolean =
         position.toCanvasXY().isNear(centerPosition)
 }

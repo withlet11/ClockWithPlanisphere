@@ -1,7 +1,7 @@
 /*
  * CwpWidget.kt
  *
- * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -28,6 +28,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.RemoteViews
 import io.github.withlet11.clockwithplanisphere.MainActivity
@@ -50,9 +51,14 @@ class CwpWidget : AppWidgetProvider() {
             alarmManager.cancel(pendingIntent)
             val triggerAtMills =
                 (System.currentTimeMillis() + 1).let { it + PARTIAL_UPDATE_INTERVAL - it % PARTIAL_UPDATE_INTERVAL }
-            alarmManager.setExact(
-                AlarmManager.RTC, triggerAtMills, pendingIntent
-            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                // Fallback to inexact alarm if permission is missing
+                alarmManager.set(AlarmManager.RTC, triggerAtMills, pendingIntent)
+            } else {
+                alarmManager.setExact(AlarmManager.RTC, triggerAtMills, pendingIntent)
+            }
+
         }
 
         private fun getAlarmIntent(context: Context): PendingIntent {
@@ -77,7 +83,7 @@ class CwpWidget : AppWidgetProvider() {
                 latitude = previous.getFloat("latitude", 0f).toDouble()
                 longitude = previous.getFloat("longitude", 0f).toDouble()
                 isSouthernSky = previous.getBoolean("isSouthernSky", false)
-            } catch (e: ClassCastException) {
+            } catch (_: ClassCastException) {
                 latitude = 0.0
                 longitude = 0.0
                 isSouthernSky = false

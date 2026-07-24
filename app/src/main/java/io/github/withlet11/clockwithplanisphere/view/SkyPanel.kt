@@ -1,7 +1,7 @@
 /*
  * SkyPanel.kt
  *
- * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -29,6 +29,7 @@ import io.github.withlet11.clockwithplanisphere.model.AbstractSkyModel.Constella
 import io.github.withlet11.clockwithplanisphere.model.AbstractSkyModel.MilkyWayDot
 import io.github.withlet11.clockwithplanisphere.model.AbstractSkyModel.StarGeometry
 import kotlin.math.*
+import androidx.core.graphics.withSave
 
 
 class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
@@ -144,25 +145,26 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
         val fontMetrics = paint.fontMetrics
 
         for (i in 0..143) {
-            save()
-            // angle + 180 because text is drawn at opposite side
-            rotate(i * tenMinuteGridStep + 180f)
+            withSave {
+                // angle + 180 because text is drawn at opposite side
+                rotate(i * tenMinuteGridStep + 180f)
 
-            when {
-                i % 6 == 0 -> {
-                    val text = (i / 6).toString()
-                    val textWidth = paint.measureText(text)
-                    // positive height means opposite side
-                    drawText(
-                        text,
-                        -textWidth * 0.5f,
-                        -fontMetrics.descent + SKY_BACKGROUND_RADIUS,
-                        paint
-                    )
+                when {
+                    i % 6 == 0 -> {
+                        val text = (i / 6).toString()
+                        val textWidth = paint.measureText(text)
+                        // positive height means opposite side
+                        drawText(
+                            text,
+                            -textWidth * 0.5f,
+                            -fontMetrics.descent + SKY_BACKGROUND_RADIUS,
+                            paint
+                        )
+                    }
+
+                    else -> drawCircle(0f, 326f, 2f, paint)
                 }
-                else -> drawCircle(0f, 326f, 2f, paint)
             }
-            restore()
         }
     }
 

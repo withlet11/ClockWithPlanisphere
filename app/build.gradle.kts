@@ -3,7 +3,7 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    // id("kotlin-android")
     id("com.google.devtools.ksp")
     id("com.google.android.gms.oss-licenses-plugin")
 }
@@ -28,11 +28,11 @@ android {
         }
     }
 
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.withlet11.skyclock"
-        targetSdk = 35
+        targetSdk = 36
         minSdk = 26
         versionCode = 14
         versionName = "6.3"
@@ -50,6 +50,11 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
+    }
     namespace = "io.github.withlet11.clockwithplanisphere"
 
     compileOptions {
@@ -64,7 +69,7 @@ kotlin {
 
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-    implementation(libs.kotlin.stdlib)
+    // implementation(libs.kotlin.stdlib)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
@@ -74,10 +79,10 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.legacy.support.v4)
     implementation(libs.androidx.core)
-    androidTestImplementation(libs.androidx.core)
+    // androidTestImplementation(libs.androidx.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.androidx.truth)
     testImplementation(libs.truth)

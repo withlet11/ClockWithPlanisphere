@@ -1,7 +1,7 @@
 /*
  * MainActivity.kt
  *
- * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -21,7 +21,6 @@
 
 package io.github.withlet11.clockwithplanisphere
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -30,12 +29,15 @@ import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.AgeRestrictedTreatment
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import io.github.withlet11.clockwithplanisphere.fragment.*
+import androidx.core.content.edit
 
 
 class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettingDialogListener,
@@ -55,6 +57,8 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
     // private val handler = Handler()
     private val handler by lazy { Handler(Looper.getMainLooper()) }
     private var adView: AdView? = null
+
+    private var adRunnable: Runnable? = null
 
     interface ChangeObserver {
         fun onLocationChange(latitude: Double, longitude: Double)
@@ -84,73 +88,75 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
 
         setContentView(R.layout.activity_main)
 
+        setUpToolbar()
+        setUpAds()
+        loadPreviousSettings()
+
+        val switch: SwitchCompat =
+            findViewById<Toolbar>(R.id.my_toolbar).findViewById(R.id.view_switch)
+        switch.isChecked = isSouthernSky
+        switch.setOnCheckedChangeListener { _, b ->
+            isSouthernSky = b
+            getSharedPreferences("observation_position", MODE_PRIVATE).edit {
+                putBoolean("isSouthernSky", isSouthernSky)
+                putInt("backgroundColor", backgroundColor)
+            }
+
+            replaceCwpFragment(isSouthernSky)
+        }
+
+        replaceCwpFragment(isSouthernSky)
+
+        adRunnable = Runnable {
+            val layout: FrameLayout? = findViewById(R.id.frameLayoutForAd)
+            layout?.removeView(adView)
+            layout?.invalidate()
+            adView?.destroy()
+            adView = null
+        }
+
+        adRunnable?.let { handler.postDelayed(it, AD_DISPLAY_DURATION) }
+    }
+
+    private fun setUpToolbar() {
         val toolbar: Toolbar = findViewById(R.id.my_toolbar)
         toolbar.setLogo(R.drawable.ic_launcher_foreground)
         toolbar.setTitle(R.string.app_name)
-
         toolbar.inflateMenu(R.menu.menu_main)
-
         toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.item_settings -> {
                     val dialog = LocationSettingFragment()
                     dialog.show(supportFragmentManager, "locationSetting")
                 }
+
                 R.id.item_bg_color -> {
                     val dialog = ColorSettingFragment()
                     dialog.show(supportFragmentManager, "backgroundColor")
                 }
+
                 R.id.item_privacy_policy -> {
                     startActivity(Intent(application, PrivacyPolicyActivity::class.java))
                 }
+
                 R.id.item_licenses -> {
                     startActivity(Intent(application, LicenseActivity::class.java))
                 }
+
                 R.id.item_credits -> {
                     startActivity(Intent(this, OssLicensesMenuActivity::class.java))
                 }
+
                 android.R.id.home -> finish()
             }
 
             true
         }
 
-        // for ads
-        MobileAds.initialize(this) {}
-        adView = findViewById(R.id.adView)
-        val adRequest = AdRequest.Builder().build()
-        adView?.loadAd(adRequest)
+    }
 
-        loadPreviousSettings()
-
-        val switch: SwitchCompat = toolbar.findViewById(R.id.view_switch)
-        switch.isChecked = isSouthernSky
-        switch.setOnCheckedChangeListener { _, b ->
-            isSouthernSky = b
-            with(getSharedPreferences("observation_position", Context.MODE_PRIVATE).edit()) {
-                putBoolean("isSouthernSky", isSouthernSky)
-                putInt("backgroundColor", backgroundColor)
-                commit()
-            }
-
-            val newFragment =
-                (if (b) SouthernCwpFragment() else NorthernCwpFragment()).apply {
-                    arguments = Bundle().apply {
-                        putDouble("LATITUDE", latitude)
-                        putDouble("LONGITUDE", longitude)
-                        putBoolean("CLOCK_HANDS_VISIBILITY", isClockHandsVisible)
-                        putInt("BACKGROUND_COLOR", backgroundColor)
-                    }
-                }
-
-            val transaction = supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.container, newFragment)
-            transaction.commit()
-        }
-
-        val fragmentManager = supportFragmentManager
-        val fragmentTransaction = fragmentManager.beginTransaction()
-        val fragment =
+    private fun replaceCwpFragment(isSouthernSky: Boolean) {
+        val newFragment =
             (if (isSouthernSky) SouthernCwpFragment() else NorthernCwpFragment()).apply {
                 arguments = Bundle().apply {
                     putDouble("LATITUDE", latitude)
@@ -160,17 +166,35 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
                 }
             }
 
-        fragmentTransaction.replace(R.id.container, fragment)
-        fragmentTransaction.commit()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.container, newFragment)
+            .commit()
 
-        val runnable = Runnable {
-            val layout: FrameLayout = findViewById(R.id.frameLayoutForAd)
-            layout.removeView(adView)
-            layout.invalidate()
-            adView = null
-        }
+    }
 
-        handler.postDelayed(runnable, AD_DISPLAY_DURATION)
+    private fun setUpAds() {
+        // =======================================================
+        // ★ Restrict data processing for users under the age of consent (under 18)
+        // =======================================================
+        val requestConfiguration = MobileAds.getRequestConfiguration()
+            .toBuilder()
+            .setAgeRestrictedTreatment(AgeRestrictedTreatment.CHILD)
+            .build()
+        MobileAds.setRequestConfiguration(requestConfiguration)
+        // =======================================================
+
+        MobileAds.initialize(this) {}
+        adView = findViewById(R.id.adView)
+        val adRequest = AdRequest.Builder().build()
+        adView?.loadAd(adRequest)
+    }
+
+
+    override fun onDestroy() {
+        adRunnable?.let { handler.removeCallbacks(it) }
+        adView?.destroy()
+        adView = null
+        super.onDestroy()
     }
 
     override fun onLocationDialogPositiveClick(dialog: DialogFragment) {
@@ -190,7 +214,7 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
     }
 
     private fun loadPreviousSettings() {
-        val previous = getSharedPreferences("observation_position", Context.MODE_PRIVATE)
+        val previous = getSharedPreferences("observation_position", MODE_PRIVATE)
 
         try {
             latitude = previous.getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
@@ -198,9 +222,10 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
             isSouthernSky = previous.getBoolean("isSouthernSky", false)
             backgroundColor = previous.getInt(
                 "backgroundColor",
-                resources.getColor(R.color.defaultBackGround, null)
+                // resources.getColor(R.color.defaultBackGround, null)
+                ContextCompat.getColor(this, R.color.defaultBackGround)
             )
-        } catch (e: ClassCastException) {
+        } catch (_: ClassCastException) {
             latitude = DEFAULT_LATITUDE
             longitude = DEFAULT_LONGITUDE
             isSouthernSky = false
@@ -210,12 +235,12 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
     }
 
     private fun loadPreviousPosition() {
-        val previous = getSharedPreferences("observation_position", Context.MODE_PRIVATE)
+        val previous = getSharedPreferences("observation_position", MODE_PRIVATE)
 
         try {
             latitude = previous.getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
             longitude = previous.getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
-        } catch (e: ClassCastException) {
+        } catch (_: ClassCastException) {
             latitude = DEFAULT_LATITUDE
             longitude = DEFAULT_LONGITUDE
         } finally {
@@ -224,14 +249,14 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
     }
 
     private fun loadColorSettings() {
-        val previous = getSharedPreferences("observation_position", Context.MODE_PRIVATE)
+        val previous = getSharedPreferences("observation_position", MODE_PRIVATE)
 
         try {
             backgroundColor = previous.getInt(
                 "backgroundColor",
                 resources.getColor(R.color.defaultBackGround, null)
             )
-        } catch (e: ClassCastException) {
+        } catch (_: ClassCastException) {
             setDefaultColor()
         } finally {
             notifyColorChange()
