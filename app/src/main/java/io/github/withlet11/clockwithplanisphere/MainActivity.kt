@@ -26,6 +26,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.FrameLayout
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
@@ -33,11 +34,17 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
-import com.google.android.gms.ads.AgeRestrictedTreatment
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import io.github.withlet11.clockwithplanisphere.fragment.*
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+import androidx.core.view.updateLayoutParams
+import android.util.TypedValue
+import android.widget.LinearLayout
 
 
 class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettingDialogListener,
@@ -84,6 +91,7 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
@@ -120,6 +128,27 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
 
     private fun setUpToolbar() {
         val toolbar: Toolbar = findViewById(R.id.my_toolbar)
+        val mainContent: LinearLayout = findViewById(R.id.main_content)
+
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(top = systemBars.top)
+
+            val tv = TypedValue()
+            if (theme.resolveAttribute(androidx.appcompat.R.attr.actionBarSize, tv, true)) {
+                val actionBarHeight = TypedValue.complexToDimensionPixelSize(tv.data, resources.displayMetrics)
+                v.updateLayoutParams { height = systemBars.top + actionBarHeight }
+            }
+
+            insets
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(mainContent) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(bottom = systemBars.bottom)
+            insets
+        }
+
         toolbar.setLogo(R.drawable.ic_launcher_foreground)
         toolbar.setTitle(R.string.app_name)
         toolbar.inflateMenu(R.menu.menu_main)
@@ -178,7 +207,7 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
         // =======================================================
         val requestConfiguration = MobileAds.getRequestConfiguration()
             .toBuilder()
-            .setAgeRestrictedTreatment(AgeRestrictedTreatment.CHILD)
+            .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
             .build()
         MobileAds.setRequestConfiguration(requestConfiguration)
         // =======================================================

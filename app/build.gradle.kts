@@ -32,10 +32,10 @@ android {
 
     defaultConfig {
         applicationId = "io.github.withlet11.skyclock"
-        targetSdk = 36
+        targetSdk = 37
         minSdk = 26
-        versionCode = 14
-        versionName = "6.3"
+        versionCode = 16
+        versionName = "6.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -71,6 +71,7 @@ dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     // implementation(libs.kotlin.stdlib)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.play.services.location)
@@ -87,6 +88,8 @@ dependencies {
     testImplementation(libs.androidx.truth)
     testImplementation(libs.truth)
     implementation(libs.play.services.ads)
+    implementation(libs.playAppUpdate)
+    implementation(libs.playReview)
 
     // for Room
     implementation(libs.androidx.room.runtime)

@@ -16,6 +16,7 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
+            android:id="@+id/main_content"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
@@ -23,7 +24,8 @@
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/my_toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
+                android:layout_height="wrap_content"
+                android:minHeight="?attr/actionBarSize"
                 android:background="?attr/colorPrimary"
                 android:elevation="4dp"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
@@ -33,24 +35,25 @@
             <FrameLayout
                 android:id="@+id/container"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="0dp"
+                android:layout_weight="1">
 
             </FrameLayout>
-        </LinearLayout>
 
-        <com.google.android.gms.ads.AdView
-            android:id="@+id/adView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center_horizontal"
-            app:adSize="BANNER"
-            app:adUnitId="ca-app-pub-6502278727709781/9103220433" />
-        <!--
-            **** for Test
-            app:adUnitId="ca-app-pub-3940256099942544/6300978111" />
-            **** for Release
-            app:adUnitId="ca-app-pub-6502278727709781/9103220433" />
-            -->
+            <com.google.android.gms.ads.AdView
+                android:id="@+id/adView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                app:adSize="BANNER"
+                app:adUnitId="ca-app-pub-6502278727709781/9103220433" />
+            <!--
+                **** for Test
+                app:adUnitId="ca-app-pub-3940256099942544/6300978111" />
+                **** for Release
+                app:adUnitId="ca-app-pub-6502278727709781/9103220433" />
+                -->
+        </LinearLayout>
     </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
