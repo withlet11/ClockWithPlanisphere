@@ -1,6 +1,6 @@
 [versions]
 legacySupportV4 = "1.0.0"
-playServicesAds = "24.0.0"
+playServicesAds = "25.4.0"
 playServicesAppUpdate = "2.1.0"
 playServicesReview = "2.0.2"
 roomCompiler = "2.8.5"
@@ -10,7 +10,7 @@ truth = "1.4.5"
 viewpager2 = "1.1.0"
 
 appcompat = "1.8.0"
-activity = "1.10.0"
+activity = "1.13.0"
 constraintlayout = "2.2.2"
 core = "1.7.0"
 coreKtx = "1.19.0"

@@ -34,8 +34,8 @@ android {
         applicationId = "io.github.withlet11.skyclock"
         targetSdk = 37
         minSdk = 26
-        versionCode = 16
-        versionName = "6.5"
+        versionCode = 17
+        versionName = "6.5.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
