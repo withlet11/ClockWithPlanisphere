@@ -34,15 +34,16 @@ android {
         applicationId = "io.github.withlet11.skyclock"
         targetSdk = 37
         minSdk = 26
-        versionCode = 17
-        versionName = "6.5.1"
+        versionCode = 18
+        versionName = "6.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("config")
         }
