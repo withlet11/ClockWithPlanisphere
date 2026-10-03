@@ -23,42 +23,48 @@ package io.github.withlet11.clockwithplanisphere.widget
 
 import android.app.AlarmManager
 import android.app.PendingIntent
-import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.Bundle
-import android.widget.RemoteViews
+import androidx.compose.runtime.Composable
+import androidx.glance.GlanceId
+import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.action.actionStartActivity
+import androidx.glance.action.clickable
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.provideContent
+import androidx.glance.layout.Box
+import androidx.glance.layout.fillMaxSize
 import io.github.withlet11.clockwithplanisphere.MainActivity
 import io.github.withlet11.clockwithplanisphere.R
 import io.github.withlet11.clockwithplanisphere.model.NorthernSkyModel
 import io.github.withlet11.clockwithplanisphere.model.SkyViewModel
 import io.github.withlet11.clockwithplanisphere.model.SouthernSkyModel
-import java.time.LocalTime
+import kotlinx.coroutines.runBlocking
 
+class CwpWidget : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = CwpWidgetContent()
 
-class CwpWidget : AppWidgetProvider() {
     companion object {
         const val ACTION_UPDATE = "io.github.withlet11.clockwithplanisphere.widget.CwpWidget.ACTION_UPDATE"
-        const val PARTIAL_UPDATE_INTERVAL = 5000L // mill seconds
-        const val FULL_UPDATE_INTERVAL = 60000L // mill seconds
+        const val UPDATE_INTERVAL = 5000L // milliseconds
 
         fun scheduleUpdate(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val pendingIntent = getAlarmIntent(context)
             alarmManager.cancel(pendingIntent)
-            val triggerAtMills =
-                (System.currentTimeMillis() + 1).let { it + PARTIAL_UPDATE_INTERVAL - it % PARTIAL_UPDATE_INTERVAL }
+            val triggerAtMillis =
+                (System.currentTimeMillis() + 1).let { it + UPDATE_INTERVAL - it % UPDATE_INTERVAL }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-                // Fallback to inexact alarm if permission is missing
-                alarmManager.set(AlarmManager.RTC, triggerAtMills, pendingIntent)
+                alarmManager.set(AlarmManager.RTC, triggerAtMillis, pendingIntent)
             } else {
-                alarmManager.setExact(AlarmManager.RTC, triggerAtMills, pendingIntent)
+                alarmManager.setExact(AlarmManager.RTC, triggerAtMillis, pendingIntent)
             }
-
         }
 
         private fun getAlarmIntent(context: Context): PendingIntent {
@@ -87,170 +93,131 @@ class CwpWidget : AppWidgetProvider() {
                 latitude = 0.0
                 longitude = 0.0
                 isSouthernSky = false
-            } finally {
             }
-
             return Triple(latitude, longitude, isSouthernSky)
         }
     }
 
-    override fun onAppWidgetOptionsChanged(
-        context: Context?,
-        appWidgetManager: AppWidgetManager?,
-        appWidgetId: Int,
-        newOptions: Bundle?
-    ) {
-        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
-        scheduleUpdate(context!!)
-    }
-
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        updateAppWidget(context, appWidgetManager, appWidgetIds, true)
-        scheduleUpdate(context)
-        super.onUpdate(context, appWidgetManager, appWidgetIds)
-    }
-
-    /** Invokes this when the first widget is created. */
     override fun onEnabled(context: Context) {
+        super.onEnabled(context)
     }
 
-    /** Invokes this when the last widget is disabled */
     override fun onDisabled(context: Context) {
         clearUpdate(context)
+        super.onDisabled(context)
     }
 
-    override fun onReceive(context: Context?, intent: Intent) {
-        if (context == null) super.onReceive(null, intent)
-        else when (intent.action) {
+    override fun onReceive(context: Context, intent: Intent) {
+        when (intent.action) {
             ACTION_UPDATE -> {
-                onUpdate(context)
-                super.onReceive(context, intent)
+                scheduleUpdate(context)
+                val glanceManager = GlanceAppWidgetManager(context)
+                runBlocking {
+                    val glanceIds = glanceManager.getGlanceIds(CwpWidgetContent::class.java)
+                    glanceIds.forEach { glanceId ->
+                        CwpWidgetContent().update(context, glanceId)
+                    }
+                }
             }
             Intent.ACTION_BOOT_COMPLETED -> {
-                val appWidgetManager = AppWidgetManager.getInstance(context)
-                val ids = appWidgetManager.getAppWidgetIds(
-                    ComponentName(context, CwpWidget::class.java)
-                )
-                if (ids.isNotEmpty()) scheduleUpdate(context)
-                super.onReceive(context, intent)
+                scheduleUpdate(context)
             }
-            else -> super.onReceive(context, intent)
+        }
+        super.onReceive(context, intent)
+    }
+}
+
+class CwpWidgetContent : GlanceAppWidget() {
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        CwpWidget.scheduleUpdate(context)
+
+        val (latitude, longitude, isSouthernSky) = CwpWidget.loadPreviousPosition(context)
+        val skyViewModel =
+            SkyViewModel(
+                context,
+                if (isSouthernSky) SouthernSkyModel() else NorthernSkyModel(),
+                latitude,
+                longitude
+            )
+        val clockBasePanel = ClockBasePanel(context)
+        val skyPanel = SkyPanel(context)
+        val sunAndMoonPanel = SunAndMoonPanel(context)
+        val horizonPanel = HorizonPanel(context)
+        val clockHandsPanel = ClockHandsPanel(context)
+
+        with(skyViewModel) {
+            clockBasePanel.set(offset, direction)
+            skyPanel.set(
+                starGeometryList,
+                constellationLineList,
+                milkyWayDotList,
+                milkyWayDotSize,
+                equatorial,
+                ecliptic,
+                tenMinuteGridStep
+            )
+            sunAndMoonPanel.set(
+                analemma,
+                monthlySunPositionList,
+                currentSunPosition,
+                currentMoonPosition,
+                tenMinuteGridStep
+            )
+            horizonPanel.set(horizon, altAzimuth, directionLetters)
+        }
+
+        skyViewModel.setCurrentTime()
+        clockBasePanel.currentDate = skyViewModel.localDate
+        clockHandsPanel.localTime = skyViewModel.localTime
+        skyPanel.siderealAngle = skyViewModel.siderealAngle
+        sunAndMoonPanel.solarAngle = skyViewModel.solarAngle
+        sunAndMoonPanel.siderealAngle = skyViewModel.siderealAngle
+
+        // Draw panels
+        clockBasePanel.draw()
+        skyPanel.draw()
+        sunAndMoonPanel.draw()
+        horizonPanel.draw()
+        clockHandsPanel.draw()
+
+        val baseBmp = clockBasePanel.bmp
+        val skyBmp = skyPanel.bmp
+        val sunMoonBmp = sunAndMoonPanel.bmp
+        val horizonBmp = horizonPanel.bmp
+        val handsBmp = clockHandsPanel.bmp
+
+        provideContent {
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .clickable(actionStartActivity<MainActivity>())
+            ) {
+                Image(
+                    provider = ImageProvider(baseBmp),
+                    contentDescription = context.getString(R.string.clock_base_panel),
+                    modifier = GlanceModifier.fillMaxSize()
+                )
+                Image(
+                    provider = ImageProvider(skyBmp),
+                    contentDescription = context.getString(R.string.sky_panel),
+                    modifier = GlanceModifier.fillMaxSize()
+                )
+                Image(
+                    provider = ImageProvider(sunMoonBmp),
+                    contentDescription = context.getString(R.string.sun_and_moon_panel),
+                    modifier = GlanceModifier.fillMaxSize()
+                )
+                Image(
+                    provider = ImageProvider(horizonBmp),
+                    contentDescription = context.getString(R.string.horizon_panel),
+                    modifier = GlanceModifier.fillMaxSize()
+                )
+                Image(
+                    provider = ImageProvider(handsBmp),
+                    contentDescription = context.getString(R.string.clock_hands_panel),
+                    modifier = GlanceModifier.fillMaxSize()
+                )
+            }
         }
     }
-
-    private fun onUpdate(context: Context) {
-        scheduleUpdate(context)
-
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val thisAppWidgetComponentName = ComponentName(context.packageName, javaClass.name)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(thisAppWidgetComponentName)
-        val shouldUpdateFull =
-            System.currentTimeMillis() % FULL_UPDATE_INTERVAL < PARTIAL_UPDATE_INTERVAL + 100
-        updateAppWidget(context, appWidgetManager, appWidgetIds, shouldUpdateFull)
-    }
-}
-
-internal fun updateAppWidget(
-    context: Context,
-    appWidgetManager: AppWidgetManager,
-    appWidgetIds: IntArray,
-    shouldUpdateFull: Boolean
-) {
-    val remoteViews = RemoteViews(context.packageName, R.layout.widget_clock)
-    val intent = Intent(context, MainActivity::class.java)
-    val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
-    remoteViews.setOnClickPendingIntent(R.id.launchButton, pendingIntent)
-    appWidgetManager.updateAppWidget(appWidgetIds, remoteViews)
-
-    // There may be multiple widgets active, so update all of them
-    for (appWidgetId in appWidgetIds) {
-        if (shouldUpdateFull) updateAppWidget(context, appWidgetManager, appWidgetId)
-        else updateAppWidgetPartially(context, appWidgetManager, appWidgetId)
-    }
-}
-
-internal fun updateAppWidget(
-    context: Context,
-    appWidgetManager: AppWidgetManager,
-    appWidgetId: Int
-) {
-    val (latitude, longitude, isSouthernSky) = CwpWidget.loadPreviousPosition(context)
-    val skyViewModel =
-        SkyViewModel(
-            context,
-            if (isSouthernSky) SouthernSkyModel() else NorthernSkyModel(),
-            latitude,
-            longitude
-        )
-    val clockBasePanel = ClockBasePanel(context)
-    val skyPanel = SkyPanel(context)
-    val sunAndMoonPanel = SunAndMoonPanel(context)
-    val horizonPanel = HorizonPanel(context)
-    val clockHandsPanel = ClockHandsPanel(context)
-
-    with(skyViewModel) {
-        clockBasePanel.set(offset, direction)
-        skyPanel.set(
-            starGeometryList,
-            constellationLineList,
-            milkyWayDotList,
-            milkyWayDotSize,
-            equatorial,
-            ecliptic,
-            tenMinuteGridStep
-        )
-        sunAndMoonPanel.set(
-            analemma,
-            monthlySunPositionList,
-            currentSunPosition,
-            currentMoonPosition,
-            tenMinuteGridStep
-        )
-
-        horizonPanel.set(horizon, altAzimuth, directionLetters)
-    }
-
-    skyViewModel.setCurrentTime()
-    clockBasePanel.currentDate = skyViewModel.localDate
-    clockHandsPanel.localTime = skyViewModel.localTime
-    skyPanel.siderealAngle = skyViewModel.siderealAngle
-    sunAndMoonPanel.solarAngle = skyViewModel.solarAngle
-    sunAndMoonPanel.siderealAngle = skyViewModel.siderealAngle
-
-    // Draws panels
-    clockBasePanel.draw()
-    skyPanel.draw()
-    sunAndMoonPanel.draw()
-    horizonPanel.draw()
-    clockHandsPanel.draw()
-
-    // Constructs the RemoteViews object
-    val remoteViews = RemoteViews(context.packageName, R.layout.widget_clock)
-
-    // Adds panels to views
-    remoteViews.setImageViewBitmap(R.id.widgetClockBasePanel, clockBasePanel.bmp)
-    remoteViews.setImageViewBitmap(R.id.widgetSkyPanel, skyPanel.bmp)
-    remoteViews.setImageViewBitmap(R.id.widgetSunAndMoonPanel, sunAndMoonPanel.bmp)
-    remoteViews.setImageViewBitmap(R.id.widgetHorizonPanel, horizonPanel.bmp)
-    remoteViews.setImageViewBitmap(R.id.widgetClockHandsPanel, clockHandsPanel.bmp)
-
-    // Instructs the widget manager to update the widget
-    appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
-}
-
-internal fun updateAppWidgetPartially(
-    context: Context,
-    appWidgetManager: AppWidgetManager,
-    appWidgetId: Int
-) {
-    val clockHandsPanel = ClockHandsPanel(context)
-    clockHandsPanel.localTime = LocalTime.now()
-    clockHandsPanel.draw()
-    val remoteViews = RemoteViews(context.packageName, R.layout.widget_clock)
-    remoteViews.setImageViewBitmap(R.id.widgetClockHandsPanel, clockHandsPanel.bmp)
-    appWidgetManager.partiallyUpdateAppWidget(appWidgetId, remoteViews)
 }
