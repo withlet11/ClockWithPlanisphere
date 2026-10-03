@@ -1,7 +1,7 @@
 /**
  * LocationSettingFragment.kt
  *
- * Copyright 2021-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2021-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -28,34 +28,39 @@ import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
-import android.text.Editable
-import android.text.TextWatcher
-import android.text.method.DigitsKeyListener
-import android.view.View
-import android.widget.Button
-import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.DialogFragment
 import com.google.android.gms.location.*
 import io.github.withlet11.clockwithplanisphere.R
 
-
 class LocationSettingFragment : DialogFragment() {
     private var latitude: Double? = 0.0
     private var longitude: Double? = 0.0
-    private lateinit var latitudeField: TextView
-    private lateinit var longitudeField: TextView
 
-    private lateinit var getLocationButton: Button
-    private lateinit var statusField: TextView
+    private var latitudeTextState by mutableStateOf("")
+    private var longitudeTextState by mutableStateOf("")
+    private var isLatitudeErrorState by mutableStateOf(false)
+    private var isLongitudeErrorState by mutableStateOf(false)
+    private var statusMessageState by mutableStateOf("")
+    private var isGetLocationEnabledState by mutableStateOf(true)
+
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private lateinit var dialog: AlertDialog
-
-    private var normalTextColor = 0
-    private var warningTextColor = 0
 
     companion object {
         private const val MAXIMUM_UPDATE_INTERVAL = 10000L
@@ -75,15 +80,57 @@ class LocationSettingFragment : DialogFragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         listener = context as LocationSettingDialogListener
-        normalTextColor = context.getColor(R.color.black)
-        warningTextColor = context.getColor(R.color.red)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        getPreviousValues()
+
+        latitudeTextState = "%+f".format(latitude)
+        longitudeTextState = "%+f".format(longitude)
+
+        val composeView = ComposeView(requireContext()).apply {
+            setContent {
+                MaterialTheme {
+                    LocationSettingContent(
+                        latitudeText = latitudeTextState,
+                        onLatitudeChanged = { text ->
+                            latitudeTextState = text
+                            val parsed = text.replace(',', '.').toDoubleOrNull()
+                            if (parsed != null && parsed >= -90.0 && parsed <= 90.0) {
+                                latitude = parsed
+                                isLatitudeErrorState = false
+                            } else {
+                                latitude = null
+                                isLatitudeErrorState = true
+                            }
+                            updatePositiveButtonState()
+                        },
+                        isLatitudeError = isLatitudeErrorState,
+                        longitudeText = longitudeTextState,
+                        onLongitudeChanged = { text ->
+                            longitudeTextState = text
+                            val parsed = text.replace(',', '.').toDoubleOrNull()
+                            if (parsed != null && parsed >= -180.0 && parsed <= 180.0) {
+                                longitude = parsed
+                                isLongitudeErrorState = false
+                            } else {
+                                longitude = null
+                                isLongitudeErrorState = true
+                            }
+                            updatePositiveButtonState()
+                        },
+                        isLongitudeError = isLongitudeErrorState,
+                        statusMessage = statusMessageState,
+                        isGetLocationEnabled = isGetLocationEnabledState,
+                        onGetLocationClick = { startGPS() }
+                    )
+                }
+            }
+        }
+
         val builder = AlertDialog.Builder(requireActivity())
-        val inflater = requireActivity().layoutInflater
-        val locationSettingView = inflater.inflate(R.layout.fragment_location_setting, null)
-        builder.setView(locationSettingView)
+        builder.setView(composeView)
             .setTitle(R.string.locationSettings)
             .setPositiveButton(context?.getText(R.string.modify)) { _, _ ->
                 context?.getSharedPreferences("observation_position", Context.MODE_PRIVATE)?.edit()
@@ -98,10 +145,12 @@ class LocationSettingFragment : DialogFragment() {
                 listener?.onLocationDialogNegativeClick(this)
             }
 
-        getPreviousValues()
-        prepareGUIComponents(locationSettingView)
-
-        return builder.create().also { dialog = it }
+        return builder.create().also {
+            dialog = it
+            it.setOnShowListener {
+                updatePositiveButtonState()
+            }
+        }
     }
 
     override fun onStart() {
@@ -118,15 +167,16 @@ class LocationSettingFragment : DialogFragment() {
 
                 latitude = location?.latitude
                 longitude = location?.longitude
-                latitudeField.text = "%+f".format(latitude)
-                longitudeField.text = "%+f".format(longitude)
+                latitudeTextState = latitude?.let { "%+f".format(it) } ?: ""
+                longitudeTextState = longitude?.let { "%+f".format(it) } ?: ""
+                isLatitudeErrorState = false
+                isLongitudeErrorState = false
                 unlockViewItems()
-                statusField.text = ""
+                statusMessageState = ""
 
                 fusedLocationClient.removeLocationUpdates(this)
             }
         }
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
     }
 
     override fun onDetach() {
@@ -141,74 +191,27 @@ class LocationSettingFragment : DialogFragment() {
         }
     }
 
-    private fun prepareGUIComponents(locationSettingView: View) {
-        latitudeField = locationSettingView.findViewById<TextView>(R.id.latitudeField).apply {
-            keyListener = DigitsKeyListener.getInstance("0123456789.,+-")
-            setAutofillHints("%+.4f".format(23.4567))
-            hint = "%+.4f".format(23.4567)
-            text = "%+f".format(latitude)
-            addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-                override fun afterTextChanged(p0: Editable?) {}
-
-                override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                    latitude = latitudeField.text.toString().replace(',', '.').toDoubleOrNull()
-                    latitude?.let { if (it > 90.0 || it < -90.0) latitude = null }
-                    latitudeField.setTextColor(if (latitude == null) warningTextColor else normalTextColor)
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled =
-                        latitude != null && longitude != null
-                }
-            })
+    private fun updatePositiveButtonState() {
+        if (::dialog.isInitialized) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled =
+                latitude != null && longitude != null
         }
-
-        longitudeField = locationSettingView.findViewById<TextView>(R.id.longitudeField).apply {
-            keyListener = DigitsKeyListener.getInstance("0123456789.,+-")
-            setAutofillHints("%+.3f".format(123.456))
-            hint = "%+.3f".format(123.456)
-            text = "%+f".format(longitude)
-            addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-                override fun afterTextChanged(p0: Editable?) {}
-
-                override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                    longitude = longitudeField.text.toString().replace(',', '.').toDoubleOrNull()
-                    longitude?.let { if (it > 180.0 || it < -180.0) longitude = null }
-                    longitudeField.setTextColor(if (longitude == null) warningTextColor else normalTextColor)
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled =
-                        latitude != null && longitude != null
-                }
-            })
-        }
-
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-
-        getLocationButton = locationSettingView.findViewById<Button>(R.id.getLocationButton).apply {
-            setOnClickListener { startGPS() }
-        }
-
-        statusField = locationSettingView.findViewById(R.id.statusField)
-
     }
 
     private fun lockViewItems() {
-        latitudeField.isEnabled = false
-        longitudeField.isEnabled = false
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
-        getLocationButton.isEnabled = false
+        isGetLocationEnabledState = false
+        updatePositiveButtonState()
     }
 
     private fun unlockViewItems() {
-        latitudeField.isEnabled = true
-        longitudeField.isEnabled = true
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled =
-            latitude != null && longitude != null
-        getLocationButton.isEnabled = true
+        isGetLocationEnabledState = true
+        updatePositiveButtonState()
     }
 
     private fun startGPS() {
         context?.let {
             lockViewItems()
-            statusField.text = getString(R.string.inGettingLocation)
+            statusMessageState = getString(R.string.inGettingLocation)
             val isPermissionFineLocation = ActivityCompat.checkSelfPermission(
                 it, Manifest.permission.ACCESS_FINE_LOCATION
             )
@@ -232,7 +235,7 @@ class LocationSettingFragment : DialogFragment() {
                     )
                 } else {
                     unlockViewItems()
-                    statusField.text = getString(R.string.pleaseCheckIfGPSIsOn)
+                    statusMessageState = getString(R.string.pleaseCheckIfGPSIsOn)
                 }
             }
         }
@@ -245,7 +248,7 @@ class LocationSettingFragment : DialogFragment() {
                     Manifest.permission.ACCESS_FINE_LOCATION
                 )
             ) {
-                statusField.text = getString(R.string.no_permission_to_access_location_permanent)
+                statusMessageState = getString(R.string.no_permission_to_access_location_permanent)
             } else {
                 ActivityCompat.requestPermissions(
                     it,
@@ -254,5 +257,112 @@ class LocationSettingFragment : DialogFragment() {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun LocationSettingContent(
+    latitudeText: String,
+    onLatitudeChanged: (String) -> Unit,
+    isLatitudeError: Boolean,
+    longitudeText: String,
+    onLongitudeChanged: (String) -> Unit,
+    isLongitudeError: Boolean,
+    statusMessage: String,
+    isGetLocationEnabled: Boolean,
+    onGetLocationClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .padding(16.dp)
+            .wrapContentSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+//        Row(
+//            modifier = Modifier.width(320.dp),
+//            verticalAlignment = Alignment.CenterVertically,
+//            horizontalArrangement = Arrangement.spacedBy(8.dp)
+//        ) {
+            Column(
+                modifier = Modifier.width(320.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = stringResource(R.string.latitude),
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End
+                    )
+                    OutlinedTextField(
+                        value = latitudeText,
+                        onValueChange = onLatitudeChanged,
+                        modifier = Modifier.weight(1f),
+                        isError = isLatitudeError,
+                        singleLine = true,
+                        placeholder = { Text(stringResource(R.string.latitudeHint)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = stringResource(R.string.longitude),
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End
+                    )
+                    OutlinedTextField(
+                        value = longitudeText,
+                        onValueChange = onLongitudeChanged,
+                        modifier = Modifier.weight(1f),
+                        isError = isLongitudeError,
+                        singleLine = true,
+                        placeholder = { Text(stringResource(R.string.longitudeHint)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+            // }
+
+            Button(
+                onClick = onGetLocationClick,
+                enabled = isGetLocationEnabled,
+                modifier = Modifier.width(320.dp)
+            ) {
+                Text(stringResource(R.string.gps))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = statusMessage,
+            modifier = Modifier
+                .width(320.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LocationSettingContentPreview() {
+    MaterialTheme {
+        LocationSettingContent(
+            latitudeText = "+35.6895",
+            onLatitudeChanged = {},
+            isLatitudeError = false,
+            longitudeText = "+139.6917",
+            onLongitudeChanged = {},
+            isLongitudeError = false,
+            statusMessage = "",
+            isGetLocationEnabled = true,
+            onGetLocationClick = {}
+        )
     }
 }

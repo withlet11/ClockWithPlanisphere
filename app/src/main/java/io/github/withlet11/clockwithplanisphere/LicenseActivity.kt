@@ -22,22 +22,36 @@
 package io.github.withlet11.clockwithplanisphere
 
 import android.os.Bundle
-import android.view.MenuItem
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 
 
 class LicenseActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_license)
-
-        setSupportActionBar(findViewById(R.id.my_toolbar3)) // ToolBar instead of ActionBar
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) finish()
-        return true
+        setContent {
+            CwpTheme {
+                LicenseComposable(onBack = { finish() })
+            }
+        }
     }
 
 }
+
+//class LicenseActivity : AppCompatActivity() {
+//    override fun onCreate(savedInstanceState: Bundle?) {
+//        super.onCreate(savedInstanceState)
+//        setContentView(R.layout.activity_license)
+//
+//        setSupportActionBar(findViewById(R.id.my_toolbar3)) // ToolBar instead of ActionBar
+//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+//    }
+//
+//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+//        if (item.itemId == android.R.id.home) finish()
+//        return true
+//    }
+//
+//}
