@@ -25,12 +25,15 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SwitchCompat
-import androidx.appcompat.widget.Toolbar
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.core.view.doOnAttach
 import androidx.fragment.app.DialogFragment
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
@@ -38,14 +41,7 @@ import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import io.github.withlet11.clockwithplanisphere.fragment.*
-import androidx.core.content.edit
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
-import androidx.core.view.updateLayoutParams
-import android.util.TypedValue
-import android.widget.LinearLayout
-
+import io.github.withlet11.clockwithplanisphere.ui.MainScreen
 
 class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettingDialogListener,
     ColorSettingFragment.BackgroundColorSettingDialogListener {
@@ -61,11 +57,11 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
     private var backgroundColor = 0
     private var isSouthernSky = false
 
-    // private val handler = Handler()
     private val handler by lazy { Handler(Looper.getMainLooper()) }
     private var adView: AdView? = null
-
     private var adRunnable: Runnable? = null
+    private lateinit var containerFrameLayout: FrameLayout
+    // private lateinit var adViewInstance: AdView
 
     interface ChangeObserver {
         fun onLocationChange(latitude: Double, longitude: Double)
@@ -94,94 +90,77 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_main)
-
-        setUpToolbar()
-        setUpAds()
         loadPreviousSettings()
 
-        val switch: SwitchCompat =
-            findViewById<Toolbar>(R.id.my_toolbar).findViewById(R.id.view_switch)
-        switch.isChecked = isSouthernSky
-        switch.setOnCheckedChangeListener { _, b ->
-            isSouthernSky = b
-            getSharedPreferences("observation_position", MODE_PRIVATE).edit {
-                putBoolean("isSouthernSky", isSouthernSky)
-                putInt("backgroundColor", backgroundColor)
+        containerFrameLayout = FrameLayout(this).apply {
+            id = R.id.container
+            doOnAttach {
+                if (supportFragmentManager.findFragmentById(R.id.container) == null) {
+                    replaceCwpFragment(isSouthernSky)
+                }
             }
-
-            replaceCwpFragment(isSouthernSky)
         }
 
-        replaceCwpFragment(isSouthernSky)
+//        adViewInstance = AdView(this).apply {
+//            id = R.id.adView
+//            setAdSize(com.google.android.gms.ads.AdSize.BANNER)
+//            adUnitId = "ca-app-pub-6502278727709781/9103220433"
+//        }
+
+        setContent {
+            CwpTheme {
+                MainScreen(
+                    isSouthernSky = isSouthernSky,
+                    onSouthernSkyChanged = { b ->
+                        isSouthernSky = b
+                        getSharedPreferences("observation_position", MODE_PRIVATE).edit {
+                            putBoolean("isSouthernSky", isSouthernSky)
+                            putInt("backgroundColor", backgroundColor)
+                        }
+                        replaceCwpFragment(isSouthernSky)
+                    },
+                    onSettingsClick = {
+                        val dialog = LocationSettingFragment()
+                        dialog.show(supportFragmentManager, "locationSetting")
+                    },
+                    onBgColorClick = {
+                        val dialog = ColorSettingFragment()
+                        dialog.show(supportFragmentManager, "backgroundColor")
+                    },
+                    onPrivacyPolicyClick = {
+                        startActivity(Intent(application, PrivacyPolicyActivity::class.java))
+                    },
+                    onLicensesClick = {
+                        startActivity(Intent(application, LicenseActivity::class.java))
+                    },
+                    onCreditsClick = {
+                        startActivity(Intent(this, OssLicensesMenuActivity::class.java))
+                    },
+                    content = { modifier ->
+                        AndroidView(
+                            factory = { containerFrameLayout },
+                            modifier = modifier
+                        )
+                    },
+//                    adViewContent = {
+//                        AndroidView(
+//                            factory = { adViewInstance }
+//                        )
+//                    }
+                )
+            }
+        }
 
         adRunnable = Runnable {
-            val layout: FrameLayout? = findViewById(R.id.frameLayoutForAd)
-            layout?.removeView(adView)
-            layout?.invalidate()
-            adView?.destroy()
+            adView?.let { view ->
+                (view.parent as? ViewGroup)?.removeView(view)
+                view.destroy()
+            }
             adView = null
         }
 
         adRunnable?.let { handler.postDelayed(it, AD_DISPLAY_DURATION) }
-    }
-
-    private fun setUpToolbar() {
-        val toolbar: Toolbar = findViewById(R.id.my_toolbar)
-        val mainContent: LinearLayout = findViewById(R.id.main_content)
-
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.updatePadding(top = systemBars.top)
-
-            val tv = TypedValue()
-            if (theme.resolveAttribute(androidx.appcompat.R.attr.actionBarSize, tv, true)) {
-                val actionBarHeight = TypedValue.complexToDimensionPixelSize(tv.data, resources.displayMetrics)
-                v.updateLayoutParams { height = systemBars.top + actionBarHeight }
-            }
-
-            insets
-        }
-
-        ViewCompat.setOnApplyWindowInsetsListener(mainContent) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.updatePadding(bottom = systemBars.bottom)
-            insets
-        }
-
-        toolbar.setLogo(R.drawable.ic_launcher_foreground)
-        toolbar.setTitle(R.string.app_name)
-        toolbar.inflateMenu(R.menu.menu_main)
-        toolbar.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.item_settings -> {
-                    val dialog = LocationSettingFragment()
-                    dialog.show(supportFragmentManager, "locationSetting")
-                }
-
-                R.id.item_bg_color -> {
-                    val dialog = ColorSettingFragment()
-                    dialog.show(supportFragmentManager, "backgroundColor")
-                }
-
-                R.id.item_privacy_policy -> {
-                    startActivity(Intent(application, PrivacyPolicyActivity::class.java))
-                }
-
-                R.id.item_licenses -> {
-                    startActivity(Intent(application, LicenseActivity::class.java))
-                }
-
-                R.id.item_credits -> {
-                    startActivity(Intent(this, OssLicensesMenuActivity::class.java))
-                }
-
-                android.R.id.home -> finish()
-            }
-
-            true
-        }
-
+        setUpAds()
     }
 
     private fun replaceCwpFragment(isSouthernSky: Boolean) {
@@ -198,26 +177,20 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
         supportFragmentManager.beginTransaction()
             .replace(R.id.container, newFragment)
             .commit()
-
     }
 
     private fun setUpAds() {
-        // =======================================================
-        // ★ Restrict data processing for users under the age of consent (under 18)
-        // =======================================================
         val requestConfiguration = MobileAds.getRequestConfiguration()
             .toBuilder()
             .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
             .build()
         MobileAds.setRequestConfiguration(requestConfiguration)
-        // =======================================================
 
         MobileAds.initialize(this) {}
-        adView = findViewById(R.id.adView)
+//        adView = adViewInstance
         val adRequest = AdRequest.Builder().build()
         adView?.loadAd(adRequest)
     }
-
 
     override fun onDestroy() {
         adRunnable?.let { handler.removeCallbacks(it) }
@@ -251,7 +224,6 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
             isSouthernSky = previous.getBoolean("isSouthernSky", false)
             backgroundColor = previous.getInt(
                 "backgroundColor",
-                // resources.getColor(R.color.defaultBackGround, null)
                 ContextCompat.getColor(this, R.color.defaultBackGround)
             )
         } catch (_: ClassCastException) {
