@@ -29,7 +29,10 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
+import io.github.withlet11.clockwithplanisphere.ui.ClockContent
 import io.github.withlet11.clockwithplanisphere.MainActivity
 import io.github.withlet11.clockwithplanisphere.R
 import io.github.withlet11.clockwithplanisphere.PeriodicalUpdater
@@ -56,7 +59,7 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
     private lateinit var skyViewModel: SkyViewModel
 
     // views
-    private lateinit var background: View
+    private lateinit var backgroundView: ComposeView
     private lateinit var skyPanel: SkyPanel
     private lateinit var sunPanel: SunPanel
     private lateinit var sunAndMoonPanel: SunAndMoonPanel
@@ -119,18 +122,36 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? = inflater.inflate(R.layout.fragment_clock, container, false)
+    ): View {
+        val context = requireContext()
+        skyPanel = SkyPanel(context, null)
+        sunPanel = SunPanel(context, null)
+        sunAndMoonPanel = SunAndMoonPanel(context, null)
+        horizonPanel = HorizonPanel(context, null)
+        clockBasePanel = ClockBasePanel(context, null)
+        clockHandsPanel = ClockHandsPanel(context, null)
+
+        return ComposeView(context).apply {
+            backgroundView = this
+            setContent {
+                MaterialTheme {
+                    ClockContent(
+                        clockBasePanel = clockBasePanel,
+                        skyPanel = skyPanel,
+                        sunPanel = sunPanel,
+                        sunAndMoonPanel = sunAndMoonPanel,
+                        horizonPanel = horizonPanel,
+                        clockHandsPanel = clockHandsPanel
+                    ) { frameLayout ->
+                        clockFrame = frameLayout
+                    }
+                }
+            }
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        background = view
-        skyPanel = view.findViewById(R.id.skyPanel)
-        sunPanel = view.findViewById(R.id.sunPanel)
-        sunAndMoonPanel = view.findViewById(R.id.moonPanel)
-        horizonPanel = view.findViewById(R.id.horizonPanel)
-        clockBasePanel = view.findViewById(R.id.clockBasePanel)
-        clockHandsPanel = view.findViewById(R.id.clockHandsPanel)
-        clockFrame = view.findViewById(R.id.frameLayout)
 
         // get argument
         val args = arguments
@@ -143,7 +164,7 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
 
         skyViewModel = prepareViewModel(activity?.applicationContext!!, latitude, longitude)
 
-        view.setBackgroundColor(backgroundColor)
+        backgroundView.setBackgroundColor(backgroundColor)
         setPeriodicalUpdater()
         setOnTapListenerToPanel()
         setViewObserver()
@@ -495,7 +516,7 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
      * Implementation of [MainActivity.ChangeObserver.onColorChange]
      */
     override fun onColorChange(backgroundColor: Int) {
-        background.setBackgroundColor(backgroundColor)
+        backgroundView.setBackgroundColor(backgroundColor)
     }
 
     /**
