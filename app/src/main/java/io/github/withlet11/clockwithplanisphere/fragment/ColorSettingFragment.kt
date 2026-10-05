@@ -21,11 +21,12 @@
 
 package io.github.withlet11.clockwithplanisphere.fragment
 
-import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -39,12 +40,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.DialogFragment
+import io.github.withlet11.clockwithplanisphere.CwpTheme
 import io.github.withlet11.clockwithplanisphere.R
 
 class ColorSettingFragment : DialogFragment() {
@@ -55,11 +58,9 @@ class ColorSettingFragment : DialogFragment() {
     private var backgroundColor = DEFAULT_BACKGROUND_COLOR.toInt()
 
     private var redState by mutableStateOf(0)
-    private var greenState by mutableStateOf(0)
-    private var blueState by mutableStateOf(0)
-    private var isPositiveButtonEnabledState by mutableStateOf(false)
-
-    private lateinit var dialog: AlertDialog
+    private var greenState by mutableIntStateOf(0)
+    private var blueState by mutableIntStateOf(0)
+    private var isPositiveButtonEnabledState by mutableStateOf(true)
 
     interface BackgroundColorSettingDialogListener {
         fun onColorDialogPositiveClick(dialog: DialogFragment)
@@ -73,87 +74,91 @@ class ColorSettingFragment : DialogFragment() {
         listener = context as BackgroundColorSettingDialogListener
     }
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         getPreviousValues()
         redState = Color.red(backgroundColor)
         greenState = Color.green(backgroundColor)
         blueState = Color.blue(backgroundColor)
 
-        val composeView = ComposeView(requireContext()).apply {
+        return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
-                    ColorSettingContent(
-                        red = redState,
-                        green = greenState,
-                        blue = blueState,
-                        onRedChanged = { r ->
-                            redState = r
-                            backgroundColor = Color.rgb(redState, greenState, blueState)
-                            isPositiveButtonEnabledState = true
-                            updatePositiveButtonState()
+                CwpTheme {
+                    AlertDialog(
+                        onDismissRequest = {
+                            listener?.onColorDialogNegativeClick(this@ColorSettingFragment)
+                            dismiss()
                         },
-                        onGreenChanged = { g ->
-                            greenState = g
-                            backgroundColor = Color.rgb(redState, greenState, blueState)
-                            isPositiveButtonEnabledState = true
-                            updatePositiveButtonState()
+                        title = {
+                            Text(text = stringResource(R.string.bg_color))
                         },
-                        onBlueChanged = { b ->
-                            blueState = b
-                            backgroundColor = Color.rgb(redState, greenState, blueState)
-                            isPositiveButtonEnabledState = true
-                            updatePositiveButtonState()
+                        text = {
+                            ColorSettingContent(
+                                red = redState,
+                                green = greenState,
+                                blue = blueState,
+                                onRedChanged = { r ->
+                                    redState = r
+                                    backgroundColor = Color.rgb(redState, greenState, blueState)
+                                    isPositiveButtonEnabledState = true
+                                },
+                                onGreenChanged = { g ->
+                                    greenState = g
+                                    backgroundColor = Color.rgb(redState, greenState, blueState)
+                                    isPositiveButtonEnabledState = true
+                                },
+                                onBlueChanged = { b ->
+                                    blueState = b
+                                    backgroundColor = Color.rgb(redState, greenState, blueState)
+                                    isPositiveButtonEnabledState = true
+                                },
+                                onColorSelected = { r, g, b ->
+                                    redState = r
+                                    greenState = g
+                                    blueState = b
+                                    backgroundColor = Color.rgb(redState, greenState, blueState)
+                                    isPositiveButtonEnabledState = true
+                                }
+                            )
                         },
-                        onColorSelected = { r, g, b ->
-                            redState = r
-                            greenState = g
-                            blueState = b
-                            backgroundColor = Color.rgb(redState, greenState, blueState)
-                            isPositiveButtonEnabledState = true
-                            updatePositiveButtonState()
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    context?.getSharedPreferences("observation_position", Context.MODE_PRIVATE)?.edit()
+                                        ?.run {
+                                            putInt("backgroundColor", backgroundColor)
+                                            commit()
+                                        }
+                                    listener?.onColorDialogPositiveClick(this@ColorSettingFragment)
+                                    dismiss()
+                                },
+                                enabled = isPositiveButtonEnabledState
+                            ) {
+                                Text(stringResource(R.string.modify))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    listener?.onColorDialogNegativeClick(this@ColorSettingFragment)
+                                    dismiss()
+                                }
+                            ) {
+                                Text(stringResource(R.string.cancel))
+                            }
                         }
                     )
                 }
             }
         }
-
-        val builder = AlertDialog.Builder(requireActivity())
-        builder.setView(composeView)
-            .setTitle(R.string.bg_color)
-            .setPositiveButton(context?.getText(R.string.modify)) { _, _ ->
-                context?.getSharedPreferences("observation_position", Context.MODE_PRIVATE)?.edit()
-                    ?.run {
-                        putInt("backgroundColor", backgroundColor)
-                        commit()
-                    }
-                listener?.onColorDialogPositiveClick(this)
-            }
-            .setNegativeButton(context?.getText(R.string.cancel)) { _, _ ->
-                listener?.onColorDialogNegativeClick(this)
-            }
-
-        return builder.create().also {
-            dialog = it
-            it.setOnShowListener {
-                updatePositiveButtonState()
-            }
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        updatePositiveButtonState()
     }
 
     override fun onDetach() {
         listener = null
         super.onDetach()
-    }
-
-    private fun updatePositiveButtonState() {
-        if (::dialog.isInitialized) {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = isPositiveButtonEnabledState
-        }
     }
 
     private fun getPreviousValues() {
@@ -224,22 +229,22 @@ fun ColorSettingContent(
         )
 
         val paletteColors = listOf(
-            Triple(R.string.white, ComposeColor.White, ComposeColor.Black),
-            Triple(R.string.silver, ComposeColor(0xFFC0C0C0), ComposeColor.Black),
-            Triple(R.string.gray, ComposeColor.Gray, ComposeColor.Black),
-            Triple(R.string.black, ComposeColor.Black, ComposeColor.White),
-            Triple(R.string.red, ComposeColor.Red, ComposeColor.Black),
-            Triple(R.string.maroon, ComposeColor(0xFF800000), ComposeColor.White),
-            Triple(R.string.yellow, ComposeColor.Yellow, ComposeColor.Black),
-            Triple(R.string.olive, ComposeColor(0xFF808000), ComposeColor.Black),
-            Triple(R.string.lime, ComposeColor(0xFF00FF00), ComposeColor.Black),
-            Triple(R.string.green, ComposeColor.Green, ComposeColor.White),
-            Triple(R.string.aqua, ComposeColor.Cyan, ComposeColor.Black),
-            Triple(R.string.teal, ComposeColor(0xFF008080), ComposeColor.White),
-            Triple(R.string.blue, ComposeColor.Blue, ComposeColor.White),
-            Triple(R.string.navy, ComposeColor(0xFF000080), ComposeColor.White),
-            Triple(R.string.fuchsia, ComposeColor.Magenta, ComposeColor.Black),
-            Triple(R.string.purple, ComposeColor(0xFF800080), ComposeColor.White),
+            Triple(R.string.white, R.color.white, R.color.black),
+            Triple(R.string.silver, R.color.silver, R.color.black),
+            Triple(R.string.gray, R.color.gray, R.color.black),
+            Triple(R.string.black, R.color.black, R.color.white),
+            Triple(R.string.red, R.color.red, R.color.black),
+            Triple(R.string.maroon, R.color.maroon, R.color.white),
+            Triple(R.string.yellow, R.color.yellow, R.color.black),
+            Triple(R.string.olive, R.color.olive, R.color.black),
+            Triple(R.string.lime, R.color.lime, R.color.black),
+            Triple(R.string.green, R.color.green, R.color.white),
+            Triple(R.string.aqua, R.color.aqua, R.color.black),
+            Triple(R.string.teal, R.color.teal, R.color.white),
+            Triple(R.string.blue, R.color.blue, R.color.white),
+            Triple(R.string.navy, R.color.navy, R.color.white),
+            Triple(R.string.fuchsia, R.color.fuchsia, R.color.black),
+            Triple(R.string.purple, R.color.purple, R.color.white),
         )
 
         LazyVerticalGrid(
@@ -251,7 +256,9 @@ fun ColorSettingContent(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             userScrollEnabled = false
         ) {
-            items(paletteColors) { (stringRes, bgCol, textCol) ->
+            items(paletteColors) { (stringRes, bgColCode, textColCode) ->
+                val bgCol = colorResource(bgColCode)
+                val textCol = colorResource(textColCode)
                 Button(
                     onClick = {
                         onColorSelected(
@@ -318,7 +325,7 @@ fun ColorSliderRow(
 @Preview(showBackground = true)
 @Composable
 fun ColorSettingContentPreview() {
-    MaterialTheme {
+    CwpTheme {
         ColorSettingContent(
             red = 192,
             green = 224,

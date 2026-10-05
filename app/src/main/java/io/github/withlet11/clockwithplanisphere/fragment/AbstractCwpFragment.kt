@@ -32,6 +32,7 @@ import android.widget.FrameLayout
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
+import io.github.withlet11.clockwithplanisphere.CwpTheme
 import io.github.withlet11.clockwithplanisphere.ui.ClockContent
 import io.github.withlet11.clockwithplanisphere.MainActivity
 import io.github.withlet11.clockwithplanisphere.R
@@ -134,7 +135,7 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
         return ComposeView(context).apply {
             backgroundView = this
             setContent {
-                MaterialTheme {
+                CwpTheme {
                     ClockContent(
                         clockBasePanel = clockBasePanel,
                         skyPanel = skyPanel,

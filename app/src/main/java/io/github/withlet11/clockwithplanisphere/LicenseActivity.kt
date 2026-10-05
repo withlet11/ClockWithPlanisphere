@@ -1,7 +1,7 @@
 /*
  * LicenseActivity.kt
  *
- * Copyright 2020-2023 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -37,21 +37,4 @@ class LicenseActivity : AppCompatActivity() {
             }
         }
     }
-
 }
-
-//class LicenseActivity : AppCompatActivity() {
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        setContentView(R.layout.activity_license)
-//
-//        setSupportActionBar(findViewById(R.id.my_toolbar3)) // ToolBar instead of ActionBar
-//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-//    }
-//
-//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-//        if (item.itemId == android.R.id.home) finish()
-//        return true
-//    }
-//
-//}

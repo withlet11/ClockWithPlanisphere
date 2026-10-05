@@ -30,6 +30,9 @@ import android.widget.FrameLayout
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -55,7 +58,7 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
     private var longitude = 0.0
     var isClockHandsVisible = true
     private var backgroundColor = 0
-    private var isSouthernSky = false
+    var isSouthernSky by mutableStateOf(false)
 
     private val handler by lazy { Handler(Looper.getMainLooper()) }
     private var adView: AdView? = null

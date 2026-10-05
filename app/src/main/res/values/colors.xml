@@ -7,6 +7,14 @@
     <color name="colorPlainText">#FFFFFF</color>
     <color name="defaultBackGround">#C0E0FF</color>
 
+    <!-- CwpTheme matching colors -->
+    <color name="cwp_light_primary">#545C8C</color>
+    <color name="cwp_light_surface">#FBF8FE</color>
+    <color name="cwp_light_on_surface">#31323B</color>
+    <color name="cwp_dark_primary">#969BC4</color>
+    <color name="cwp_dark_surface">#0E0E12</color>
+    <color name="cwp_dark_on_surface">#E6E4F0</color>
+
     <!-- Standard colors -->
     <color name="darkBlue">#040820</color>
     <color name="midnightBlue">#081040</color>
