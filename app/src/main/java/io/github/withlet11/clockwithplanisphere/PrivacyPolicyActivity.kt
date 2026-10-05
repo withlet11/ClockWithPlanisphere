@@ -22,13 +22,11 @@
 package io.github.withlet11.clockwithplanisphere
 
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 
-
-
-class PrivacyPolicyActivity : AppCompatActivity() {
+class PrivacyPolicyActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)

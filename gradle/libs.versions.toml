@@ -1,4 +1,5 @@
 [versions]
+composeBom = "2026.09.00"
 legacySupportV4 = "1.0.0"
 playServicesAds = "25.5.0"
 playServicesAppUpdate = "2.1.0"
@@ -26,6 +27,7 @@ playServicesOssLicenses = "17.5.2"
 [libraries]
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-activity = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
 androidx-core = { module = "androidx.test:core", version.ref = "core" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }

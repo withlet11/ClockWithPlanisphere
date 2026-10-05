@@ -29,9 +29,10 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -46,7 +47,7 @@ import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import io.github.withlet11.clockwithplanisphere.fragment.*
 import io.github.withlet11.clockwithplanisphere.ui.MainScreen
 
-class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettingDialogListener,
+class MainActivity : FragmentActivity(), /*LocationSettingFragment.LocationSettingDialogListener,*/
     ColorSettingFragment.BackgroundColorSettingDialogListener {
     companion object {
         const val AD_DISPLAY_DURATION = 10000L
@@ -111,6 +112,7 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
 //        }
 
         setContent {
+            var showLocationDialog by rememberSaveable { mutableStateOf(false) }
             CwpTheme {
                 MainScreen(
                     isSouthernSky = isSouthernSky,
@@ -123,8 +125,7 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
                         replaceCwpFragment(isSouthernSky)
                     },
                     onSettingsClick = {
-                        val dialog = LocationSettingFragment()
-                        dialog.show(supportFragmentManager, "locationSetting")
+                        showLocationDialog = true
                     },
                     onBgColorClick = {
                         val dialog = ColorSettingFragment()
@@ -140,6 +141,17 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
                         startActivity(Intent(this, OssLicensesMenuActivity::class.java))
                     },
                     content = { modifier ->
+                        if (showLocationDialog) {
+                            LocationSettingDialog(
+                                onDismiss = {
+                                    showLocationDialog = false
+                                },
+                                onLocationSaved = {
+                                    showLocationDialog = false
+                                    loadPreviousPosition()
+                                }
+                            )
+                        }
                         AndroidView(
                             factory = { containerFrameLayout },
                             modifier = modifier
@@ -202,13 +214,13 @@ class MainActivity : AppCompatActivity(), LocationSettingFragment.LocationSettin
         super.onDestroy()
     }
 
-    override fun onLocationDialogPositiveClick(dialog: DialogFragment) {
-        loadPreviousPosition()
-    }
-
-    override fun onLocationDialogNegativeClick(dialog: DialogFragment) {
-        // Do nothing
-    }
+//    override fun onLocationDialogPositiveClick(dialog: DialogFragment) {
+//        loadPreviousPosition()
+//    }
+//
+//    override fun onLocationDialogNegativeClick(dialog: DialogFragment) {
+//        // Do nothing
+//    }
 
     override fun onColorDialogPositiveClick(dialog: DialogFragment) {
         loadColorSettings()
