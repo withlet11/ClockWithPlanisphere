@@ -38,7 +38,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.doOnAttach
-import androidx.fragment.app.DialogFragment
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
@@ -47,8 +46,9 @@ import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import io.github.withlet11.clockwithplanisphere.fragment.*
 import io.github.withlet11.clockwithplanisphere.ui.MainScreen
 
-class MainActivity : FragmentActivity(), /*LocationSettingFragment.LocationSettingDialogListener,*/
-    ColorSettingFragment.BackgroundColorSettingDialogListener {
+class MainActivity : FragmentActivity()
+/*, LocationSettingFragment.LocationSettingDialogListener, ColorSettingFragment.BackgroundColorSettingDialogListener */
+{
     companion object {
         const val AD_DISPLAY_DURATION = 10000L
         const val DEFAULT_LATITUDE = 45.0
@@ -113,6 +113,7 @@ class MainActivity : FragmentActivity(), /*LocationSettingFragment.LocationSetti
 
         setContent {
             var showLocationDialog by rememberSaveable { mutableStateOf(false) }
+            var showColorDialog by rememberSaveable { mutableStateOf(false) }
             CwpTheme {
                 MainScreen(
                     isSouthernSky = isSouthernSky,
@@ -128,8 +129,9 @@ class MainActivity : FragmentActivity(), /*LocationSettingFragment.LocationSetti
                         showLocationDialog = true
                     },
                     onBgColorClick = {
-                        val dialog = ColorSettingFragment()
-                        dialog.show(supportFragmentManager, "backgroundColor")
+//                        val dialog = ColorSettingFragment()
+//                        dialog.show(supportFragmentManager, "backgroundColor")
+                        showColorDialog = true
                     },
                     onPrivacyPolicyClick = {
                         startActivity(Intent(application, PrivacyPolicyActivity::class.java))
@@ -149,6 +151,17 @@ class MainActivity : FragmentActivity(), /*LocationSettingFragment.LocationSetti
                                 onLocationSaved = {
                                     showLocationDialog = false
                                     loadPreviousPosition()
+                                }
+                            )
+                        }
+                        if (showColorDialog) {
+                            ColorSettingDialog(
+                                onDismiss = {
+                                    showColorDialog = false
+                                },
+                                onColorSaved = {
+                                    showColorDialog = false
+                                    loadColorSettings()
                                 }
                             )
                         }
@@ -214,21 +227,13 @@ class MainActivity : FragmentActivity(), /*LocationSettingFragment.LocationSetti
         super.onDestroy()
     }
 
-//    override fun onLocationDialogPositiveClick(dialog: DialogFragment) {
-//        loadPreviousPosition()
+//    override fun onColorDialogPositiveClick(dialog: DialogFragment) {
+//        loadColorSettings()
 //    }
 //
-//    override fun onLocationDialogNegativeClick(dialog: DialogFragment) {
+//    override fun onColorDialogNegativeClick(dialog: DialogFragment) {
 //        // Do nothing
 //    }
-
-    override fun onColorDialogPositiveClick(dialog: DialogFragment) {
-        loadColorSettings()
-    }
-
-    override fun onColorDialogNegativeClick(dialog: DialogFragment) {
-        // Do nothing
-    }
 
     private fun loadPreviousSettings() {
         val previous = getSharedPreferences("observation_position", MODE_PRIVATE)

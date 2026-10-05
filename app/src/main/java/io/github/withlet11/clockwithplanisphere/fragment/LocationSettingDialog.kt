@@ -1,7 +1,7 @@
 /**
  * LocationSettingDialog.kt
  *
- * Copyright 2021-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -23,7 +23,6 @@ package io.github.withlet11.clockwithplanisphere.fragment
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -140,7 +139,6 @@ fun LocationSettingDialog(
                 context = context,
                 fusedLocationClient = fusedLocationClient,
                 locationCallback = locationCallback,
-                onLocation = currentOnLocation,
                 onError = {
                     isGetLocationEnabled = true
                     statusMessage = R.string.pleaseCheckIfGPSIsOn
@@ -161,7 +159,6 @@ fun LocationSettingDialog(
                 >,
         onStart: () -> Unit,
         onGpsDisabled: () -> Unit,
-        onLocation: (Location) -> Unit,
         locationCallback: LocationCallback
     ) {
         onStart()
@@ -182,8 +179,8 @@ fun LocationSettingDialog(
             permissionLauncher.launch(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
-Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
             )
             return
         }
@@ -192,7 +189,6 @@ Manifest.permission.ACCESS_COARSE_LOCATION
             context = context,
             fusedLocationClient = fusedLocationClient,
             locationCallback = locationCallback,
-            onLocation = onLocation,
             onError = onGpsDisabled
         )
     }
@@ -276,8 +272,7 @@ Manifest.permission.ACCESS_COARSE_LOCATION
                         onGpsDisabled = {
                             isGetLocationEnabled = true
                             statusMessage = R.string.pleaseCheckIfGPSIsOn
-                        },
-                        onLocation = currentOnLocation
+                        }
                     )
                 }
             )
@@ -422,7 +417,6 @@ private fun startLocationUpdates(
     context: Context,
     fusedLocationClient: FusedLocationProviderClient,
     locationCallback: LocationCallback,
-    onLocation: (Location) -> Unit,
     onError: () -> Unit
 ) {
     val locationRequest = LocationRequest.Builder(
