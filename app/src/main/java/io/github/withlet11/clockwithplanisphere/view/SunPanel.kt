@@ -73,7 +73,7 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
     private val sunColor = context?.getColor(R.color.ripeMango) ?: 0
 
     private val centerPosition
-        get() = (if (isZoomed) wideSideLength else narrowSideLength).let { it * 0.5f to it * 0.5f }
+        get() = (if (isZoomed) wideSideLength else narrowSideLength).let { it * 0.5f + offsetX to it * 0.5f + offsetY }
 
     private val scale: Float
         get() {
@@ -151,7 +151,7 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
      */
     fun isOnAnalemma(posOnFragment: Pair<Float, Float>): Boolean {
         val analemmaPosition = sunPosition.toAbsoluteXY(-solarAngle * sign(tenMinuteGridStep), scale, centerPosition)
-        return posOnFragment.toCanvasXY().isNear(analemmaPosition)
+        return posOnFragment.isNear(analemmaPosition)
     }
 
     fun set(

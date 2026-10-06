@@ -57,7 +57,7 @@ class ClockHandsPanel(context: Context?, attrs: AttributeSet? = null) {
     private val shadow = context?.getColor(R.color.smoke) ?: 0
 
     private val centerPosition
-        get() = (if (isZoomed) wideSideLength else narrowSideLength).let { it * 0.5f to it * 0.5f }
+        get() = (if (isZoomed) wideSideLength else narrowSideLength).let { it * 0.5f + offsetX to it * 0.5f + offsetY }
 
     private val scale: Float
         get() {

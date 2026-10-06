@@ -21,6 +21,9 @@
 
 package io.github.withlet11.clockwithplanisphere.ui
 
+import android.os.SystemClock
+import android.util.Log
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -32,6 +35,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.withlet11.clockwithplanisphere.view.*
+import kotlin.math.pow
 
 @Composable
 fun ClockScreen() {
@@ -74,7 +78,6 @@ fun ClockContent(
     offsetX: Int = 0,
     offsetY: Int = 0,
     onTap: (Float, Float) -> Unit = { _, _ -> },
-    onDoubleTap: () -> Unit = {},
     onDragStart: (Float, Float) -> Unit = { _, _ -> },
     onDrag: (Float, Float) -> Unit = { _, _ -> },
     onDragEnd: () -> Unit = {}
@@ -123,26 +126,66 @@ fun ClockContent(
         Box(
             modifier = Modifier
                 .size(with(density) { wide.toDp() })
+                .pointerInput(isZoomed) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val down = awaitFirstDown()
+                            val start = down.position
+
+                            onDragStart(start.x, start.y)
+
+                            var isDragging = false
+
+                            val downTime = SystemClock.elapsedRealtime()
+
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull()
+                                    ?: break
+
+                                if (!change.pressed) {
+                                    val end = change.position
+                                    val elapsed = SystemClock.elapsedRealtime() - downTime
+                                    val distanceSquared =
+                                        (start.x - end.x).pow(2) +
+                                                (start.y - end.y).pow(2)
+
+                                    if (!isDragging &&
+                                        elapsed < 200L &&
+                                        distanceSquared < 50f
+                                    ) {
+                                        onTap(end.x, end.y)
+                                    } else {
+                                        onDragEnd()
+                                    }
+
+                                    break
+                                }
+
+                                val position = change.position
+
+                                if (!isDragging) {
+                                    val distanceSquared =
+                                        (start.x - position.x).pow(2) +
+                                                (start.y - position.y).pow(2)
+
+                                    if (distanceSquared >= 5f) {
+                                        isDragging = true
+                                    }
+                                }
+
+                                if (isDragging) {
+                                    change.consume()
+                                    onDrag(position.x, position.y)
+                                }
+                            }
+                        }
+                    }
+                }
                 .graphicsLayer(
                     translationX = offsetX.toFloat(), translationY = offsetY.toFloat()
-                )
-                .pointerInput(isZoomed) {
-                    detectTapGestures(onTap = { offset ->
-                        onTap(offset.x, offset.y)
-                    }, onDoubleTap = {
-                        onDoubleTap()
-                    })
-                }
-                .pointerInput(isZoomed) {
-                    detectDragGestures(onDragStart = { offset ->
-                        onDragStart(offset.x, offset.y)
-                    }, onDrag = { change, _ ->
-                        change.consume()
-                        onDrag(change.position.x, change.position.y)
-                    }, onDragEnd = {
-                        onDragEnd()
-                    })
-                }, contentAlignment = Alignment.Center
+                ),
+            contentAlignment = Alignment.Center
         ) {
             clockBasePanel.Content(Modifier.fillMaxSize())
             skyPanel.Content(Modifier.fillMaxSize())

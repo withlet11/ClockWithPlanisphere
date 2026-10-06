@@ -24,6 +24,7 @@ package io.github.withlet11.clockwithplanisphere.fragment
 import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -160,9 +161,6 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
                         onTap = { x, y ->
                             handleTap(x, y)
                         },
-                        onDoubleTap = {
-                            toggleZoom()
-                        },
                         onDragStart = { x, y ->
                             handleDragStart(x, y)
                         },
@@ -201,6 +199,7 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
         setStarDataList()
         setHorizonPanel()
         setClockBasePanel()
+        // TODO: 2026-10-06
         adjustFrameLayoutPosition()
         scrollPanelToCenter()
     }
@@ -236,14 +235,14 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
         firstActionX = x
         firstActionY = y
         previousRotate = clockBasePanel.getAngle(x, y)
-        swipeStatus = when {
-            sunPanel.isOnAnalemma(x to y) -> SwipeStatus.SUN
-            clockBasePanel.isOnTodayGrid(x to y) -> SwipeStatus.DATE
-            clockBasePanel.isOnSkyBackgroundEdge(x to y) -> SwipeStatus.SKY_EDGE
-            else -> SwipeStatus.ANYTHING
-        }
-        if (swipeStatus == SwipeStatus.SUN || swipeStatus == SwipeStatus.DATE || swipeStatus == SwipeStatus.SKY_EDGE) {
-            isClockHandsVisible = false
+
+        if (!isClockHandsVisible) {
+            swipeStatus = when {
+                sunPanel.isOnAnalemma(x to y) -> SwipeStatus.SUN
+                clockBasePanel.isOnTodayGrid(x to y) -> SwipeStatus.DATE
+                clockBasePanel.isOnSkyBackgroundEdge(x to y) -> SwipeStatus.SKY_EDGE
+                else -> SwipeStatus.ANYTHING
+            }
         }
     }
 
@@ -253,15 +252,18 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
                 val rotate = sunPanel.getAngle(x, y)
                 changeDateWithFixedSiderealTime(rotate)
             }
+
             SwipeStatus.DATE -> {
                 val rotate = clockBasePanel.getAngleFromJan1(x, y)
                 changeDateWithFixedSolarTime(rotate)
             }
+
             SwipeStatus.SKY_EDGE -> {
                 val rotate = clockBasePanel.getAngle(x, y)
                 changeSiderealTimeWithFixedDate(rotate - previousRotate)
                 previousRotate = rotate
             }
+
             else -> {
                 scrollPanel(x, y)
                 previousActionX = x
@@ -309,29 +311,32 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
                     if (clockHandsPanel.isLandScape) {
                         scrollableHorizonMin = 0
                         scrollableHorizonMax = 0
-                        scrollableVerticalMin = -halfOfDifference
-                        scrollableVerticalMax = halfOfDifference
+                        scrollableVerticalMin = -totalDifference
+                        scrollableVerticalMax = 0
+                        0 to -halfOfDifference
                     } else {
-                        scrollableHorizonMin = -halfOfDifference
-                        scrollableHorizonMax = halfOfDifference
+                        scrollableHorizonMin = -totalDifference
+                        scrollableHorizonMax = 0
                         scrollableVerticalMin = 0
                         scrollableVerticalMax = 0
+                        -halfOfDifference to 0
                     }
-                    0 to 0
                 }
+
                 clockHandsPanel.isLandScape -> {
-                    scrollableHorizonMin = -totalDifference
-                    scrollableHorizonMax = 0
+                    scrollableHorizonMin = 0
+                    scrollableHorizonMax = totalDifference
                     scrollableVerticalMin = 0
                     scrollableVerticalMax = 0
-                    0 to -halfOfDifference
+                    halfOfDifference to 0
                 }
+
                 else -> {
                     scrollableHorizonMin = 0
                     scrollableHorizonMax = 0
-                    scrollableVerticalMin = -totalDifference
-                    scrollableVerticalMax = 0
-                    -halfOfDifference to 0
+                    scrollableVerticalMin = 0
+                    scrollableVerticalMax = totalDifference
+                    0 to halfOfDifference
                 }
             }
         }.let { (framePositionX, framePositionY) ->
@@ -356,6 +361,7 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
     }
 
     private fun scrollPanelToCenter() {
+        Log.d("CWP", "scrollPanelToCenter()")
         offsetXState = (scrollableHorizonMax + scrollableHorizonMin) / 2
         offsetYState = (scrollableVerticalMax + scrollableVerticalMin) / 2
         updatePanelOffsets()
@@ -441,7 +447,7 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
         val current = skyViewModel.siderealAngle
         val difference = skyPanel.getAngleDifference(current)
         if (difference > MINIMUM_DEGREE)
-        skyPanel.siderealAngle = skyViewModel.siderealAngle
+            skyPanel.siderealAngle = skyViewModel.siderealAngle
     }
 
     private fun updateSunPanel() {
@@ -476,8 +482,8 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
 
     private fun updateMoonPanel() {
         val siderealAngle = skyViewModel.siderealAngle
-        val difference = sunAndMoonPanel. getAngleDifference(siderealAngle)
-            if (sunAndMoonPanel.isDifferentDate(skyViewModel.localDate) || difference > MINIMUM_DEGREE) {
+        val difference = sunAndMoonPanel.getAngleDifference(siderealAngle)
+        if (sunAndMoonPanel.isDifferentDate(skyViewModel.localDate) || difference > MINIMUM_DEGREE) {
             with(skyViewModel) {
                 sunAndMoonPanel.setSolarAngleAndCurrentPosition(
                     solarAngle,
@@ -522,7 +528,10 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
     private fun changeDateWithFixedSiderealTime(rotate: Float) {
         if (abs(rotate) > MINIMUM_DEGREE) {
             skyViewModel.changeDateWithFixedSiderealTime(rotate)
-            refreshClock()
+            updateClockBasePanel()
+            updateSkyPanel()
+            updateSunPanel()
+            updateMoonPanel()
         }
     }
 
@@ -534,7 +543,10 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
     private fun changeDateWithFixedSolarTime(rotate: Float) {
         if (abs(rotate) > MINIMUM_DEGREE) {
             skyViewModel.changeDateWithFixedSolarTime(rotate)
-            refreshClock()
+            updateClockBasePanel()
+            updateSkyPanel()
+            updateSunPanel()
+            updateMoonPanel()
         }
     }
 
@@ -545,7 +557,9 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
     private fun changeSiderealTimeWithFixedDate(rotate: Float) {
         if (abs(rotate) > MINIMUM_DEGREE) {
             skyViewModel.changeSiderealTimeWithFixedDate(rotate)
-            refreshClock()
+            updateSkyPanel()
+            updateSunPanel()
+            updateMoonPanel()
         }
     }
 }
