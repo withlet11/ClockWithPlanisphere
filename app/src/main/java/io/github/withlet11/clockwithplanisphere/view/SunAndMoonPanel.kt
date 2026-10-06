@@ -1,7 +1,7 @@
 /*
  * SunAndMoonPanel.kt
  *
- * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -29,53 +29,93 @@ import java.lang.Math.toRadians
 import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.math.*
+import androidx.core.graphics.withSave
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Canvas as ComposeCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.toCanvas
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.MOON_RADIUS
 
-/** This class is a view that show the Moon. */
-class SunAndMoonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
-    private var moonPosition = 0f to 0f
-    private var differenceOfLongitude = 0.0
+class SunAndMoonPanel(context: Context?, attrs: AttributeSet? = null) {
+    private var moonPosition by mutableStateOf(0f to 0f)
+    private var differenceOfLongitude by mutableDoubleStateOf(0.0)
     private val rotateAngleOfSun: Float get() = -solarAngle * sign(tenMinuteGridStep)
     private val rotateAngleOfMoon: Float get() = -siderealAngle * sign(tenMinuteGridStep)
-    private var solarAngle = 0f
-    private var siderealAngle = 0f
+    var solarAngle by mutableFloatStateOf(0f)
+    var siderealAngle by mutableFloatStateOf(0f)
     private var tenMinuteGridStep = 180f / 72f
-    private var date: LocalDate = LocalDate.now()
+    private var date by mutableStateOf(LocalDate.now())
+
+    var isZoomed by mutableStateOf(false)
+    var isLandScape by mutableStateOf(false)
+    var narrowSideLength by mutableIntStateOf(0)
+    var wideSideLength by mutableIntStateOf(0)
+    var offsetX by mutableIntStateOf(0)
+    var offsetY by mutableIntStateOf(0)
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val moonColor = context?.getColor(R.color.pastelYellow) ?: 0
     private val moonDarkSideColor = context?.getColor(R.color.darkBlue) ?: 0
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        canvas.drawMoon()
-    }
-
-    private fun Canvas.drawMoon() {
-        rotate(rotateAngleOfMoon, 0f, 0f)
-        translate(moonPosition.first.toCanvas(), moonPosition.second.toCanvas())
-        rotate(
-            rotateAngleOfSun - rotateAngleOfMoon -
-                    if (tenMinuteGridStep > 0.0) (180 - differenceOfLongitude.toFloat())
-                    else differenceOfLongitude.toFloat()
-        )
-        paint.style = Paint.Style.FILL
-        val phase = abs(cos(toRadians(differenceOfLongitude)).toFloat() * MOON_RADIUS)
-        val (isFirstHalf, color) = when {
-            differenceOfLongitude < 90 -> true to moonDarkSideColor
-            differenceOfLongitude < 180 -> true to moonColor
-            differenceOfLongitude < 270 -> false to moonColor
-            else -> false to moonDarkSideColor
+    private val scale: Float
+        get() {
+            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
         }
-        drawHalfMoon(isFirstHalf)
-        paint.color = color
-        drawOval(-phase, -MOON_RADIUS, phase, MOON_RADIUS, paint)
+
+    @Composable
+    fun Content(modifier: Modifier = Modifier) {
+        ComposeCanvas(modifier = modifier) {
+            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            if (drawAreaSize > 0) {
+                drawIntoCanvas { composeCanvas ->
+                    val canvas = composeCanvas.nativeCanvas
+                    canvas.withSave {
+                        scale(scale, scale)
+                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        drawMoon(canvas)
+                    }
+                }
+            }
+        }
     }
 
-    private fun Canvas.drawHalfMoon(isFirstHalf: Boolean) {
+    private fun drawMoon(canvas: Canvas) {
+        canvas.withSave {
+            rotate(rotateAngleOfMoon, 0f, 0f)
+            translate(moonPosition.first.toCanvas(), moonPosition.second.toCanvas())
+            rotate(
+                rotateAngleOfSun - rotateAngleOfMoon -
+                        if (tenMinuteGridStep > 0.0) (180 - differenceOfLongitude.toFloat())
+                        else differenceOfLongitude.toFloat()
+            )
+            paint.style = Paint.Style.FILL
+            val phase = abs(cos(toRadians(differenceOfLongitude)).toFloat() * MOON_RADIUS)
+            val (isFirstHalf, color) = when {
+                differenceOfLongitude < 90 -> true to moonDarkSideColor
+                differenceOfLongitude < 180 -> true to moonColor
+                differenceOfLongitude < 270 -> false to moonColor
+                else -> false to moonDarkSideColor
+            }
+            drawHalfMoon(canvas, isFirstHalf)
+            paint.color = color
+            canvas.drawOval(-phase, -MOON_RADIUS, phase, MOON_RADIUS, paint)
+        }
+    }
+
+    private fun drawHalfMoon(canvas: Canvas, isFirstHalf: Boolean) {
         paint.color = moonColor
-        drawCircle(0f, 0f, MOON_RADIUS, paint)
+        canvas.drawCircle(0f, 0f, MOON_RADIUS, paint)
         paint.color = moonDarkSideColor
-        drawArc(
+        canvas.drawArc(
             -MOON_RADIUS, -MOON_RADIUS, MOON_RADIUS, MOON_RADIUS,
             if (isFirstHalf) 90f else -90f,
             180f,
@@ -108,7 +148,6 @@ class SunAndMoonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(c
         this.solarAngle = solarAngle
         this.siderealAngle = siderealAngle
         this.date = dateTime.toLocalDate()
-        invalidate()
     }
 
     /** Check if a date differs from the date of the view. */

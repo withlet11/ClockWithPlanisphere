@@ -1,5 +1,5 @@
 /*
- * ClockHandsPanel.kt
+ * ClockBasePanel.kt
  *
  * Copyright 2020-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
@@ -29,18 +29,32 @@ import io.github.withlet11.clockwithplanisphere.R
 import java.time.LocalDate
 import kotlin.math.*
 import androidx.core.graphics.withSave
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Canvas as ComposeCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.BEZEL_RADIUS
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.DATE_PANEL_RADIUS
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.SKY_BACKGROUND_RADIUS
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.isNear
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.toAbsoluteXY
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.getAngle
 
-class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
-    var currentDate: LocalDate = LocalDate.now()
-        set(value) {
-            if (field != value) {
-                field = value
-                invalidate()
-            }
-        }
+class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
+    var currentDate: LocalDate by mutableStateOf(LocalDate.now())
+    var isZoomed by mutableStateOf(false)
+    var isLandScape by mutableStateOf(false)
+    var narrowSideLength by mutableStateOf(0)
+    var wideSideLength by mutableStateOf(0)
+    var offsetX by mutableStateOf(0)
+    var offsetY by mutableStateOf(0)
 
-    private var offset = 0f
-    private var direction = false
+    private var offset by mutableStateOf(0f)
+    private var direction by mutableStateOf(false)
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val bezelColor = context?.getColor(R.color.darkBlue) ?: 0
@@ -52,27 +66,52 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
     private val monthNameColor = context?.getColor(R.color.black) ?: 0
     private val skyBackGroundColor = context?.getColor(R.color.midnightBlue) ?: 0
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        canvas.run {
-            drawBackPanel()
-            drawGrid()
-            drawDate()
+    private val centerPosition
+        get() = (if (isZoomed) wideSideLength else narrowSideLength).let { it * 0.5f to it * 0.5f }
+
+    private val scale: Float
+        get() {
+            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
+        }
+
+    @Composable
+    fun Content(modifier: Modifier = Modifier) {
+        ComposeCanvas(modifier = modifier) {
+            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            if (drawAreaSize > 0) {
+                drawIntoCanvas { composeCanvas ->
+                    val canvas = composeCanvas.nativeCanvas
+                    canvas.withSave {
+                        scale(scale, scale)
+                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        drawBackPanel(canvas)
+                        drawGrid(canvas)
+                        drawDate(canvas)
+                    }
+                }
+            }
         }
     }
 
-    private fun Canvas.drawBackPanel() {
+    /**
+     * Draws bezel, date panel, and sky background.
+     */
+    private fun drawBackPanel(canvas: Canvas) {
         listOf(
             BEZEL_RADIUS to bezelColor,
             DATE_PANEL_RADIUS to datePanelColor,
             SKY_BACKGROUND_RADIUS to skyBackGroundColor
         ).forEach { (r, color) ->
             paint.color = color
-            drawCircle(0f, 0f, r, paint)
+            canvas.drawCircle(0f, 0f, r, paint)
         }
     }
 
-    private fun Canvas.drawGrid() {
+    /**
+     * Draws dots of the minute grid for a whole day.
+     */
+    private fun drawGrid(canvas: Canvas) {
         val rectangleSize = 22f
         val dot1radius = 8f
         val dot2radius = 4f
@@ -87,8 +126,8 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
         paint.color = minuteGridColor
         paint.style = Paint.Style.FILL
         for (i in 0..59) {
-            withSave {
-                rotate(i * 6f) // 6 = 360 / 60
+            canvas.withSave {
+                rotate(i * 6f)
                 when {
                     i == 0 -> {
                         drawRect(
@@ -126,12 +165,15 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
         }
     }
 
-    private fun Canvas.drawDate() {
+    /**
+     * Draws dots and lines of the date for a whole year.
+     */
+    private fun drawDate(canvas: Canvas) {
         val circleY = 341f
         val lengthOfYear = currentDate.lengthOfYear()
         for (dayOfYear in 1 until lengthOfYear) {
             val date = LocalDate.ofYearDay(currentDate.year, dayOfYear)
-            withSave {
+            canvas.withSave {
                 // angle + 180 because text is drawn at opposite side
                 rotate((-360f / lengthOfYear * dayOfYear + offset + 180f) * if (direction) -1f else 1f)
 
@@ -146,12 +188,17 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
                 paint.color = color
                 drawCircle(0f, circleY, r, paint)
 
-                drawMonth(date)
+                drawMonth(canvas, date)
             }
         }
     }
 
-    private fun Canvas.drawMonth(date: LocalDate) {
+    /**
+     * Draws a line or a month name.
+     * @param [canvas] the canvas
+     * @param [date] the date
+     */
+    private fun drawMonth(canvas: Canvas, date: LocalDate) {
         paint.textSize = 24f
         when (date.dayOfMonth) {
             1 -> {
@@ -161,7 +208,7 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
                 val startY = SKY_BACKGROUND_RADIUS
                 val stopY = DATE_PANEL_RADIUS
                 val offsetRate = PI.toFloat() / if (direction) 365f else -365f
-                drawLine(
+                canvas.drawLine(
                     startY * offsetRate,
                     startY,
                     stopY * offsetRate,
@@ -177,10 +224,10 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
                 val r = 356f - (fontMetrics.ascent + fontMetrics.descent) * 0.5f
                 val ratio = 180f / PI.toFloat() / r
                 val start = ratio * paint.measureText(monthName) * 0.5f
-                withSave {
+                canvas.withSave {
                     rotate(start)
                     monthName.forEach { name ->
-                    drawText(name.toString(), 0f, r, paint)
+                        canvas.drawText(name.toString(), 0f, r, paint)
                         val step = -ratio * paint.measureText(name.toString())
                         rotate(step)
                     }
@@ -189,6 +236,11 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
         }
     }
 
+    /**
+     * Sets the offset and direction of the clock.
+     * @param [offset] the offset
+     * @param [direction] the direction
+     */
     fun set(offset: Float, direction: Boolean) {
         this.offset = offset
         this.direction = direction
@@ -196,16 +248,17 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
 
     /**
      * Checks if a position is on the edge of sky background
+     * @param [posOnFragment] a position on the fragment
      * @return true if a position is on the edge
      */
     fun isOnSkyBackgroundEdge(posOnFragment: Pair<Float, Float>): Boolean {
-        val (center, radius) = SKY_BACKGROUND_RADIUS.toAbsoluteXY()
-        return posOnFragment.toCanvasXY().isNear(center, radius)
+        val radius = SKY_BACKGROUND_RADIUS * scale
+        return posOnFragment.toCanvasXY().isNear(centerPosition, radius)
     }
 
     /**
      * Checks if a position is on today grid.
-     * @param posOnFragment a position on the fragment
+     * @param [posOnFragment] a position on the fragment
      * @return true if a position is on today grid
      */
     fun isOnTodayGrid(posOnFragment: Pair<Float, Float>): Boolean {
@@ -213,12 +266,32 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(co
             ((-360.0 / currentDate.lengthOfYear() * currentDate.dayOfYear + offset) * if (direction) -1.0 else 1.0) / 180.0 * PI
         val position =
             SKY_BACKGROUND_RADIUS * sin(rotate).toFloat() to -SKY_BACKGROUND_RADIUS * cos(rotate).toFloat()
-        return posOnFragment.toCanvasXY().isNear(position.toAbsoluteXY())
+        return posOnFragment.toCanvasXY().isNear(position.toAbsoluteXY(scale, centerPosition))
     }
 
     /**
+     * Gets the rotate angle of a position
+     * @param [x] the x position
+     * @param [y] the y position
+     * @return the rotate angle
+     */
+    fun getAngle(x: Float, y: Float): Float =
+        getAngle(x, y, centerPosition)
+
+    /**
      * Gets the rotate angle of a position from January 1
+     * @param [x] the x position
+     * @param [y] the y position
+     * @return the rotate angle
      */
     fun getAngleFromJan1(x: Float, y: Float): Float =
         getAngle(x, y) + if (direction) offset else -offset
+
+    /**
+     * Converts a relative position to the absolute position on the canvas.
+     * @param [x] the x position
+     * @param [y] the y position
+     * @return the absolute position on the canvas
+     */
+    private fun Pair<Float, Float>.toCanvasXY(): Pair<Float, Float> = this
 }

@@ -28,34 +28,42 @@ import io.github.withlet11.clockwithplanisphere.R
 import java.time.LocalDate
 import java.time.LocalTime
 import androidx.core.graphics.withSave
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Canvas as ComposeCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.isNear
 
-class ClockHandsPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
-    private var localDate = LocalDate.now()
-
-    var localTime: LocalTime = LocalTime.MIDNIGHT
-        set(value) {
-            if (field.toSecondOfDay() != value.toSecondOfDay()) {
-                field = value
-                invalidate()
-            }
-        }
-
-    var isVisible = true
-        set(value) {
-            field = value
-            invalidate()
-        }
+class ClockHandsPanel(context: Context?, attrs: AttributeSet? = null) {
+    var localTime: LocalTime by mutableStateOf(LocalTime.MIDNIGHT)
+    var isVisible by mutableStateOf(true)
+    var isZoomed by mutableStateOf(false)
+    var isLandScape by mutableStateOf(false)
+    var narrowSideLength by mutableIntStateOf(0)
+    var wideSideLength by mutableIntStateOf(0)
+    var offsetX by mutableIntStateOf(0)
+    var offsetY by mutableIntStateOf(0)
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val path = Path()
-    private val moonAgeRingColor = context?.getColor(R.color.transparentBlue3) ?: 0
-    private val moonAgeDirectionColor = context?.getColor(R.color.transparentBlue1) ?: 0
-    private val moonAgeGridColor = context?.getColor(R.color.silver) ?: 0
-    private val moonAgeHandColor = context?.getColor(R.color.ripeMango) ?: 0
     private val hourHandsColor = context?.getColor(R.color.transparentBlue2) ?: 0
     private val minuteHandsColor = context?.getColor(R.color.transparentBlue1) ?: 0
     private val secondHandsColor = context?.getColor(R.color.transparentWhite) ?: 0
     private val shadow = context?.getColor(R.color.smoke) ?: 0
+
+    private val centerPosition
+        get() = (if (isZoomed) wideSideLength else narrowSideLength).let { it * 0.5f to it * 0.5f }
+
+    private val scale: Float
+        get() {
+            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
+        }
 
     private val hourHandGeometries = listOf(
         0.0f to -20.0f,
@@ -155,91 +163,27 @@ class ClockHandsPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(c
         3.1f to -11.6f
     )
 
-    @Suppress("RedundantOverride")
-    override fun performClick(): Boolean {
-        return super.performClick()
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        if (isVisible) {
-            canvas.run {
-                // drawMoonAgeRing()
-                drawHourHand()
-                drawMinuteHand()
-                drawSecondHand()
-            }
-        }
-    }
-
-    private fun Canvas.drawMoonAgeRing() {
-        withSave {
-            rotate(localDate.dayOfYear / 29.530589f * 360f)
-            paint.color = moonAgeRingColor
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = MOON_AGE_RING_THICKNESS
-            // drawCircle(0f, 0f, MOON_AGE_RING_RADIUS, paint)
-            paint.strokeCap = Paint.Cap.BUTT
-            drawArc(
-                -MOON_AGE_RING_RADIUS,
-                -MOON_AGE_RING_RADIUS,
-                MOON_AGE_RING_RADIUS,
-                MOON_AGE_RING_RADIUS,
-                18f - 90f,
-                324f,
-                false,
-                paint
-            )
-
-            paint.color = moonAgeDirectionColor
-            paint.strokeWidth = MOON_AGE_RING_THICKNESS
-            drawArc(
-                -MOON_AGE_RING_RADIUS,
-                -MOON_AGE_RING_RADIUS,
-                MOON_AGE_RING_RADIUS,
-                MOON_AGE_RING_RADIUS,
-                -18f - 90f,
-                36f,
-                false,
-                paint
-            )
-
-            paint.textSize = 12f
-            paint.color = moonAgeGridColor
-            paint.style = Paint.Style.FILL
-            val fontMetrics = paint.fontMetrics
-
-            for (i in 0..29) {
-                when (i) {
-                    5, 10, 15, 20, 25 -> {
-                        val text = i.toString()
-                        val textWidth = paint.measureText(text)
-                        drawText(
-                            text,
-                            -textWidth * 0.5f,
-                            fontMetrics.descent - MOON_AGE_RING_RADIUS,
-                            paint
-                        )
+    @Composable
+    fun Content(modifier: Modifier = Modifier) {
+        ComposeCanvas(modifier = modifier) {
+            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            if (drawAreaSize > 0 && isVisible) {
+                drawIntoCanvas { composeCanvas ->
+                    val canvas = composeCanvas.nativeCanvas
+                    canvas.withSave {
+                        scale(scale, scale)
+                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        drawHourHand(canvas)
+                        drawMinuteHand(canvas)
+                        drawSecondHand(canvas)
                     }
-
-                    else -> drawCircle(0f, -MOON_AGE_RING_RADIUS, 1.5f, paint)
                 }
-                rotate(360f / 29.530589f)
             }
-        }
-        withSave {
-            paint.color = moonAgeHandColor
-            paint.style = Paint.Style.STROKE
-            paint.strokeCap = Paint.Cap.ROUND
-            paint.strokeWidth = MOON_AGE_HAND_THICKNESS
-            rotate(180 - localTime.toSecondOfDay() / 86400f * 360f)
-            drawLine(0f, 0f, 0f, -MOON_AGE_RING_RADIUS - MOON_AGE_RING_THICKNESS * 0.4f, paint)
-            paint.strokeCap = Paint.Cap.SQUARE
         }
     }
 
-    private fun Canvas.drawHourHand() {
-        withSave {
+    private fun drawHourHand(canvas: Canvas) {
+        canvas.withSave {
             translate(5f, 5f)
             rotate(180f / 6f * (localTime.toSecondOfDay() / 3600f + 6f))
             paint.maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
@@ -247,23 +191,23 @@ class ClockHandsPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(c
             paint.style = Paint.Style.FILL
             hourHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
             hourHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-            drawPath(path, paint)
+            canvas.drawPath(path, paint)
             path.reset()
         }
-        withSave {
+        canvas.withSave {
             rotate(180f / 6f * (localTime.toSecondOfDay() / 3600f + 6f))
             paint.maskFilter = null
             paint.color = hourHandsColor
             paint.style = Paint.Style.FILL
             hourHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
             hourHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-            drawPath(path, paint)
+            canvas.drawPath(path, paint)
             path.reset()
         }
     }
 
-    private fun Canvas.drawMinuteHand() {
-        withSave {
+    private fun drawMinuteHand(canvas: Canvas) {
+        canvas.withSave {
             translate(5f, 5f)
             rotate(180f / 30f * (localTime.minute + localTime.second / 60f + 30f))
             paint.maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
@@ -271,23 +215,23 @@ class ClockHandsPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(c
             paint.style = Paint.Style.FILL
             minuteHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
             minuteHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-            drawPath(path, paint)
+            canvas.drawPath(path, paint)
             path.reset()
         }
-        withSave {
+        canvas.withSave {
             rotate(180f / 30f * (localTime.minute + localTime.second / 60f + 30f))
             paint.maskFilter = null
             paint.color = minuteHandsColor
             paint.style = Paint.Style.FILL
             minuteHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
             minuteHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-            drawPath(path, paint)
+            canvas.drawPath(path, paint)
             path.reset()
         }
     }
 
-    private fun Canvas.drawSecondHand() {
-        withSave {
+    private fun drawSecondHand(canvas: Canvas) {
+        canvas.withSave {
             translate(5f, 5f)
             rotate(180f / 30f * (localTime.second + 30f))
             paint.maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
@@ -295,22 +239,22 @@ class ClockHandsPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(c
             paint.style = Paint.Style.FILL
             secondHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
             secondHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-            drawPath(path, paint)
+            canvas.drawPath(path, paint)
             path.reset()
         }
-        withSave {
+        canvas.withSave {
             rotate(180f / 30f * (localTime.second + 30f))
             paint.maskFilter = null
             paint.color = secondHandsColor
             paint.style = Paint.Style.FILL
             secondHandGeometries.last().let { (x, y) -> path.moveTo(x, y) }
             secondHandGeometries.forEach { (x, y) -> path.lineTo(x, y) }
-            drawPath(path, paint)
+            canvas.drawPath(path, paint)
             path.reset()
         }
     }
 
     /** Checks if a position is in the center of the canvas. */
     fun isCenter(position: Pair<Float, Float>): Boolean =
-        position.toCanvasXY().isNear(centerPosition)
+        position.isNear(centerPosition)
 }

@@ -1,7 +1,7 @@
 /*
  * HorizonPanel.kt
  *
- * Copyright 2020-2024 Yasuhiro Yamakawa <withlet11@gmail.com>
+ * Copyright 2020-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -25,12 +25,28 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import io.github.withlet11.clockwithplanisphere.R
+import androidx.core.graphics.withSave
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Canvas as ComposeCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.toCanvas
 
+class HorizonPanel(context: Context?, attrs: AttributeSet? = null) {
+    private var horizon by mutableStateOf(listOf<Pair<Float, Float>>())
+    private var altAzimuth by mutableStateOf(listOf<List<Pair<Float, Float>?>>())
+    private var directionLetters by mutableStateOf(listOf<Triple<String, Float, Float>>())
 
-class HorizonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
-    private var horizon = listOf<Pair<Float, Float>>()
-    private var altAzimuth = listOf<List<Pair<Float, Float>?>>()
-    private var directionLetters = listOf<Triple<String, Float, Float>>()
+    var isZoomed by mutableStateOf(false)
+    var isLandScape by mutableStateOf(false)
+    var narrowSideLength by mutableStateOf(0)
+    var wideSideLength by mutableStateOf(0)
+    var offsetX by mutableStateOf(0)
+    var offsetY by mutableStateOf(0)
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val path = Path()
@@ -40,26 +56,44 @@ class HorizonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(cont
     private val directionLetterColor = context?.getColor(R.color.silver) ?: 0
     private val siderealTimeIndicatorColor = context?.getColor(R.color.yellow) ?: 0
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        canvas.run {
-            drawHorizon()
-            drawAltitudeAndAzimuthLines()
-            drawDirectionLetters()
-            drawSiderealTimeIndicator()
+    private val scale: Float
+        get() {
+            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
+        }
+
+    @Composable
+    fun Content(modifier: Modifier = Modifier) {
+        ComposeCanvas(modifier = modifier) {
+            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            if (drawAreaSize > 0) {
+                drawIntoCanvas { composeCanvas ->
+                    val canvas = composeCanvas.nativeCanvas
+                    canvas.withSave {
+                        scale(scale, scale)
+                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        drawHorizon(canvas)
+                        drawAltitudeAndAzimuthLines(canvas)
+                        drawDirectionLetters(canvas)
+                        drawSiderealTimeIndicator(canvas)
+                    }
+                }
+            }
         }
     }
 
-    private fun Canvas.drawHorizon() {
+    private fun drawHorizon(canvas: Canvas) {
         paint.color = horizonColor
         paint.style = Paint.Style.FILL
-        horizon.first().let { (x, y) -> path.moveTo(x.toCanvas(), y.toCanvas()) }
-        horizon.forEach { (x, y) -> path.lineTo(x.toCanvas(), y.toCanvas()) }
-        drawPath(path, paint)
-        path.reset()
+        if (horizon.isNotEmpty()) {
+            horizon.first().let { (x, y) -> path.moveTo(x.toCanvas(), y.toCanvas()) }
+            horizon.forEach { (x, y) -> path.lineTo(x.toCanvas(), y.toCanvas()) }
+            canvas.drawPath(path, paint)
+            path.reset()
+        }
     }
 
-    private fun Canvas.drawAltitudeAndAzimuthLines() {
+    private fun drawAltitudeAndAzimuthLines(canvas: Canvas) {
         paint.color = altAzimuthLineColor
         paint.strokeWidth = 1f
         paint.pathEffect = dottedLine
@@ -81,19 +115,19 @@ class HorizonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(cont
                     }
                 }
             }
-            drawPath(path, paint)
+            canvas.drawPath(path, paint)
             path.reset()
         }
         paint.pathEffect = null
     }
 
-    private fun Canvas.drawDirectionLetters() {
+    private fun drawDirectionLetters(canvas: Canvas) {
         paint.color = directionLetterColor
         paint.style = Paint.Style.FILL
         paint.textSize = 18f
         directionLetters.forEach { (letter, x, y) ->
             val textWidth = paint.measureText(letter)
-            drawText(
+            canvas.drawText(
                 letter,
                 x.toCanvas() - textWidth * 0.5f,
                 y.toCanvas() + textWidth * 0.5f,
@@ -103,16 +137,16 @@ class HorizonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(cont
     }
 
     /**
-     * Draws a triangle as an indicator of sidereal time.
+     * Draws a triangle as an indicator of the sidereal time.
      */
-    private fun Canvas.drawSiderealTimeIndicator() {
+    private fun drawSiderealTimeIndicator(canvas: Canvas) {
         paint.color = siderealTimeIndicatorColor
         paint.style = Paint.Style.FILL
         path.moveTo(0f, -327f)
         path.lineTo(5f, -318f)
         path.lineTo(-5f, -318f)
         path.lineTo(0f, -327f)
-        drawPath(path, paint)
+        canvas.drawPath(path, paint)
         path.reset()
     }
 
@@ -124,6 +158,5 @@ class HorizonPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(cont
         this.horizon = horizon
         this.altAzimuth = altAzimuth
         this.directionLetters = directionLetters
-        invalidate()
     }
 }

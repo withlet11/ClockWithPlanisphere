@@ -30,21 +30,32 @@ import io.github.withlet11.clockwithplanisphere.model.AbstractSkyModel.MilkyWayD
 import io.github.withlet11.clockwithplanisphere.model.AbstractSkyModel.StarGeometry
 import kotlin.math.*
 import androidx.core.graphics.withSave
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Canvas as ComposeCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.toCanvas
+import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.SKY_BACKGROUND_RADIUS
 
+class SkyPanel(context: Context?, attrs: AttributeSet? = null) {
+    private var starGeometryList by mutableStateOf(listOf<StarGeometry>())
+    private var constellationLineList by mutableStateOf(listOf<ConstellationLineGeometry>())
+    private var milkyWayDotList by mutableStateOf(listOf<MilkyWayDot>())
+    private var milkyWayDotSize by mutableStateOf(0f)
+    private var equatorial by mutableStateOf(listOf<Pair<Int, Float>>())
+    private var ecliptic by mutableStateOf(listOf<Pair<Float, Float>>())
 
-class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context, attrs) {
-    private var starGeometryList = listOf<StarGeometry>()
-    private var constellationLineList = listOf<ConstellationLineGeometry>()
-    private var milkyWayDotList = listOf<MilkyWayDot>()
-    private var milkyWayDotSize = 0f
-    private var equatorial = listOf<Pair<Int, Float>>()
-    private var ecliptic = listOf<Pair<Float, Float>>()
-
-    var siderealAngle = 0f
-        set(value) {
-            field = value
-            invalidate()
-        }
+    var siderealAngle by mutableStateOf(0f)
+    var isZoomed by mutableStateOf(false)
+    var isLandScape by mutableStateOf(false)
+    var narrowSideLength by mutableStateOf(0)
+    var wideSideLength by mutableStateOf(0)
+    var offsetX by mutableStateOf(0)
+    var offsetY by mutableStateOf(0)
 
     private var tenMinuteGridStep = 180f / 72f
 
@@ -58,21 +69,37 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
     private val rightAscensionLineColor = context?.getColor(R.color.silver) ?: 0
     private val rightAscensionRing = context?.getColor(R.color.silver) ?: 0
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        canvas.run {
-            rotate(-siderealAngle * sign(tenMinuteGridStep), 0f, 0f)
-            drawEquatorial()
-            drawEcliptic()
-            drawStars()
-            drawMilkyWay()
-            drawConstellationLines()
-            drawRightAscensionLines()
-            drawRightAscensionRing()
+    private val scale: Float
+        get() {
+            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
+        }
+
+    @Composable
+    fun Content(modifier: Modifier = Modifier) {
+        ComposeCanvas(modifier = modifier) {
+            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            if (drawAreaSize > 0) {
+                drawIntoCanvas { composeCanvas ->
+                    val canvas = composeCanvas.nativeCanvas
+                    canvas.withSave {
+                        scale(scale, scale)
+                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        canvas.rotate(-siderealAngle * sign(tenMinuteGridStep), 0f, 0f)
+                        drawEquatorial(canvas)
+                        drawEcliptic(canvas)
+                        drawStars(canvas)
+                        drawMilkyWay(canvas)
+                        drawConstellationLines(canvas)
+                        drawRightAscensionLines(canvas)
+                        drawRightAscensionRing(canvas)
+                    }
+                }
+            }
         }
     }
 
-    private fun Canvas.drawEquatorial() {
+    private fun drawEquatorial(canvas: Canvas) {
         equatorial.forEach { (index, radius) ->
             if (index == 0) {
                 paint.color = equatorColor
@@ -83,33 +110,35 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = 0.75f
             }
-            drawCircle(0f, 0f, radius.toCanvas(), paint)
+            canvas.drawCircle(0f, 0f, radius.toCanvas(), paint)
         }
     }
 
-    private fun Canvas.drawEcliptic() {
+    private fun drawEcliptic(canvas: Canvas) {
         paint.color = eclipticColor
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 1f
-        ecliptic.last().let { (x, y) -> path.moveTo(x.toCanvas(), y.toCanvas()) }
-        ecliptic.forEach { (x, y) -> path.lineTo(x.toCanvas(), y.toCanvas()) }
-        drawPath(path, paint)
-        path.reset()
-    }
-
-    private fun Canvas.drawStars() {
-        paint.color = starColor
-        paint.style = Paint.Style.FILL
-        starGeometryList.forEach { (x, y, radius) ->
-            drawCircle(x.toCanvas(), y.toCanvas(), radius, paint)
+        if (ecliptic.isNotEmpty()) {
+            ecliptic.last().let { (x, y) -> path.moveTo(x.toCanvas(), y.toCanvas()) }
+            ecliptic.forEach { (x, y) -> path.lineTo(x.toCanvas(), y.toCanvas()) }
+            canvas.drawPath(path, paint)
+            path.reset()
         }
     }
 
-    private fun Canvas.drawMilkyWay() {
+    private fun drawStars(canvas: Canvas) {
+        paint.color = starColor
+        paint.style = Paint.Style.FILL
+        starGeometryList.forEach { (x, y, radius) ->
+            canvas.drawCircle(x.toCanvas(), y.toCanvas(), radius, paint)
+        }
+    }
+
+    private fun drawMilkyWay(canvas: Canvas) {
         paint.style = Paint.Style.FILL
         milkyWayDotList.forEach { (x, y, color) ->
             paint.color = color
-            drawRect(
+            canvas.drawRect(
                 x.toCanvas(),
                 y.toCanvas(),
                 (x + milkyWayDotSize).toCanvas(),
@@ -119,42 +148,42 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
         }
     }
 
-    private fun Canvas.drawConstellationLines() {
+    private fun drawConstellationLines(canvas: Canvas) {
         paint.strokeWidth = 1f
         paint.color = constellationLineColor
         constellationLineList.forEach { (x1, y1, x2, y2) ->
-            drawLine(x1.toCanvas(), y1.toCanvas(), x2.toCanvas(), y2.toCanvas(), paint)
+            canvas.drawLine(x1.toCanvas(), y1.toCanvas(), x2.toCanvas(), y2.toCanvas(), paint)
         }
     }
 
-    private fun Canvas.drawRightAscensionLines() {
+    private fun drawRightAscensionLines(canvas: Canvas) {
         paint.strokeWidth = 0.75f
         paint.color = rightAscensionLineColor
         for (i in 1..6) {
             val angle = i / 6.0 * PI
             val x = cos(angle).toFloat().toCanvas()
             val y = sin(angle).toFloat().toCanvas()
-            drawLine(-x, -y, x, y, paint)
+            canvas.drawLine(-x, -y, x, y, paint)
         }
     }
 
-    private fun Canvas.drawRightAscensionRing() {
+    private fun drawRightAscensionRing(canvas: Canvas) {
         paint.textSize = 16f
         paint.color = rightAscensionRing
         paint.style = Paint.Style.FILL
         val fontMetrics = paint.fontMetrics
 
         for (i in 0..143) {
-            withSave {
-                // angle + 180 because text is drawn at opposite side
+            // angle + 180 because text is drawn at opposite side of the canvas.
+            canvas.withSave {
                 rotate(i * tenMinuteGridStep + 180f)
 
                 when {
                     i % 6 == 0 -> {
                         val text = (i / 6).toString()
                         val textWidth = paint.measureText(text)
-                        // positive height means opposite side
-                        drawText(
+                        // positive height means opposite side of the canvas.
+                        canvas.drawText(
                             text,
                             -textWidth * 0.5f,
                             -fontMetrics.descent + SKY_BACKGROUND_RADIUS,
@@ -162,7 +191,7 @@ class SkyPanel(context: Context?, attrs: AttributeSet?) : AbstractPanel(context,
                         )
                     }
 
-                    else -> drawCircle(0f, 326f, 2f, paint)
+                    else -> canvas.drawCircle(0f, 326f, 2f, paint)
                 }
             }
         }
