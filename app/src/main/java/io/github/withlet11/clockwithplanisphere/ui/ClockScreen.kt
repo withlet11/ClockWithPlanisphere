@@ -22,10 +22,7 @@
 package io.github.withlet11.clockwithplanisphere.ui
 
 import android.os.SystemClock
-import android.util.Log
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,6 +33,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.withlet11.clockwithplanisphere.view.*
 import kotlin.math.pow
+
+data class ClockGeometry(
+    val isLandScape: Boolean,
+    val isZoomed: Boolean,
+    val narrow: Int,
+    val wide: Int
+)
 
 @Composable
 fun ClockScreen() {
@@ -80,7 +84,8 @@ fun ClockContent(
     onTap: (Float, Float) -> Unit = { _, _ -> },
     onDragStart: (Float, Float) -> Unit = { _, _ -> },
     onDrag: (Float, Float) -> Unit = { _, _ -> },
-    onDragEnd: () -> Unit = {}
+    onDragEnd: () -> Unit = {},
+    onGeometryReady: (ClockGeometry) -> Unit = {}
 ) {
     val density = LocalDensity.current
 
@@ -92,6 +97,13 @@ fun ClockContent(
         val isLandScape = width > height
         val narrow = if (isLandScape) height else width
         val wide = if (isLandScape) width else height
+
+        val geometry = ClockGeometry(
+            isLandScape = isLandScape,
+            isZoomed = isZoomed,
+            narrow = narrow,
+            wide = wide
+        )
 
         clockBasePanel.isZoomed = isZoomed
         clockBasePanel.isLandScape = isLandScape
@@ -123,6 +135,10 @@ fun ClockContent(
         clockHandsPanel.narrowSideLength = narrow
         clockHandsPanel.wideSideLength = wide
 
+        LaunchedEffect(width, height, isZoomed) {
+            onGeometryReady(geometry)
+        }
+
         Box(
             modifier = Modifier
                 .size(with(density) { wide.toDp() })
@@ -150,10 +166,7 @@ fun ClockContent(
                                         (start.x - end.x).pow(2) +
                                                 (start.y - end.y).pow(2)
 
-                                    if (!isDragging &&
-                                        elapsed < 200L &&
-                                        distanceSquared < 50f
-                                    ) {
+                                    if (!isDragging && elapsed < 200L && distanceSquared < 50f) {
                                         onTap(end.x, end.y)
                                     } else {
                                         onDragEnd()

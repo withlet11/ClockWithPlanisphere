@@ -24,7 +24,6 @@ package io.github.withlet11.clockwithplanisphere.fragment
 import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -36,6 +35,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import io.github.withlet11.clockwithplanisphere.CwpTheme
 import io.github.withlet11.clockwithplanisphere.ui.ClockContent
+import io.github.withlet11.clockwithplanisphere.ui.ClockGeometry
 import io.github.withlet11.clockwithplanisphere.MainActivity
 import io.github.withlet11.clockwithplanisphere.R
 import io.github.withlet11.clockwithplanisphere.PeriodicalUpdater
@@ -44,7 +44,6 @@ import io.github.withlet11.clockwithplanisphere.view.*
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.pow
 
 abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
     companion object {
@@ -92,9 +91,9 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
             horizonPanel.isZoomed = value
             clockBasePanel.isZoomed = value
             clockHandsPanel.isZoomed = value
-            adjustFrameLayoutPosition()
-            scrollPanelToCenter()
         }
+
+    private var appliedClockGeometry by mutableStateOf<ClockGeometry?>(null)
 
     private var scrollableHorizonMin = 0
     private var scrollableVerticalMin = 0
@@ -169,6 +168,15 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
                         },
                         onDragEnd = {
                             handleDragEnd()
+                        },
+                        onGeometryReady = { geometry ->
+                            adjustFrameLayoutPosition(
+                                geometry.isLandScape,
+                                geometry.narrow,
+                                geometry.wide
+                            )
+                            scrollPanelToCenter()
+                            appliedClockGeometry = geometry
                         }
                     )
                 }
@@ -199,9 +207,6 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
         setStarDataList()
         setHorizonPanel()
         setClockBasePanel()
-        // TODO: 2026-10-06
-        adjustFrameLayoutPosition()
-        scrollPanelToCenter()
     }
 
     override fun onResume() {
@@ -302,47 +307,35 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
     }
 
     /** Gets geometries of [clockHandsPanel] and adjust positions of [clockFrame] and panels. */
-    private fun adjustFrameLayoutPosition() {
-        with(clockHandsPanel) {
-            val totalDifference = wideSideLength - narrowSideLength
-            val halfOfDifference = totalDifference / 2
-            when {
-                isZoomed -> {
-                    if (clockHandsPanel.isLandScape) {
-                        scrollableHorizonMin = 0
-                        scrollableHorizonMax = 0
-                        scrollableVerticalMin = -totalDifference
-                        scrollableVerticalMax = 0
-                        0 to -halfOfDifference
-                    } else {
-                        scrollableHorizonMin = -totalDifference
-                        scrollableHorizonMax = 0
-                        scrollableVerticalMin = 0
-                        scrollableVerticalMax = 0
-                        -halfOfDifference to 0
-                    }
-                }
+    private fun adjustFrameLayoutPosition(
+        isLandScape: Boolean,
+        narrowSideLength: Int,
+        wideSideLength: Int
+    ) {
+        val totalDifference = wideSideLength - narrowSideLength
 
-                clockHandsPanel.isLandScape -> {
-                    scrollableHorizonMin = 0
-                    scrollableHorizonMax = totalDifference
-                    scrollableVerticalMin = 0
-                    scrollableVerticalMax = 0
-                    halfOfDifference to 0
-                }
-
-                else -> {
-                    scrollableHorizonMin = 0
-                    scrollableHorizonMax = 0
-                    scrollableVerticalMin = 0
-                    scrollableVerticalMax = totalDifference
-                    0 to halfOfDifference
-                }
+        if (isZoomedState) {
+            if (isLandScape) {
+                scrollableHorizonMin = 0
+                scrollableHorizonMax = 0
+                scrollableVerticalMin = -totalDifference
+                scrollableVerticalMax = 0
+            } else {
+                scrollableHorizonMin = -totalDifference
+                scrollableHorizonMax = 0
+                scrollableVerticalMin = 0
+                scrollableVerticalMax = 0
             }
-        }.let { (framePositionX, framePositionY) ->
-            offsetXState = framePositionX
-            offsetYState = framePositionY
-            updatePanelOffsets()
+        } else if (isLandScape) {
+            scrollableHorizonMin = 0
+            scrollableHorizonMax = totalDifference
+            scrollableVerticalMin = 0
+            scrollableVerticalMax = 0
+        } else {
+            scrollableHorizonMin = 0
+            scrollableHorizonMax = 0
+            scrollableVerticalMin = 0
+            scrollableVerticalMax = totalDifference
         }
     }
 
@@ -361,7 +354,6 @@ abstract class AbstractCwpFragment : Fragment(), MainActivity.ChangeObserver {
     }
 
     private fun scrollPanelToCenter() {
-        Log.d("CWP", "scrollPanelToCenter()")
         offsetXState = (scrollableHorizonMax + scrollableHorizonMin) / 2
         offsetYState = (scrollableVerticalMax + scrollableVerticalMin) / 2
         updatePanelOffsets()
