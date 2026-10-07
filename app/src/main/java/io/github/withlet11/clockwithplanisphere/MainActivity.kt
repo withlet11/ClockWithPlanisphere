@@ -26,69 +26,42 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.ViewGroup
-import android.widget.FrameLayout
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.fragment.app.FragmentActivity
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.view.doOnAttach
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
-import io.github.withlet11.clockwithplanisphere.fragment.*
+import io.github.withlet11.clockwithplanisphere.fragment.ColorSettingDialog
+import io.github.withlet11.clockwithplanisphere.fragment.LocationSettingDialog
+import io.github.withlet11.clockwithplanisphere.ui.CwpScreen
 import io.github.withlet11.clockwithplanisphere.ui.MainScreen
 
-class MainActivity : FragmentActivity()
-/*, LocationSettingFragment.LocationSettingDialogListener, ColorSettingFragment.BackgroundColorSettingDialogListener */
-{
+class MainActivity : ComponentActivity() {
     companion object {
         const val AD_DISPLAY_DURATION = 10000L
         const val DEFAULT_LATITUDE = 45.0
         const val DEFAULT_LONGITUDE = 0.0
     }
 
-    var latitude = 0.0
-    private var longitude = 0.0
-    var isClockHandsVisible = true
-    private var backgroundColor = 0
+    var latitude by mutableDoubleStateOf(DEFAULT_LATITUDE)
+    private var longitude by mutableDoubleStateOf(DEFAULT_LONGITUDE)
+    private var isClockHandsVisible by mutableStateOf(true)
+    private var backgroundColor by mutableIntStateOf(0)
     var isSouthernSky by mutableStateOf(false)
 
     private val handler by lazy { Handler(Looper.getMainLooper()) }
     private var adView: AdView? = null
     private var adRunnable: Runnable? = null
-    private lateinit var containerFrameLayout: FrameLayout
-    // private lateinit var adViewInstance: AdView
-
-    interface ChangeObserver {
-        fun onLocationChange(latitude: Double, longitude: Double)
-        fun onColorChange(backgroundColor: Int)
-    }
-
-    private val observers = mutableListOf<ChangeObserver>()
-
-    fun addObserver(observer: ChangeObserver) {
-        observers.add(observer)
-    }
-
-    fun removeObserver(observer: ChangeObserver) {
-        observers.remove(observer)
-    }
-
-    private fun notifyLocationChange() {
-        observers.forEach { it.onLocationChange(latitude, longitude) }
-    }
-
-    private fun notifyColorChange() {
-        observers.forEach { it.onColorChange(backgroundColor) }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -96,24 +69,9 @@ class MainActivity : FragmentActivity()
 
         loadPreviousSettings()
 
-        containerFrameLayout = FrameLayout(this).apply {
-            id = R.id.container
-            doOnAttach {
-                if (supportFragmentManager.findFragmentById(R.id.container) == null) {
-                    replaceCwpFragment(isSouthernSky)
-                }
-            }
-        }
-
-//        adViewInstance = AdView(this).apply {
-//            id = R.id.adView
-//            setAdSize(com.google.android.gms.ads.AdSize.BANNER)
-//            adUnitId = "ca-app-pub-6502278727709781/9103220433"
-//        }
-
         setContent {
-            var showLocationDialog by rememberSaveable { mutableStateOf(false) }
-            var showColorDialog by rememberSaveable { mutableStateOf(false) }
+            var showLocationDialog by mutableStateOf(false)
+            var showColorDialog by mutableStateOf(false)
             CwpTheme {
                 MainScreen(
                     isSouthernSky = isSouthernSky,
@@ -123,14 +81,11 @@ class MainActivity : FragmentActivity()
                             putBoolean("isSouthernSky", isSouthernSky)
                             putInt("backgroundColor", backgroundColor)
                         }
-                        replaceCwpFragment(isSouthernSky)
                     },
                     onSettingsClick = {
                         showLocationDialog = true
                     },
                     onBgColorClick = {
-//                        val dialog = ColorSettingFragment()
-//                        dialog.show(supportFragmentManager, "backgroundColor")
                         showColorDialog = true
                     },
                     onPrivacyPolicyClick = {
@@ -165,16 +120,18 @@ class MainActivity : FragmentActivity()
                                 }
                             )
                         }
-                        AndroidView(
-                            factory = { containerFrameLayout },
+                        CwpScreen(
+                            isSouthernSky = isSouthernSky,
+                            latitude = latitude,
+                            longitude = longitude,
+                            isClockHandsVisible = isClockHandsVisible,
+                            onClockHandsVisibilityChanged = {
+                                isClockHandsVisible = it
+                            },
+                            backgroundColor = backgroundColor,
                             modifier = modifier
                         )
-                    },
-//                    adViewContent = {
-//                        AndroidView(
-//                            factory = { adViewInstance }
-//                        )
-//                    }
+                    }
                 )
             }
         }
@@ -191,22 +148,6 @@ class MainActivity : FragmentActivity()
         setUpAds()
     }
 
-    private fun replaceCwpFragment(isSouthernSky: Boolean) {
-        val newFragment =
-            (if (isSouthernSky) SouthernCwpFragment() else NorthernCwpFragment()).apply {
-                arguments = Bundle().apply {
-                    putDouble("LATITUDE", latitude)
-                    putDouble("LONGITUDE", longitude)
-                    putBoolean("CLOCK_HANDS_VISIBILITY", isClockHandsVisible)
-                    putInt("BACKGROUND_COLOR", backgroundColor)
-                }
-            }
-
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.container, newFragment)
-            .commit()
-    }
-
     private fun setUpAds() {
         val requestConfiguration = MobileAds.getRequestConfiguration()
             .toBuilder()
@@ -215,7 +156,6 @@ class MainActivity : FragmentActivity()
         MobileAds.setRequestConfiguration(requestConfiguration)
 
         MobileAds.initialize(this) {}
-//        adView = adViewInstance
         val adRequest = AdRequest.Builder().build()
         adView?.loadAd(adRequest)
     }
@@ -226,14 +166,6 @@ class MainActivity : FragmentActivity()
         adView = null
         super.onDestroy()
     }
-
-//    override fun onColorDialogPositiveClick(dialog: DialogFragment) {
-//        loadColorSettings()
-//    }
-//
-//    override fun onColorDialogNegativeClick(dialog: DialogFragment) {
-//        // Do nothing
-//    }
 
     private fun loadPreviousSettings() {
         val previous = getSharedPreferences("observation_position", MODE_PRIVATE)
@@ -251,7 +183,6 @@ class MainActivity : FragmentActivity()
             longitude = DEFAULT_LONGITUDE
             isSouthernSky = false
             setDefaultColor()
-        } finally {
         }
     }
 
@@ -264,8 +195,6 @@ class MainActivity : FragmentActivity()
         } catch (_: ClassCastException) {
             latitude = DEFAULT_LATITUDE
             longitude = DEFAULT_LONGITUDE
-        } finally {
-            notifyLocationChange()
         }
     }
 
@@ -279,8 +208,6 @@ class MainActivity : FragmentActivity()
             )
         } catch (_: ClassCastException) {
             setDefaultColor()
-        } finally {
-            notifyColorChange()
         }
     }
 

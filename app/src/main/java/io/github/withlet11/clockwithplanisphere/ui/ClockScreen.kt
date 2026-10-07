@@ -65,7 +65,8 @@ fun ClockScreen() {
         sunPanel = sunPanel,
         sunAndMoonPanel = sunAndMoonPanel,
         horizonPanel = horizonPanel,
-        clockHandsPanel = clockHandsPanel
+        clockHandsPanel = clockHandsPanel,
+        isClockHandsVisible = true
     )
 }
 
@@ -79,6 +80,7 @@ fun ClockContent(
     horizonPanel: HorizonPanel,
     clockHandsPanel: ClockHandsPanel,
     isZoomed: Boolean = false,
+    isClockHandsVisible: Boolean,
     offsetX: Int = 0,
     offsetY: Int = 0,
     onTap: (Float, Float) -> Unit = { _, _ -> },
@@ -88,6 +90,11 @@ fun ClockContent(
     onGeometryReady: (ClockGeometry) -> Unit = {}
 ) {
     val density = LocalDensity.current
+
+    val currentOnTap by rememberUpdatedState(onTap)
+    val currentOnDragStart by rememberUpdatedState(onDragStart)
+    val currentOnDrag by rememberUpdatedState(onDrag)
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
 
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
@@ -148,7 +155,7 @@ fun ClockContent(
                             val down = awaitFirstDown()
                             val start = down.position
 
-                            onDragStart(start.x, start.y)
+                            currentOnDragStart(start.x, start.y)
 
                             var isDragging = false
 
@@ -167,9 +174,9 @@ fun ClockContent(
                                                 (start.y - end.y).pow(2)
 
                                     if (!isDragging && elapsed < 200L && distanceSquared < 50f) {
-                                        onTap(end.x, end.y)
+                                        currentOnTap(end.x, end.y)
                                     } else {
-                                        onDragEnd()
+                                        currentOnDragEnd()
                                     }
 
                                     break
@@ -189,7 +196,7 @@ fun ClockContent(
 
                                 if (isDragging) {
                                     change.consume()
-                                    onDrag(position.x, position.y)
+                                    currentOnDrag(position.x, position.y)
                                 }
                             }
                         }
@@ -205,7 +212,9 @@ fun ClockContent(
             sunPanel.Content(Modifier.fillMaxSize())
             sunAndMoonPanel.Content(Modifier.fillMaxSize())
             horizonPanel.Content(Modifier.fillMaxSize())
-            clockHandsPanel.Content(Modifier.fillMaxSize())
+            if (isClockHandsVisible) {
+                clockHandsPanel.Content(Modifier.fillMaxSize())
+            }
         }
     }
 }
