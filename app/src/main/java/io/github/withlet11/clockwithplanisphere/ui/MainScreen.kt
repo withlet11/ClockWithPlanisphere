@@ -35,25 +35,36 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 import io.github.withlet11.clockwithplanisphere.CwpTopAppBar
 import io.github.withlet11.clockwithplanisphere.R
+import io.github.withlet11.clockwithplanisphere.fragment.ColorSettingDialog
+import io.github.withlet11.clockwithplanisphere.fragment.LocationSettingDialog
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
+    latitude: Double,
+    longitude: Double,
     isSouthernSky: Boolean,
     onSouthernSkyChanged: (Boolean) -> Unit,
-    onSettingsClick: () -> Unit,
-    onBgColorClick: () -> Unit,
+    isClockHandsVisible: Boolean,
+    onClockHandsVisibilityChanged: (Boolean) -> Unit,
+    backgroundColor: Int,
     onPrivacyPolicyClick: () -> Unit,
     onLicensesClick: () -> Unit,
     onCreditsClick: () -> Unit,
-    content: @Composable (Modifier) -> Unit,
-    adViewContent: @Composable (Modifier) -> Unit
+    loadPreviousPosition: () -> Unit,
+    loadColorSettings: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    var showLocationDialog by remember { mutableStateOf(false) }
+    var showColorDialog by remember { mutableStateOf(false) }
     var showAd by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
@@ -63,100 +74,143 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            CwpTopAppBar(title = {
-                Text(
-                    stringResource(R.string.app_name),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }, navigationIcon = {
-                Image(
-                    painter = painterResource(R.drawable.ic_launcher_foreground),
-                    contentDescription = null,
-                    modifier = Modifier.size(60.dp)
-                )
-            }, actions = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
+            CwpTopAppBar(
+                title = {
                     Text(
-                        text = stringResource(R.string.north_label),
-                        style = MaterialTheme.typography.bodyMedium
+                        stringResource(R.string.app_name),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                    Switch(
-                        checked = isSouthernSky,
-                        onCheckedChange = onSouthernSkyChanged,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.primary,
-                            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                            uncheckedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                            checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            uncheckedBorderColor = MaterialTheme.colorScheme.primary
-                        ),
-                        thumbContent = {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
-                            )
-                        })
-                    Text(
-                        text = stringResource(R.string.south_label),
-                        style = MaterialTheme.typography.bodyMedium
+                },
+                navigationIcon = {
+                    Image(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(60.dp)
                     )
+                },
+                actions = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.north_label),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Switch(
+                            checked = isSouthernSky,
+                            onCheckedChange = onSouthernSkyChanged,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                                uncheckedBorderColor = MaterialTheme.colorScheme.primary
+                            ),
+                            thumbContent = {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                )
+                            },
+                        )
+                        Text(
+                            text = stringResource(R.string.south_label),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
 
-                    Box {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Menu"
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.locationSettings)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onSettingsClick()
-                                })
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.bg_color)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onBgColorClick()
-                                })
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.privacy_policy_header)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onPrivacyPolicyClick()
-                                })
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.license)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onLicensesClick()
-                                })
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.opensource_licenses)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onCreditsClick()
-                                })
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "Menu"
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.locationSettings)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showLocationDialog = true
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.bg_color)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showColorDialog = true
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.privacy_policy_header)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onPrivacyPolicyClick()
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.license)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onLicensesClick()
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.opensource_licenses)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onCreditsClick()
+                                    },
+                                )
+                            }
                         }
                     }
-                }
-            })
-        }) { innerPadding ->
+                },
+            )
+        },
+    ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            content(Modifier.fillMaxSize())
+            if (showLocationDialog) {
+                LocationSettingDialog(
+                    onDismiss = {
+                        showLocationDialog = false
+                    },
+                    onLocationSaved = {
+                        showLocationDialog = false
+                        loadPreviousPosition()
+                    },
+                )
+            }
+            if (showColorDialog) {
+                ColorSettingDialog(
+                    onDismiss = {
+                        showColorDialog = false
+                    },
+                    onColorSaved = {
+                        showColorDialog = false
+                        loadColorSettings()
+                    },
+                )
+            }
+
+            CwpScreen(
+                isSouthernSky = isSouthernSky,
+                latitude = latitude,
+                longitude = longitude,
+                isClockHandsVisible = isClockHandsVisible,
+                onClockHandsVisibilityChanged = onClockHandsVisibilityChanged,
+                backgroundColor = backgroundColor,
+                modifier = Modifier.fillMaxSize()
+            )
 
             if (showAd) {
                 Box(
@@ -164,9 +218,18 @@ fun MainScreen(
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .wrapContentHeight(),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
-                    adViewContent(Modifier.fillMaxWidth())
+                    AndroidView(
+                        factory = { context ->
+                            AdView(context).apply {
+                                setAdSize(AdSize.BANNER)
+                                 adUnitId = "ca-app-pub-6502278727709781/9103220433"
+//                                adUnitId = "ca-app-pub-3940256099942544/6300978111" // Test ad
+                                loadAd(AdRequest.Builder().build())
+                            }
+                        },
+                    )
                 }
             }
         }

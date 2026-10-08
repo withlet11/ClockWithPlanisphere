@@ -23,34 +23,19 @@ package io.github.withlet11.clockwithplanisphere
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.compose.ui.viewinterop.AndroidView
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
-import io.github.withlet11.clockwithplanisphere.fragment.ColorSettingDialog
-import io.github.withlet11.clockwithplanisphere.fragment.LocationSettingDialog
-import io.github.withlet11.clockwithplanisphere.ui.CwpScreen
 import io.github.withlet11.clockwithplanisphere.ui.MainScreen
-import kotlin.time.Duration.Companion.seconds
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -68,27 +53,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        MobileAds.initialize(this)
+
         loadPreviousSettings()
 
         setContent {
-            var showLocationDialog by remember { mutableStateOf(false) }
-            var showColorDialog by remember { mutableStateOf(false) }
             CwpTheme {
                 MainScreen(
+                    latitude = latitude,
+                    longitude = longitude,
                     isSouthernSky = isSouthernSky,
-                    onSouthernSkyChanged = { b ->
-                        isSouthernSky = b
-                        getSharedPreferences("observation_position", MODE_PRIVATE).edit {
-                            putBoolean("isSouthernSky", isSouthernSky)
-                            putInt("backgroundColor", backgroundColor)
-                        }
-                    },
-                    onSettingsClick = {
-                        showLocationDialog = true
-                    },
-                    onBgColorClick = {
-                        showColorDialog = true
-                    },
+                    onSouthernSkyChanged = { b -> onSouthernSkyChanged(b) },
+                    isClockHandsVisible = isClockHandsVisible,
+                    onClockHandsVisibilityChanged = { isClockHandsVisible = it },
+                    backgroundColor = backgroundColor,
                     onPrivacyPolicyClick = {
                         startActivity(Intent(application, PrivacyPolicyActivity::class.java))
                     },
@@ -98,54 +76,8 @@ class MainActivity : ComponentActivity() {
                     onCreditsClick = {
                         startActivity(Intent(this, OssLicensesMenuActivity::class.java))
                     },
-                    content = { modifier ->
-                        if (showLocationDialog) {
-                            LocationSettingDialog(
-                                onDismiss = {
-                                    showLocationDialog = false
-                                },
-                                onLocationSaved = {
-                                    showLocationDialog = false
-                                    loadPreviousPosition()
-                                }
-                            )
-                        }
-                        if (showColorDialog) {
-                            ColorSettingDialog(
-                                onDismiss = {
-                                    showColorDialog = false
-                                },
-                                onColorSaved = {
-                                    showColorDialog = false
-                                    loadColorSettings()
-                                }
-                            )
-                        }
-                        CwpScreen(
-                            isSouthernSky = isSouthernSky,
-                            latitude = latitude,
-                            longitude = longitude,
-                            isClockHandsVisible = isClockHandsVisible,
-                            onClockHandsVisibilityChanged = {
-                                isClockHandsVisible = it
-                            },
-                            backgroundColor = backgroundColor,
-                            modifier = modifier
-                        )
-                    },
-                    adViewContent = { modifier ->
-                        AndroidView(
-                            modifier = modifier,
-                            factory = { context ->
-                                AdView(context).apply {
-                                    setAdSize(AdSize.BANNER)
-                                    // adUnitId = "ca-app-pub-6502278727709781/9103220433"
-                                    adUnitId = "ca-app-pub-3940256099942544/6300978111"
-                                    loadAd(AdRequest.Builder().build())
-                                }
-                            }
-                        )
-                    },
+                    loadPreviousPosition = { loadPreviousPosition() },
+                    loadColorSettings = { loadColorSettings() },
                 )
             }
         }
@@ -159,14 +91,21 @@ class MainActivity : ComponentActivity() {
             longitude = previous.getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
             isSouthernSky = previous.getBoolean("isSouthernSky", false)
             backgroundColor = previous.getInt(
-                "backgroundColor",
-                ContextCompat.getColor(this, R.color.defaultBackGround)
+                "backgroundColor", ContextCompat.getColor(this, R.color.defaultBackGround)
             )
         } catch (_: ClassCastException) {
             latitude = DEFAULT_LATITUDE
             longitude = DEFAULT_LONGITUDE
             isSouthernSky = false
             setDefaultColor()
+        }
+    }
+
+    private fun onSouthernSkyChanged(b: Boolean) {
+        isSouthernSky = b
+        getSharedPreferences("observation_position", MODE_PRIVATE).edit {
+            putBoolean("isSouthernSky", isSouthernSky)
+            putInt("backgroundColor", backgroundColor)
         }
     }
 
@@ -188,7 +127,7 @@ class MainActivity : ComponentActivity() {
         try {
             backgroundColor = previous.getInt(
                 "backgroundColor",
-                resources.getColor(R.color.defaultBackGround, null)
+                resources.getColor(R.color.defaultBackGround, null),
             )
         } catch (_: ClassCastException) {
             setDefaultColor()
