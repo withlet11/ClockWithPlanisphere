@@ -37,6 +37,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.withlet11.clockwithplanisphere.CwpTopAppBar
 import io.github.withlet11.clockwithplanisphere.R
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,135 +51,124 @@ fun MainScreen(
     onLicensesClick: () -> Unit,
     onCreditsClick: () -> Unit,
     content: @Composable (Modifier) -> Unit,
-    // adViewContent: @Composable () -> Unit
+    adViewContent: @Composable (Modifier) -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    var showAd by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        delay(10L.seconds)
+        showAd = false
+    }
 
     Scaffold(
         topBar = {
-            CwpTopAppBar(
-                title = {
+            CwpTopAppBar(title = {
+                Text(
+                    stringResource(R.string.app_name),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }, navigationIcon = {
+                Image(
+                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.size(60.dp)
+                )
+            }, actions = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Text(
-                        stringResource(R.string.app_name),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        text = stringResource(R.string.north_label),
+                        style = MaterialTheme.typography.bodyMedium
                     )
-                },
-                navigationIcon = {
-                    Image(
-                        painter = painterResource(R.drawable.ic_launcher_foreground),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(60.dp)
+                    Switch(
+                        checked = isSouthernSky,
+                        onCheckedChange = onSouthernSkyChanged,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = MaterialTheme.colorScheme.primary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                            checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.primary
+                        ),
+                        thumbContent = {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                            )
+                        })
+                    Text(
+                        text = stringResource(R.string.south_label),
+                        style = MaterialTheme.typography.bodyMedium
                     )
-                },
-                actions = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.north_label),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Switch(
-                            checked = isSouthernSky,
-                            onCheckedChange = onSouthernSkyChanged,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                                uncheckedBorderColor = MaterialTheme.colorScheme.primary
-                            ),
-                            thumbContent = {
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
-                                )
-                            }
-                        )
-                        Text(
-                            text = stringResource(R.string.south_label),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
 
-                        Box {
-                            IconButton(onClick = { menuExpanded = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Menu"
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = menuExpanded,
-                                onDismissRequest = { menuExpanded = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.locationSettings)) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        onSettingsClick()
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.bg_color)) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        onBgColorClick()
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.privacy_policy_header)) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        onPrivacyPolicyClick()
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.license)) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        onLicensesClick()
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.opensource_licenses)) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        onCreditsClick()
-                                    }
-                                )
-                            }
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Menu"
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.locationSettings)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onSettingsClick()
+                                })
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.bg_color)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onBgColorClick()
+                                })
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.privacy_policy_header)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onPrivacyPolicyClick()
+                                })
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.license)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onLicensesClick()
+                                })
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.opensource_licenses)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onCreditsClick()
+                                })
                         }
                     }
                 }
-            )
-        }
-    ) { innerPadding ->
-        Column(
+            })
+        }) { innerPadding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                content(Modifier.fillMaxSize())
-            }
+            content(Modifier.fillMaxSize())
 
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .wrapContentHeight(),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                adViewContent()
-//            }
+            if (showAd) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    adViewContent(Modifier.fillMaxWidth())
+                }
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import androidx.compose.runtime.Composable
+import android.util.Log
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
@@ -34,9 +34,10 @@ import androidx.glance.ImageProvider
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.updateAll
 import androidx.glance.layout.Box
 import androidx.glance.layout.fillMaxSize
 import io.github.withlet11.clockwithplanisphere.MainActivity
@@ -44,13 +45,16 @@ import io.github.withlet11.clockwithplanisphere.R
 import io.github.withlet11.clockwithplanisphere.model.NorthernSkyModel
 import io.github.withlet11.clockwithplanisphere.model.SkyViewModel
 import io.github.withlet11.clockwithplanisphere.model.SouthernSkyModel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class CwpWidget : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = CwpWidgetContent()
 
     companion object {
-        const val ACTION_UPDATE = "io.github.withlet11.clockwithplanisphere.widget.CwpWidget.ACTION_UPDATE"
+        const val ACTION_UPDATE =
+            "io.github.withlet11.clockwithplanisphere.widget.CwpWidget.ACTION_UPDATE"
         const val UPDATE_INTERVAL = 5000L // milliseconds
 
         fun scheduleUpdate(context: Context) {
@@ -100,6 +104,7 @@ class CwpWidget : GlanceAppWidgetReceiver() {
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
+        scheduleUpdate(context)
     }
 
     override fun onDisabled(context: Context) {
@@ -107,30 +112,40 @@ class CwpWidget : GlanceAppWidgetReceiver() {
         super.onDisabled(context)
     }
 
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: android.appwidget.AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+        scheduleUpdate(context)
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
         when (intent.action) {
             ACTION_UPDATE -> {
                 scheduleUpdate(context)
-                val glanceManager = GlanceAppWidgetManager(context)
-                runBlocking {
-                    val glanceIds = glanceManager.getGlanceIds(CwpWidgetContent::class.java)
-                    glanceIds.forEach { glanceId ->
-                        CwpWidgetContent().update(context, glanceId)
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        CwpWidgetContent().updateAll(context)
+                    } catch (e: Exception) {
+                        Log.e("CwpWidget", "Widget update failed", e)
                     }
                 }
             }
+
             Intent.ACTION_BOOT_COMPLETED -> {
                 scheduleUpdate(context)
             }
         }
-        super.onReceive(context, intent)
     }
 }
 
 class CwpWidgetContent : GlanceAppWidget() {
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        CwpWidget.scheduleUpdate(context)
+    override val sizeMode = SizeMode.Exact
 
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
         val (latitude, longitude, isSouthernSky) = CwpWidget.loadPreviousPosition(context)
         val skyViewModel =
             SkyViewModel(

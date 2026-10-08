@@ -29,14 +29,19 @@ import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
@@ -45,10 +50,10 @@ import io.github.withlet11.clockwithplanisphere.fragment.ColorSettingDialog
 import io.github.withlet11.clockwithplanisphere.fragment.LocationSettingDialog
 import io.github.withlet11.clockwithplanisphere.ui.CwpScreen
 import io.github.withlet11.clockwithplanisphere.ui.MainScreen
+import kotlin.time.Duration.Companion.seconds
 
 class MainActivity : ComponentActivity() {
     companion object {
-        const val AD_DISPLAY_DURATION = 10000L
         const val DEFAULT_LATITUDE = 45.0
         const val DEFAULT_LONGITUDE = 0.0
     }
@@ -59,10 +64,6 @@ class MainActivity : ComponentActivity() {
     private var backgroundColor by mutableIntStateOf(0)
     var isSouthernSky by mutableStateOf(false)
 
-    private val handler by lazy { Handler(Looper.getMainLooper()) }
-    private var adView: AdView? = null
-    private var adRunnable: Runnable? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -70,8 +71,8 @@ class MainActivity : ComponentActivity() {
         loadPreviousSettings()
 
         setContent {
-            var showLocationDialog by mutableStateOf(false)
-            var showColorDialog by mutableStateOf(false)
+            var showLocationDialog by remember { mutableStateOf(false) }
+            var showColorDialog by remember { mutableStateOf(false) }
             CwpTheme {
                 MainScreen(
                     isSouthernSky = isSouthernSky,
@@ -131,40 +132,23 @@ class MainActivity : ComponentActivity() {
                             backgroundColor = backgroundColor,
                             modifier = modifier
                         )
-                    }
+                    },
+                    adViewContent = { modifier ->
+                        AndroidView(
+                            modifier = modifier,
+                            factory = { context ->
+                                AdView(context).apply {
+                                    setAdSize(AdSize.BANNER)
+                                    // adUnitId = "ca-app-pub-6502278727709781/9103220433"
+                                    adUnitId = "ca-app-pub-3940256099942544/6300978111"
+                                    loadAd(AdRequest.Builder().build())
+                                }
+                            }
+                        )
+                    },
                 )
             }
         }
-
-        adRunnable = Runnable {
-            adView?.let { view ->
-                (view.parent as? ViewGroup)?.removeView(view)
-                view.destroy()
-            }
-            adView = null
-        }
-
-        adRunnable?.let { handler.postDelayed(it, AD_DISPLAY_DURATION) }
-        setUpAds()
-    }
-
-    private fun setUpAds() {
-        val requestConfiguration = MobileAds.getRequestConfiguration()
-            .toBuilder()
-            .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
-            .build()
-        MobileAds.setRequestConfiguration(requestConfiguration)
-
-        MobileAds.initialize(this) {}
-        val adRequest = AdRequest.Builder().build()
-        adView?.loadAd(adRequest)
-    }
-
-    override fun onDestroy() {
-        adRunnable?.let { handler.removeCallbacks(it) }
-        adView?.destroy()
-        adView = null
-        super.onDestroy()
     }
 
     private fun loadPreviousSettings() {

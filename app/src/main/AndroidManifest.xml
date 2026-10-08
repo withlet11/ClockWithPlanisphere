@@ -20,7 +20,6 @@
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <!-- action android:name="io.github.withlet11.clockwithplanisphere.widget.CwpWidget.ACTION_UPDATE" / -->
             </intent-filter>
 
             <meta-data
