@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
                     latitude = latitude,
                     longitude = longitude,
                     isSouthernSky = isSouthernSky,
-                    onSouthernSkyChanged = { b -> onSouthernSkyChanged(b) },
+                    onSouthernSkyChanged = { onSouthernSkyChanged(it) },
                     isClockHandsVisible = isClockHandsVisible,
                     onClockHandsVisibilityChanged = { isClockHandsVisible = it },
                     backgroundColor = backgroundColor,

@@ -27,12 +27,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntSize
 import io.github.withlet11.clockwithplanisphere.model.*
 import io.github.withlet11.clockwithplanisphere.view.*
 import kotlinx.coroutines.delay
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration.Companion.milliseconds
 
 private enum class SwipeStatus { ANYTHING, SUN, SKY_EDGE, DATE }
 
@@ -47,6 +50,52 @@ fun CwpScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+
+    var offsetX by remember { mutableIntStateOf(0) }
+    var offsetY by remember { mutableIntStateOf(0) }
+
+    var screenSize by remember { mutableStateOf(IntSize.Zero) }
+    var isZoomed by remember { mutableStateOf(false) }
+
+    val isLandScape = screenSize.width > screenSize.height
+    val wideSideLength: Int
+    val narrowSideLength: Int
+    if (isLandScape) {
+        wideSideLength = screenSize.width
+        narrowSideLength = screenSize.height
+    } else {
+        wideSideLength = screenSize.height
+        narrowSideLength = screenSize.width
+    }
+    val totalDifference = wideSideLength - narrowSideLength
+
+    val scrollableHorizonMin: Int
+    val scrollableHorizonMax: Int
+    val scrollableVerticalMin: Int
+    val scrollableVerticalMax: Int
+    if (isZoomed) {
+        if (isLandScape) {
+            scrollableHorizonMin = 0
+            scrollableHorizonMax = 0
+            scrollableVerticalMin = -totalDifference
+            scrollableVerticalMax = 0
+        } else {
+            scrollableHorizonMin = -totalDifference
+            scrollableHorizonMax = 0
+            scrollableVerticalMin = 0
+            scrollableVerticalMax = 0
+        }
+    } else if (isLandScape) {
+        scrollableHorizonMin = 0
+        scrollableHorizonMax = totalDifference
+        scrollableVerticalMin = 0
+        scrollableVerticalMax = 0
+    } else {
+        scrollableHorizonMin = 0
+        scrollableHorizonMax = 0
+        scrollableVerticalMin = 0
+        scrollableVerticalMax = totalDifference
+    }
 
     val skyViewModel = remember(isSouthernSky) {
         SkyViewModel(
@@ -65,16 +114,6 @@ fun CwpScreen(
     val clockHandsPanel = remember(skyViewModel) {
         ClockHandsPanel(context, null)
     }
-
-    var isZoomed by remember { mutableStateOf(false) }
-
-    var offsetX by remember { mutableIntStateOf(0) }
-    var offsetY by remember { mutableIntStateOf(0) }
-
-    var scrollableHorizonMin by remember { mutableIntStateOf(0) }
-    var scrollableHorizonMax by remember { mutableIntStateOf(0) }
-    var scrollableVerticalMin by remember { mutableIntStateOf(0) }
-    var scrollableVerticalMax by remember { mutableIntStateOf(0) }
 
     // Touch and swipe management
     var previousActionX by remember { mutableFloatStateOf(0f) }
@@ -99,43 +138,6 @@ fun CwpScreen(
         sunAndMoonPanel.offsetY = offsetY
         horizonPanel.offsetX = offsetX
         horizonPanel.offsetY = offsetY
-    }
-
-    fun scrollPanelToCenter() {
-        offsetX = (scrollableHorizonMax + scrollableHorizonMin) / 2
-        offsetY = (scrollableVerticalMax + scrollableVerticalMin) / 2
-        updatePanelOffsets()
-    }
-
-    fun adjustFrameLayoutPosition(
-        isLandScape: Boolean,
-        narrowSideLength: Int,
-        wideSideLength: Int
-    ) {
-        val totalDifference = wideSideLength - narrowSideLength
-        if (isZoomed) {
-            if (isLandScape) {
-                scrollableHorizonMin = 0
-                scrollableHorizonMax = 0
-                scrollableVerticalMin = -totalDifference
-                scrollableVerticalMax = 0
-            } else {
-                scrollableHorizonMin = -totalDifference
-                scrollableHorizonMax = 0
-                scrollableVerticalMin = 0
-                scrollableVerticalMax = 0
-            }
-        } else if (isLandScape) {
-            scrollableHorizonMin = 0
-            scrollableHorizonMax = totalDifference
-            scrollableVerticalMin = 0
-            scrollableVerticalMax = 0
-        } else {
-            scrollableHorizonMin = 0
-            scrollableHorizonMax = 0
-            scrollableVerticalMin = 0
-            scrollableVerticalMax = totalDifference
-        }
     }
 
     fun setStarDataList() {
@@ -227,6 +229,15 @@ fun CwpScreen(
         refreshPanels()
     }
 
+    LaunchedEffect(screenSize, isZoomed) {
+        if (screenSize == IntSize.Zero) return@LaunchedEffect
+
+        offsetX = (scrollableHorizonMax + scrollableHorizonMin) / 2
+        offsetY = (scrollableVerticalMax + scrollableVerticalMin) / 2
+
+        updatePanelOffsets()
+    }
+
     LaunchedEffect(isSouthernSky, latitude, longitude) {
         skyViewModel.changeLocation(latitude, longitude)
         setStarDataList()
@@ -234,6 +245,8 @@ fun CwpScreen(
         setClockBasePanel()
         skyViewModel.setCurrentTime()
         refreshClock()
+
+        updatePanelOffsets()
     }
 
     LaunchedEffect(isClockHandsVisible) {
@@ -241,7 +254,7 @@ fun CwpScreen(
             while (true) {
                 skyViewModel.setCurrentTime()
                 refreshClock()
-                delay(250L)
+                delay(250L.milliseconds)
             }
         }
     }
@@ -250,6 +263,7 @@ fun CwpScreen(
         modifier = modifier
             .fillMaxSize()
             .background(androidx.compose.ui.graphics.Color(backgroundColor))
+            .onSizeChanged { screenSize = it }
     ) {
         ClockContent(
             modifier = Modifier.fillMaxSize(),
@@ -261,6 +275,9 @@ fun CwpScreen(
             clockHandsPanel = clockHandsPanel,
             isZoomed = isZoomed,
             isClockHandsVisible = isClockHandsVisible,
+            isLandScape = isLandScape,
+            narrowSideLength = narrowSideLength,
+            wideSideLength = wideSideLength,
             offsetX = offsetX,
             offsetY = offsetY,
             onTap = { x, y ->
@@ -354,14 +371,6 @@ fun CwpScreen(
             onDragEnd = {
                 swipeStatus = SwipeStatus.ANYTHING
             },
-            onGeometryReady = { geometry ->
-                adjustFrameLayoutPosition(
-                    geometry.isLandScape,
-                    geometry.narrow,
-                    geometry.wide
-                )
-                scrollPanelToCenter()
-            }
         )
     }
 }

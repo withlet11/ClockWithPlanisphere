@@ -34,13 +34,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import io.github.withlet11.clockwithplanisphere.view.*
 import kotlin.math.pow
 
-data class ClockGeometry(
-    val isLandScape: Boolean,
-    val isZoomed: Boolean,
-    val narrow: Int,
-    val wide: Int
-)
-
 @Composable
 fun ClockScreen() {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -55,7 +48,7 @@ fun ClockScreen() {
     val horizonPanel = remember { HorizonPanel(context, null) }
     val clockHandsPanel = remember {
         ClockHandsPanel(context, null).apply {
-            localTime = java.time.LocalTime.MIDNIGHT
+            localTime = java.time.LocalTime.now()
         }
     }
 
@@ -66,7 +59,10 @@ fun ClockScreen() {
         sunAndMoonPanel = sunAndMoonPanel,
         horizonPanel = horizonPanel,
         clockHandsPanel = clockHandsPanel,
-        isClockHandsVisible = true
+        isClockHandsVisible = true,
+        isLandScape = false,
+        narrowSideLength = 500,
+        wideSideLength = 800
     )
 }
 
@@ -81,13 +77,15 @@ fun ClockContent(
     clockHandsPanel: ClockHandsPanel,
     isZoomed: Boolean = false,
     isClockHandsVisible: Boolean,
+    isLandScape: Boolean,
+    narrowSideLength: Int,
+    wideSideLength: Int,
     offsetX: Int = 0,
     offsetY: Int = 0,
     onTap: (Float, Float) -> Unit = { _, _ -> },
     onDragStart: (Float, Float) -> Unit = { _, _ -> },
     onDrag: (Float, Float) -> Unit = { _, _ -> },
-    onDragEnd: () -> Unit = {},
-    onGeometryReady: (ClockGeometry) -> Unit = {}
+    onDragEnd: () -> Unit = {}
 ) {
     val density = LocalDensity.current
 
@@ -96,125 +94,104 @@ fun ClockContent(
     val currentOnDrag by rememberUpdatedState(onDrag)
     val currentOnDragEnd by rememberUpdatedState(onDragEnd)
 
-    BoxWithConstraints(
-        modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
-    ) {
-        val width = constraints.maxWidth
-        val height = constraints.maxHeight
-        val isLandScape = width > height
-        val narrow = if (isLandScape) height else width
-        val wide = if (isLandScape) width else height
+    clockBasePanel.isZoomed = isZoomed
+    clockBasePanel.isLandScape = isLandScape
+    clockBasePanel.narrowSideLength = narrowSideLength
+    clockBasePanel.wideSideLength = wideSideLength
 
-        val geometry = ClockGeometry(
-            isLandScape = isLandScape,
-            isZoomed = isZoomed,
-            narrow = narrow,
-            wide = wide
-        )
+    skyPanel.isZoomed = isZoomed
+    skyPanel.isLandScape = isLandScape
+    skyPanel.narrowSideLength = narrowSideLength
+    skyPanel.wideSideLength = wideSideLength
 
-        clockBasePanel.isZoomed = isZoomed
-        clockBasePanel.isLandScape = isLandScape
-        clockBasePanel.narrowSideLength = narrow
-        clockBasePanel.wideSideLength = wide
+    sunPanel.isZoomed = isZoomed
+    sunPanel.isLandScape = isLandScape
+    sunPanel.narrowSideLength = narrowSideLength
+    sunPanel.wideSideLength = wideSideLength
 
-        skyPanel.isZoomed = isZoomed
-        skyPanel.isLandScape = isLandScape
-        skyPanel.narrowSideLength = narrow
-        skyPanel.wideSideLength = wide
+    sunAndMoonPanel.isZoomed = isZoomed
+    sunAndMoonPanel.isLandScape = isLandScape
+    sunAndMoonPanel.narrowSideLength = narrowSideLength
+    sunAndMoonPanel.wideSideLength = wideSideLength
 
-        sunPanel.isZoomed = isZoomed
-        sunPanel.isLandScape = isLandScape
-        sunPanel.narrowSideLength = narrow
-        sunPanel.wideSideLength = wide
+    horizonPanel.isZoomed = isZoomed
+    horizonPanel.isLandScape = isLandScape
+    horizonPanel.narrowSideLength = narrowSideLength
+    horizonPanel.wideSideLength = wideSideLength
 
-        sunAndMoonPanel.isZoomed = isZoomed
-        sunAndMoonPanel.isLandScape = isLandScape
-        sunAndMoonPanel.narrowSideLength = narrow
-        sunAndMoonPanel.wideSideLength = wide
+    clockHandsPanel.isZoomed = isZoomed
+    clockHandsPanel.isLandScape = isLandScape
+    clockHandsPanel.narrowSideLength = narrowSideLength
+    clockHandsPanel.wideSideLength = wideSideLength
 
-        horizonPanel.isZoomed = isZoomed
-        horizonPanel.isLandScape = isLandScape
-        horizonPanel.narrowSideLength = narrow
-        horizonPanel.wideSideLength = wide
+    Box(
+        modifier = modifier
+            .size(with(density) { wideSideLength.toDp() })
+            .pointerInput(isZoomed) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val down = awaitFirstDown()
+                        val start = down.position
 
-        clockHandsPanel.isZoomed = isZoomed
-        clockHandsPanel.isLandScape = isLandScape
-        clockHandsPanel.narrowSideLength = narrow
-        clockHandsPanel.wideSideLength = wide
+                        currentOnDragStart(start.x, start.y)
 
-        LaunchedEffect(width, height, isZoomed) {
-            onGeometryReady(geometry)
-        }
+                        var isDragging = false
 
-        Box(
-            modifier = Modifier
-                .size(with(density) { wide.toDp() })
-                .pointerInput(isZoomed) {
-                    awaitPointerEventScope {
+                        val downTime = SystemClock.elapsedRealtime()
+
                         while (true) {
-                            val down = awaitFirstDown()
-                            val start = down.position
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull()
+                                ?: break
 
-                            currentOnDragStart(start.x, start.y)
+                            if (!change.pressed) {
+                                val end = change.position
+                                val elapsed = SystemClock.elapsedRealtime() - downTime
+                                val distanceSquared =
+                                    (start.x - end.x).pow(2) +
+                                            (start.y - end.y).pow(2)
 
-                            var isDragging = false
-
-                            val downTime = SystemClock.elapsedRealtime()
-
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                val change = event.changes.firstOrNull()
-                                    ?: break
-
-                                if (!change.pressed) {
-                                    val end = change.position
-                                    val elapsed = SystemClock.elapsedRealtime() - downTime
-                                    val distanceSquared =
-                                        (start.x - end.x).pow(2) +
-                                                (start.y - end.y).pow(2)
-
-                                    if (!isDragging && elapsed < 200L && distanceSquared < 50f) {
-                                        currentOnTap(end.x, end.y)
-                                    } else {
-                                        currentOnDragEnd()
-                                    }
-
-                                    break
+                                if (!isDragging && elapsed < 200L && distanceSquared < 50f) {
+                                    currentOnTap(end.x, end.y)
+                                } else {
+                                    currentOnDragEnd()
                                 }
 
-                                val position = change.position
+                                break
+                            }
 
-                                if (!isDragging) {
-                                    val distanceSquared =
-                                        (start.x - position.x).pow(2) +
-                                                (start.y - position.y).pow(2)
+                            val position = change.position
 
-                                    if (distanceSquared >= 5f) {
-                                        isDragging = true
-                                    }
+                            if (!isDragging) {
+                                val distanceSquared =
+                                    (start.x - position.x).pow(2) +
+                                            (start.y - position.y).pow(2)
+
+                                if (distanceSquared >= 5f) {
+                                    isDragging = true
                                 }
+                            }
 
-                                if (isDragging) {
-                                    change.consume()
-                                    currentOnDrag(position.x, position.y)
-                                }
+                            if (isDragging) {
+                                change.consume()
+                                currentOnDrag(position.x, position.y)
                             }
                         }
                     }
                 }
-                .graphicsLayer(
-                    translationX = offsetX.toFloat(), translationY = offsetY.toFloat()
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            clockBasePanel.Content(Modifier.fillMaxSize())
-            skyPanel.Content(Modifier.fillMaxSize())
-            sunPanel.Content(Modifier.fillMaxSize())
-            sunAndMoonPanel.Content(Modifier.fillMaxSize())
-            horizonPanel.Content(Modifier.fillMaxSize())
-            if (isClockHandsVisible) {
-                clockHandsPanel.Content(Modifier.fillMaxSize())
             }
+            .graphicsLayer(
+                translationX = offsetX.toFloat(), translationY = offsetY.toFloat()
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        clockBasePanel.Content(Modifier.fillMaxSize())
+        skyPanel.Content(Modifier.fillMaxSize())
+        sunPanel.Content(Modifier.fillMaxSize())
+        sunAndMoonPanel.Content(Modifier.fillMaxSize())
+        horizonPanel.Content(Modifier.fillMaxSize())
+        if (isClockHandsVisible) {
+            clockHandsPanel.Content(Modifier.fillMaxSize())
         }
     }
 }
