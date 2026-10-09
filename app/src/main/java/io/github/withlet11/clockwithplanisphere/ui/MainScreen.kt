@@ -21,6 +21,7 @@
 
 package io.github.withlet11.clockwithplanisphere.ui
 
+import android.content.Context.MODE_PRIVATE
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -28,9 +29,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.core.content.edit
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,22 +58,66 @@ import io.github.withlet11.clockwithplanisphere.fragment.LocationSettingDialog
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
+private const val DEFAULT_LATITUDE = 45.0
+private const val DEFAULT_LONGITUDE = 0.0
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    latitude: Double,
-    longitude: Double,
-    isSouthernSky: Boolean,
-    onSouthernSkyChanged: (Boolean) -> Unit,
-    isClockHandsVisible: Boolean,
-    onClockHandsVisibilityChanged: (Boolean) -> Unit,
-    backgroundColor: Int,
     onPrivacyPolicyClick: () -> Unit,
     onLicensesClick: () -> Unit,
     onCreditsClick: () -> Unit,
-    loadPreviousPosition: () -> Unit,
-    loadColorSettings: () -> Unit
 ) {
+    val context = LocalContext.current
+
+    val defaultColor = colorResource(R.color.defaultBackGround).toArgb()
+
+    var latitude by remember { mutableDoubleStateOf(DEFAULT_LATITUDE) }
+    var longitude by remember { mutableDoubleStateOf(DEFAULT_LONGITUDE) }
+    var isClockHandsVisible by remember { mutableStateOf(true) }
+    var backgroundColor by remember { mutableIntStateOf(0) }
+    var isSouthernSky by remember { mutableStateOf(false) }
+
+    fun loadPreviousSettings() {
+        val previous = context.getSharedPreferences("observation_position", MODE_PRIVATE)
+
+        try {
+            latitude = previous.getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
+            longitude = previous.getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
+            isSouthernSky = previous.getBoolean("isSouthernSky", false)
+            backgroundColor = previous.getInt( "backgroundColor", defaultColor )
+        } catch (_: ClassCastException) {
+            latitude = DEFAULT_LATITUDE
+            longitude = DEFAULT_LONGITUDE
+            isSouthernSky = false
+            backgroundColor = defaultColor
+        }
+    }
+
+    fun loadPreviousPosition() {
+        val previous = context.getSharedPreferences("observation_position", MODE_PRIVATE)
+
+        try {
+            latitude = previous.getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
+            longitude = previous.getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
+        } catch (_: ClassCastException) {
+            latitude = DEFAULT_LATITUDE
+            longitude = DEFAULT_LONGITUDE
+        }
+    }
+
+    fun loadColorSettings() {
+        val previous = context.getSharedPreferences("observation_position", MODE_PRIVATE)
+
+        backgroundColor = try {
+            previous.getInt("backgroundColor", defaultColor)
+        } catch (_: ClassCastException) {
+            defaultColor
+        }
+    }
+
+    loadPreviousSettings()
+
     var menuExpanded by remember { mutableStateOf(false) }
     var showLocationDialog by remember { mutableStateOf(false) }
     var showColorDialog by remember { mutableStateOf(false) }
@@ -100,7 +156,14 @@ fun MainScreen(
                         )
                         Switch(
                             checked = isSouthernSky,
-                            onCheckedChange = onSouthernSkyChanged,
+                            onCheckedChange = {
+                                isSouthernSky = it
+                                context.getSharedPreferences("observation_position", MODE_PRIVATE)
+                                    .edit {
+                                        putBoolean("isSouthernSky", isSouthernSky)
+                                        putInt("backgroundColor", backgroundColor)
+                                    }
+                            },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.primary,
                                 uncheckedThumbColor = MaterialTheme.colorScheme.primary,
@@ -207,7 +270,7 @@ fun MainScreen(
                 latitude = latitude,
                 longitude = longitude,
                 isClockHandsVisible = isClockHandsVisible,
-                onClockHandsVisibilityChanged = onClockHandsVisibilityChanged,
+                onClockHandsVisibilityChanged = { isClockHandsVisible = it },
                 backgroundColor = backgroundColor,
                 modifier = Modifier.fillMaxSize()
             )
@@ -224,7 +287,7 @@ fun MainScreen(
                         factory = { context ->
                             AdView(context).apply {
                                 setAdSize(AdSize.BANNER)
-                                 adUnitId = "ca-app-pub-6502278727709781/9103220433"
+                                adUnitId = "ca-app-pub-6502278727709781/9103220433"
 //                                adUnitId = "ca-app-pub-3940256099942544/6300978111" // Test ad
                                 loadAd(AdRequest.Builder().build())
                             }
