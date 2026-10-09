@@ -22,6 +22,7 @@
 package io.github.withlet11.clockwithplanisphere.ui
 
 import android.os.SystemClock
+import android.util.Log
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -29,40 +30,304 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import io.github.withlet11.clockwithplanisphere.model.NorthernSkyModel
+import io.github.withlet11.clockwithplanisphere.model.SkyViewModel
+import io.github.withlet11.clockwithplanisphere.model.SouthernSkyModel
 import io.github.withlet11.clockwithplanisphere.view.*
+import kotlinx.coroutines.delay
+import kotlin.Int
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
+import kotlin.time.Duration.Companion.milliseconds
+
+private enum class SwipeStatus { ANYTHING, SUN, SKY_EDGE, DATE }
 
 @Composable
-fun ClockScreen() {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val clockBasePanel = remember {
-        ClockBasePanel(context, null).apply {
-            currentDate = java.time.LocalDate.now()
+fun ClockScreen(
+    modifier: Modifier = Modifier,
+    latitude: Double,
+    longitude: Double,
+    isSouthernSky: Boolean,
+
+    isZoomed: Boolean,
+    onZoomedChanged: (Boolean) -> Unit,
+    isClockHandsVisible: Boolean,
+    onClockHandsVisibilityChanged: (Boolean) -> Unit,
+    isLandScape: Boolean,
+    narrowSideLength: Int,
+    wideSideLength: Int,
+    scrollableHorizonMin: Int,
+    scrollableHorizonMax: Int,
+    scrollableVerticalMin: Int,
+    scrollableVerticalMax: Int,
+    offsetX: Int,
+    offsetY: Int,
+    onChangeOffset: (Int, Int) -> Unit,
+) {
+    val context = LocalContext.current
+
+    val skyViewModel = remember(isSouthernSky) {
+        SkyViewModel(
+            context,
+            if (isSouthernSky) SouthernSkyModel() else NorthernSkyModel(),
+            latitude,
+            longitude
+        )
+    }
+
+    val skyPanel = remember(skyViewModel) { SkyPanel(context, null) }
+    val sunPanel = remember(skyViewModel) { SunPanel(context, null) }
+    val sunAndMoonPanel = remember(skyViewModel) { SunAndMoonPanel(context, null) }
+    val horizonPanel = remember(skyViewModel) { HorizonPanel(context, null) }
+    val clockBasePanel = remember(skyViewModel) { ClockBasePanel(context, null) }
+    val clockHandsPanel = remember(skyViewModel) { ClockHandsPanel(context, null) }
+
+    // Touch and swipe management
+    var previousActionX by remember { mutableFloatStateOf(0f) }
+    var previousActionY by remember { mutableFloatStateOf(0f) }
+    var previousRotate by remember { mutableFloatStateOf(0f) }
+
+    var clickCount by remember { mutableIntStateOf(0) }
+    var previousClickTime by remember { mutableLongStateOf(0L) }
+
+    var swipeStatus by remember { mutableStateOf(SwipeStatus.ANYTHING) }
+
+    fun updatePanelOffsets() {
+        clockBasePanel.offsetX = offsetX
+        clockBasePanel.offsetY = offsetY
+        sunPanel.offsetX = offsetX
+        sunPanel.offsetY = offsetY
+        clockHandsPanel.offsetX = offsetX
+        clockHandsPanel.offsetY = offsetY
+        skyPanel.offsetX = offsetX
+        skyPanel.offsetY = offsetY
+        sunAndMoonPanel.offsetX = offsetX
+        sunAndMoonPanel.offsetY = offsetY
+        horizonPanel.offsetX = offsetX
+        horizonPanel.offsetY = offsetY
+    }
+
+    updatePanelOffsets()
+
+    fun setStarDataList() {
+        with(skyViewModel) {
+            skyPanel.set(
+                starGeometryList,
+                constellationLineList,
+                milkyWayDotList,
+                milkyWayDotSize,
+                equatorial,
+                ecliptic,
+                tenMinuteGridStep
+            )
+            sunPanel.set(
+                analemma,
+                monthlySunPositionList,
+                currentSunPosition.first,
+                tenMinuteGridStep
+            )
+            sunAndMoonPanel.set(
+                currentMoonPosition,
+                currentSunPosition.second,
+                tenMinuteGridStep
+            )
         }
     }
-    val skyPanel = remember { SkyPanel(context, null) }
-    val sunPanel = remember { SunPanel(context, null) }
-    val sunAndMoonPanel = remember { SunAndMoonPanel(context, null) }
-    val horizonPanel = remember { HorizonPanel(context, null) }
-    val clockHandsPanel = remember {
-        ClockHandsPanel(context, null).apply {
-            localTime = java.time.LocalTime.now()
+
+    fun setHorizonPanel() {
+        with(skyViewModel) { horizonPanel.set(horizon, altAzimuth, directionLetters) }
+    }
+
+    fun setClockBasePanel() {
+        with(skyViewModel) { clockBasePanel.set(offset, direction) }
+    }
+
+    fun refreshPanels() {
+        clockBasePanel.currentDate = skyViewModel.localDate
+
+        // update sky panel
+        val currentSidereal = skyViewModel.siderealAngle
+        if (skyPanel.getAngleDifference(currentSidereal) > 0.25f) {
+            skyPanel.siderealAngle = currentSidereal
+        }
+
+        // update sun panel
+        val solarDate = skyViewModel.localDate
+        val solarAngle = skyViewModel.solarAngle
+        val currentSunPos = skyViewModel.currentSunPosition
+        if (sunPanel.isDifferentDate(solarDate)) {
+            if (sunPanel.getAngleDifference(solarAngle) > 0.25f || sunPanel.getDistance(
+                    currentSunPos.first
+                ) > 0.005f * 0.005f
+            ) {
+                sunPanel.setSolarAngle(solarAngle, skyViewModel.localTime)
+                if (sunPanel.isDifferentDate(solarDate) || sunPanel.isDifferentTime(skyViewModel.localTime.toSecondOfDay())) {
+                    sunPanel.setSolarAngleAndCurrentPosition(
+                        solarAngle,
+                        currentSunPos.first,
+                        skyViewModel.localDateTime
+                    )
+                }
+            }
+        } else if (sunPanel.isDifferentTime(skyViewModel.localTime.toSecondOfDay())) {
+            val currentSunAngle = skyViewModel.solarAngle
+            if (sunPanel.getAngleDifference(currentSunAngle) > 0.25f) {
+                sunPanel.setSolarAngle(currentSunAngle, skyViewModel.localTime)
+            }
+        }
+
+        // update moon panel
+        val siderealAngle = skyViewModel.siderealAngle
+        if (sunAndMoonPanel.isDifferentDate(solarDate) || sunAndMoonPanel.getAngleDifference(
+                siderealAngle
+            ) > 0.25f
+        ) {
+            sunAndMoonPanel.setSolarAngleAndCurrentPosition(
+                solarAngle,
+                siderealAngle,
+                skyViewModel.currentMoonPosition,
+                skyViewModel.currentSunPosition.second,
+                skyViewModel.localDateTime
+            )
+        }
+
+    }
+
+    fun refreshClock() {
+        clockHandsPanel.localTime = skyViewModel.localTime
+        refreshPanels()
+    }
+
+    LaunchedEffect(isSouthernSky, latitude, longitude) {
+        skyViewModel.changeLocation(latitude, longitude)
+        setStarDataList()
+        setHorizonPanel()
+        setClockBasePanel()
+        skyViewModel.setCurrentTime()
+        refreshClock()
+
+        updatePanelOffsets()
+    }
+
+    LaunchedEffect(isClockHandsVisible) {
+        if (isClockHandsVisible) {
+            while (true) {
+                skyViewModel.setCurrentTime()
+                refreshClock()
+                delay(250L.milliseconds)
+            }
         }
     }
 
     ClockContent(
+        modifier = modifier,
         clockBasePanel = clockBasePanel,
         skyPanel = skyPanel,
         sunPanel = sunPanel,
         sunAndMoonPanel = sunAndMoonPanel,
         horizonPanel = horizonPanel,
         clockHandsPanel = clockHandsPanel,
-        isClockHandsVisible = true,
-        isLandScape = false,
-        narrowSideLength = 500,
-        wideSideLength = 800
+        isZoomed = isZoomed,
+        isClockHandsVisible = isClockHandsVisible,
+        isLandScape = isLandScape,
+        narrowSideLength = narrowSideLength,
+        wideSideLength = wideSideLength,
+        offsetX = offsetX,
+        offsetY = offsetY,
+        onTap = { x, y ->
+            when {
+                clickCount > 0 && SystemClock.elapsedRealtime() - previousClickTime < 200L -> {
+                    onZoomedChanged(!isZoomed)
+                    clickCount = 0
+                    previousClickTime = 0L
+                }
+
+                clockHandsPanel.isCenter(x to y) -> {
+                    clickCount = 0
+                    val newVisibility = !isClockHandsVisible
+                    onClockHandsVisibilityChanged(newVisibility)
+                    if (newVisibility) {
+                        skyViewModel.setCurrentTime()
+                        refreshClock()
+                    }
+                }
+
+                else -> {
+                    clickCount = 1
+                    previousClickTime = SystemClock.elapsedRealtime()
+                }
+            }
+        },
+        onDragStart = { x, y ->
+            previousActionX = x
+            previousActionY = y
+            previousRotate = clockBasePanel.getAngle(x, y)
+
+            if (!isClockHandsVisible) {
+                swipeStatus = when {
+                    sunPanel.isOnAnalemma(x to y) -> SwipeStatus.SUN
+                    clockBasePanel.isOnTodayGrid(x to y) -> SwipeStatus.DATE
+                    clockBasePanel.isOnSkyBackgroundEdge(x to y) -> SwipeStatus.SKY_EDGE
+                    else -> SwipeStatus.ANYTHING
+                }
+            }
+        },
+        onDrag = { x, y ->
+            when (swipeStatus) {
+                SwipeStatus.SUN -> {
+                    val rotate = sunPanel.getAngle(x, y)
+                    skyViewModel.changeDateWithFixedSiderealTime(rotate)
+                    refreshPanels()
+                }
+
+                SwipeStatus.DATE -> {
+                    val rotate = clockBasePanel.getAngleFromJan1(x, y)
+                    skyViewModel.changeDateWithFixedSolarTime(rotate)
+                    refreshPanels()
+                }
+
+                SwipeStatus.SKY_EDGE -> {
+                    val rotate = clockBasePanel.getAngle(x, y)
+                    skyViewModel.changeSiderealTimeWithFixedDate(
+                        rotate - previousRotate
+                    )
+                    previousRotate = rotate
+                    refreshPanels()
+                }
+
+                else -> {
+                    val newX = max(
+                        min(
+                            offsetX + (x - previousActionX).toInt(),
+                            scrollableHorizonMax
+                        ),
+                        scrollableHorizonMin
+                    )
+
+                    val newY = max(
+                        min(
+                            offsetY + (y - previousActionY).toInt(),
+                            scrollableVerticalMax
+                        ),
+                        scrollableVerticalMin
+                    )
+
+                    onChangeOffset(newX, newY)
+
+                    previousActionX = x
+                    previousActionY = y
+
+                    updatePanelOffsets()
+                }
+            }
+        },
+        onDragEnd = {
+            swipeStatus = SwipeStatus.ANYTHING
+        },
     )
 }
 
@@ -75,17 +340,17 @@ fun ClockContent(
     sunAndMoonPanel: SunAndMoonPanel,
     horizonPanel: HorizonPanel,
     clockHandsPanel: ClockHandsPanel,
-    isZoomed: Boolean = false,
+    isZoomed: Boolean,
     isClockHandsVisible: Boolean,
     isLandScape: Boolean,
     narrowSideLength: Int,
     wideSideLength: Int,
-    offsetX: Int = 0,
-    offsetY: Int = 0,
-    onTap: (Float, Float) -> Unit = { _, _ -> },
-    onDragStart: (Float, Float) -> Unit = { _, _ -> },
-    onDrag: (Float, Float) -> Unit = { _, _ -> },
-    onDragEnd: () -> Unit = {}
+    offsetX: Int,
+    offsetY: Int,
+    onTap: (Float, Float) -> Unit,
+    onDragStart: (Float, Float) -> Unit,
+    onDrag: (Float, Float) -> Unit,
+    onDragEnd: () -> Unit
 ) {
     val density = LocalDensity.current
 
@@ -199,5 +464,25 @@ fun ClockContent(
 @Preview
 @Composable
 fun ClockScreenPreview() {
-    ClockScreen()
+
+    ClockScreen(
+        latitude = 45.0,
+        longitude = 0.0,
+        isSouthernSky = false,
+
+        isZoomed = false,
+        onZoomedChanged = {},
+        isClockHandsVisible = true,
+        onClockHandsVisibilityChanged = {},
+        isLandScape = false,
+        narrowSideLength = 500,
+        wideSideLength = 800,
+        offsetX = 0,
+        offsetY = 0,
+        scrollableHorizonMin = 0,
+        scrollableHorizonMax = 500,
+        scrollableVerticalMin = 0,
+        scrollableVerticalMax = 800,
+        onChangeOffset = { _, _ -> },
+    )
 }
