@@ -21,6 +21,7 @@
 
 package io.github.withlet11.clockwithplanisphere.model
 
+import androidx.compose.ui.geometry.Offset
 import java.lang.Math.toDegrees
 import java.lang.Math.toRadians
 import kotlin.math.*
@@ -35,8 +36,8 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
             updateHorizon()
         }
 
-    var horizon = listOf<Pair<Float, Float>>()
-    var altAzimuth = listOf<List<Pair<Float, Float>?>>()
+    var horizon = listOf<Offset>()
+    var altAzimuth = listOf<List<Offset?>>()
     var directionLetters = listOf<Triple<String, Float, Float>>()
 
     private fun updateHorizon() {
@@ -44,9 +45,10 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
             latitude == 0.0 -> {
                 List(181) { // 0 to 180
                     val altitude = toRadians(it - 90.0)
-                    sin(altitude).toFloat() to cos(altitude).toFloat()
-                }.plus(listOf(-1f to 0f))
+                    Offset(sin(altitude).toFloat(), cos(altitude).toFloat())
+                }.plus(listOf(Offset(-1f, 0f)))
             }
+
             skyModel.toAngle(latitude) < 180.0 -> {
                 List(361) { // 0 to 360 deg
                     val hourAngle = it / 15.0
@@ -56,6 +58,7 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
                     skyModel.getXYPositionOnOuterCircle(it.toDouble())
                 })
             }
+
             else -> {
                 List(361) { // 0 to 360 deg
                     val hourAngle = it / 15.0
@@ -97,7 +100,7 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
         }.filterNotNull()
     }
 
-    private fun createAltitudeLine(altitude: Double): List<Pair<Float, Float>?> =
+    private fun createAltitudeLine(altitude: Double): List<Offset?> =
         List(361) { // 0 to 360 deg
             val azimuth = it.toDouble()
             convertToEquatorialFromHorizontal(azimuth, altitude).let { (declination, hourAngle) ->
@@ -105,9 +108,9 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
             }
         }
 
-    private fun createHorizonLine(): List<Pair<Float, Float>?> =
+    private fun createHorizonLine(): List<Offset?> =
         if (latitude == 0.0) {
-            listOf(1f to 0f, -1f to 0f)
+            listOf(Offset(1f, 0f), Offset(-1f, 0f))
         } else {
             List(361) { // 0 to 360 deg
                 val hourAngle = it / 15.0
@@ -119,7 +122,7 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
     private fun calculateHorizon(hourAngle: Double): Double =
         toDegrees(atan(-cos(hourAngle / 12.0 * PI) / tan(toRadians(latitude))))
 
-    private fun createAzimuthLine(azimuth: Double): List<Pair<Float, Float>?> =
+    private fun createAzimuthLine(azimuth: Double): List<Offset?> =
         List(91) { // 0 to 90 deg
             val altitude = it.toDouble()
             convertToEquatorialFromHorizontal(azimuth, altitude).let { (dec, ha) ->
@@ -128,7 +131,7 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
         }
 
 
-    private fun createMeridian(isUpper: Boolean): List<Pair<Float, Float>> {
+    private fun createMeridian(isUpper: Boolean): List<Offset> {
         val hourAngle = if (isUpper) 0.0 else 12.0
         val poleNearZenith = skyModel.toDeclinationFromPole(0).toDouble()
         val poleNearHorizon: Double

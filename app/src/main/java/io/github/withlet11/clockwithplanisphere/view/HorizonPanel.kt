@@ -28,25 +28,26 @@ import io.github.withlet11.clockwithplanisphere.R
 import androidx.core.graphics.withSave
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.Canvas as ComposeCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.toCanvas
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toCanvas
 
 class HorizonPanel(context: Context?, attrs: AttributeSet? = null) {
-    private var horizon by mutableStateOf(listOf<Pair<Float, Float>>())
-    private var altAzimuth by mutableStateOf(listOf<List<Pair<Float, Float>?>>())
+    private var horizon by mutableStateOf(listOf<Offset>())
+    private var altAzimuth by mutableStateOf(listOf<List<Offset?>>())
     private var directionLetters by mutableStateOf(listOf<Triple<String, Float, Float>>())
 
     var isZoomed by mutableStateOf(false)
     var isLandScape by mutableStateOf(false)
-    var narrowSideLength by mutableStateOf(0)
-    var wideSideLength by mutableStateOf(0)
-    var offsetX by mutableStateOf(0)
-    var offsetY by mutableStateOf(0)
+    var shortSide by mutableIntStateOf(0)
+    var longSide by mutableIntStateOf(0)
+    var offsetXY by mutableStateOf(Offset.Zero)
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val path = Path()
@@ -58,20 +59,20 @@ class HorizonPanel(context: Context?, attrs: AttributeSet? = null) {
 
     private val scale: Float
         get() {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
-            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
+            val drawAreaSize = if (isZoomed) longSide else shortSide
+            return if (drawAreaSize > 0) drawAreaSize.toFloat() / PanelGeometry.PREFERRED_SIZE else 1f
         }
 
     @Composable
     fun Content(modifier: Modifier = Modifier) {
         ComposeCanvas(modifier = modifier) {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            val drawAreaSize = if (isZoomed) longSide else shortSide
             if (drawAreaSize > 0) {
                 drawIntoCanvas { composeCanvas ->
                     val canvas = composeCanvas.nativeCanvas
                     canvas.withSave {
                         scale(scale, scale)
-                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        translate(PanelGeometry.CENTER, PanelGeometry.CENTER)
                         drawHorizon(canvas)
                         drawAltitudeAndAzimuthLines(canvas)
                         drawDirectionLetters(canvas)
@@ -151,8 +152,8 @@ class HorizonPanel(context: Context?, attrs: AttributeSet? = null) {
     }
 
     fun set(
-        horizon: List<Pair<Float, Float>>,
-        altAzimuth: List<List<Pair<Float, Float>?>>,
+        horizon: List<Offset>,
+        altAzimuth: List<List<Offset?>>,
         directionLetters: List<Triple<String, Float, Float>>
     ) {
         this.horizon = horizon

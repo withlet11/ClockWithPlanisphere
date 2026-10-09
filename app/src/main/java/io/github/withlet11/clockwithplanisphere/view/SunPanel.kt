@@ -32,7 +32,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.math.abs
 import kotlin.math.min
-import kotlin.math.pow
 import kotlin.math.sign
 import androidx.core.graphics.withSave
 import androidx.compose.runtime.Composable
@@ -42,18 +41,19 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.Canvas as ComposeCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.toCanvas
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.toAbsoluteXY
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.isNear
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toCanvas
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toAbsoluteXY
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.isNear
 
 class SunPanel(context: Context?, attrs: AttributeSet? = null) {
-    private var analemma by mutableStateOf(listOf<Pair<Float, Float>>())
-    private var monthlyPositionList by mutableStateOf(listOf<Pair<Float, Float>>())
+    private var analemma by mutableStateOf(listOf<Offset>())
+    private var monthlyPositionList by mutableStateOf(listOf<Offset>())
 
-    private var sunPosition by mutableStateOf(0f to 0f)
+    private var sunPosition by mutableStateOf(Offset.Zero)
     private val rotateAngle: Float get() = -solarAngle * sign(tenMinuteGridStep)
     var solarAngle by mutableFloatStateOf(0f)
     private var tenMinuteGridStep = 180f / 72f
@@ -62,10 +62,9 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
 
     var isZoomed by mutableStateOf(false)
     var isLandScape by mutableStateOf(false)
-    var narrowSideLength by mutableIntStateOf(0)
-    var wideSideLength by mutableIntStateOf(0)
-    var offsetX by mutableIntStateOf(0)
-    var offsetY by mutableIntStateOf(0)
+    var shortSide by mutableIntStateOf(0)
+    var longSide by mutableIntStateOf(0)
+    var offsetXY by mutableStateOf(Offset.Zero)
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val path = Path()
@@ -73,24 +72,26 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
     private val sunColor = context?.getColor(R.color.ripeMango) ?: 0
 
     private val centerPosition
-        get() = (if (isZoomed) wideSideLength else narrowSideLength).let { it * 0.5f + offsetX to it * 0.5f + offsetY }
+        get() = ((if (isZoomed) longSide else shortSide) * 0.5f).let {
+            Offset(it, it) + offsetXY
+        }
 
     private val scale: Float
         get() {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
-            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
+            val drawAreaSize = if (isZoomed) longSide else shortSide
+            return if (drawAreaSize > 0) drawAreaSize.toFloat() / PanelGeometry.PREFERRED_SIZE else 1f
         }
 
     @Composable
     fun Content(modifier: Modifier = Modifier) {
         ComposeCanvas(modifier = modifier) {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            val drawAreaSize = if (isZoomed) longSide else shortSide
             if (drawAreaSize > 0) {
                 drawIntoCanvas { composeCanvas ->
                     val canvas = composeCanvas.nativeCanvas
                     canvas.withSave {
                         scale(scale, scale)
-                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        translate(PanelGeometry.CENTER, PanelGeometry.CENTER)
                         canvas.rotate(rotateAngle, 0f, 0f)
                         drawAnalemma(canvas)
                         drawMonthlyPosition(canvas)
@@ -129,6 +130,7 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
                         y.toCanvas() + 5f,
                         paint
                     )
+
                     else -> canvas.drawText(label, x.toCanvas() + 5f, y.toCanvas() + 5f, paint)
                 }
                 canvas.drawCircle(x.toCanvas(), y.toCanvas(), 3f, paint)
@@ -149,15 +151,16 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
      * @param posOnFragment a position on the fragment
      * @return true if a position is on analemma
      */
-    fun isOnAnalemma(posOnFragment: Pair<Float, Float>): Boolean {
-        val analemmaPosition = sunPosition.toAbsoluteXY(-solarAngle * sign(tenMinuteGridStep), scale, centerPosition)
+    fun isOnAnalemma(posOnFragment: Offset): Boolean {
+        val analemmaPosition =
+            sunPosition.toAbsoluteXY(-solarAngle * sign(tenMinuteGridStep), scale, centerPosition)
         return posOnFragment.isNear(analemmaPosition)
     }
 
     fun set(
-        analemma: List<Pair<Float, Float>>,
-        monthlyPositionList: List<Pair<Float, Float>>,
-        currentPosition: Pair<Float, Float>,
+        analemma: List<Offset>,
+        monthlyPositionList: List<Offset>,
+        currentPosition: Offset,
         tenMinuteGridStep: Float
     ) {
         this.analemma = analemma
@@ -173,7 +176,7 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
 
     fun setSolarAngleAndCurrentPosition(
         solarAngle: Float,
-        sunPosition: Pair<Float, Float>,
+        sunPosition: Offset,
         dateTime: LocalDateTime
     ) {
         this.sunPosition = sunPosition
@@ -187,9 +190,7 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
         (abs(angle - solarAngle) % 360f).let { min(it, 360f - it) }
 
     /** @return the square of distance between a position and the current sun position */
-    fun getDistance(position: Pair<Float, Float>): Float =
-        (sunPosition.first - position.first).pow(2) +
-                (sunPosition.second - position.second).pow(2)
+    fun getDistance(position: Offset): Float = (sunPosition - position).getDistanceSquared()
 
     /** Check if a date differs from the date of the view. */
     fun isDifferentDate(date: LocalDate): Boolean = this.date != date
@@ -197,9 +198,7 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
     /** Check if a time differs from the time of the view. */
     fun isDifferentTime(secondOfDay: Int): Boolean = this.secondOfDay != secondOfDay
 
-    fun getAngle(x: Float, y: Float): Float =
-        AbstractPanel.getAngle(x, y, centerPosition)
+    fun getAngle(position: Offset): Float = PanelGeometry.getAngle(position, centerPosition)
 
-    private fun Pair<Float, Float>.toCanvasXY(): Pair<Float, Float> =
-        first + offsetX to second + offsetY
+    private fun Offset.toCanvasXY(): Offset = this + offsetXY
 }

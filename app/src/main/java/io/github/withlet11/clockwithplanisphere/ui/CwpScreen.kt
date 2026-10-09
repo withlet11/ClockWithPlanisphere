@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 
@@ -42,50 +44,30 @@ fun CwpScreen(
     var isClockHandsVisible by remember { mutableStateOf(true) }
 
     val isLandScape = screenSize.width > screenSize.height
-    val wideSideLength: Int
-    val narrowSideLength: Int
+    val longSide: Int
+    val shortSide: Int
     if (isLandScape) {
-        wideSideLength = screenSize.width
-        narrowSideLength = screenSize.height
+        longSide = screenSize.width
+        shortSide = screenSize.height
     } else {
-        wideSideLength = screenSize.height
-        narrowSideLength = screenSize.width
+        longSide = screenSize.height
+        shortSide = screenSize.width
     }
-    val totalDifference = wideSideLength - narrowSideLength
-
-    val scrollableHorizonMin: Int
-    val scrollableHorizonMax: Int
-    val scrollableVerticalMin: Int
-    val scrollableVerticalMax: Int
-    if (isZoomed) {
+    val totalDifference = (longSide - shortSide).toFloat()
+    val scrollBounds: Rect = if (isZoomed) {
         if (isLandScape) {
-            scrollableHorizonMin = 0
-            scrollableHorizonMax = 0
-            scrollableVerticalMin = -totalDifference
-            scrollableVerticalMax = 0
+            Rect(left = 0f, right = 0f, top = -totalDifference, bottom = 0f)
         } else {
-            scrollableHorizonMin = -totalDifference
-            scrollableHorizonMax = 0
-            scrollableVerticalMin = 0
-            scrollableVerticalMax = 0
+            Rect(left = -totalDifference, right = 0f, top = 0f, bottom = 0f)
         }
     } else if (isLandScape) {
-        scrollableHorizonMin = 0
-        scrollableHorizonMax = totalDifference
-        scrollableVerticalMin = 0
-        scrollableVerticalMax = 0
+        Rect(left = 0f, right = totalDifference, top = 0f, bottom = 0f)
     } else {
-        scrollableHorizonMin = 0
-        scrollableHorizonMax = 0
-        scrollableVerticalMin = 0
-        scrollableVerticalMax = totalDifference
+        Rect(left = 0f, right = 0f, top = 0f, bottom = totalDifference)
     }
 
-    var offsetX by remember(screenSize, isZoomed) {
-        mutableIntStateOf((scrollableHorizonMax + scrollableHorizonMin) / 2)
-    }
-    var offsetY by remember(screenSize, isZoomed) {
-        mutableIntStateOf((scrollableVerticalMax + scrollableVerticalMin) / 2)
+    var offsetXY by remember(screenSize, isZoomed) {
+        mutableStateOf(scrollBounds.center)
     }
 
     Box(
@@ -104,18 +86,11 @@ fun CwpScreen(
             isClockHandsVisible = isClockHandsVisible,
             onClockHandsVisibilityChanged = { isClockHandsVisible = it },
             isLandScape = isLandScape,
-            narrowSideLength = narrowSideLength,
-            wideSideLength = wideSideLength,
-            scrollableHorizonMin = scrollableHorizonMin,
-            scrollableHorizonMax = scrollableHorizonMax,
-            scrollableVerticalMin = scrollableVerticalMin,
-            scrollableVerticalMax = scrollableVerticalMax,
-            offsetX = offsetX,
-            offsetY = offsetY,
-            onOffsetChanged = { x, y ->
-                offsetX = x
-                offsetY = y
-            },
+            shortSide = shortSide,
+            longSide = longSide,
+            scrollBounds = scrollBounds,
+            offsetXY = offsetXY,
+            onOffsetChanged = { x, y -> offsetXY = Offset(x, y) },
         )
     }
 }

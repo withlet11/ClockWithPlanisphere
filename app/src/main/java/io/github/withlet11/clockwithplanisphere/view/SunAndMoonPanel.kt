@@ -38,14 +38,15 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.Canvas as ComposeCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.toCanvas
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.MOON_RADIUS
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toCanvas
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.MOON_RADIUS
 
 class SunAndMoonPanel(context: Context?, attrs: AttributeSet? = null) {
-    private var moonPosition by mutableStateOf(0f to 0f)
+    private var moonPosition by mutableStateOf(Offset.Zero)
     private var differenceOfLongitude by mutableDoubleStateOf(0.0)
     private val rotateAngleOfSun: Float get() = -solarAngle * sign(tenMinuteGridStep)
     private val rotateAngleOfMoon: Float get() = -siderealAngle * sign(tenMinuteGridStep)
@@ -56,10 +57,9 @@ class SunAndMoonPanel(context: Context?, attrs: AttributeSet? = null) {
 
     var isZoomed by mutableStateOf(false)
     var isLandScape by mutableStateOf(false)
-    var narrowSideLength by mutableIntStateOf(0)
-    var wideSideLength by mutableIntStateOf(0)
-    var offsetX by mutableIntStateOf(0)
-    var offsetY by mutableIntStateOf(0)
+    var shortSide by mutableIntStateOf(0)
+    var longSide by mutableIntStateOf(0)
+    var offsetXY by mutableStateOf(Offset.Zero)
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val moonColor = context?.getColor(R.color.pastelYellow) ?: 0
@@ -67,20 +67,20 @@ class SunAndMoonPanel(context: Context?, attrs: AttributeSet? = null) {
 
     private val scale: Float
         get() {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
-            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
+            val drawAreaSize = if (isZoomed) longSide else shortSide
+            return if (drawAreaSize > 0) drawAreaSize.toFloat() / PanelGeometry.PREFERRED_SIZE else 1f
         }
 
     @Composable
     fun Content(modifier: Modifier = Modifier) {
         ComposeCanvas(modifier = modifier) {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            val drawAreaSize = if (isZoomed) longSide else shortSide
             if (drawAreaSize > 0) {
                 drawIntoCanvas { composeCanvas ->
                     val canvas = composeCanvas.nativeCanvas
                     canvas.withSave {
                         scale(scale, scale)
-                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        translate(PanelGeometry.CENTER, PanelGeometry.CENTER)
                         drawMoon(canvas)
                     }
                 }
@@ -91,7 +91,7 @@ class SunAndMoonPanel(context: Context?, attrs: AttributeSet? = null) {
     private fun drawMoon(canvas: Canvas) {
         canvas.withSave {
             rotate(rotateAngleOfMoon, 0f, 0f)
-            translate(moonPosition.first.toCanvas(), moonPosition.second.toCanvas())
+            translate(moonPosition.x.toCanvas(), moonPosition.y.toCanvas())
             rotate(
                 rotateAngleOfSun - rotateAngleOfMoon -
                         if (tenMinuteGridStep > 0.0) (180 - differenceOfLongitude.toFloat())
@@ -125,7 +125,7 @@ class SunAndMoonPanel(context: Context?, attrs: AttributeSet? = null) {
     }
 
     fun set(
-        positionOfMoon: Pair<Pair<Float, Float>, Double>,
+        positionOfMoon: Pair<Offset, Double>,
         longitudeOfSun: Double,
         tenMinuteGridStep: Float
     ) {
@@ -138,7 +138,7 @@ class SunAndMoonPanel(context: Context?, attrs: AttributeSet? = null) {
     fun setSolarAngleAndCurrentPosition(
         solarAngle: Float,
         siderealAngle: Float,
-        moonPosition: Pair<Pair<Float, Float>, Double>,
+        moonPosition: Pair<Offset, Double>,
         longitudeOfSun: Double,
         dateTime: LocalDateTime
     ) {

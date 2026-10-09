@@ -31,29 +31,31 @@ import kotlin.math.*
 import androidx.core.graphics.withSave
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.Canvas as ComposeCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.BEZEL_RADIUS
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.DATE_PANEL_RADIUS
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.SKY_BACKGROUND_RADIUS
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.isNear
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.toAbsoluteXY
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.getAngle
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.BEZEL_RADIUS
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.DATE_PANEL_RADIUS
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.SKY_BACKGROUND_RADIUS
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.isNear
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toAbsoluteXY
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.getAngle
 
 class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
     var currentDate: LocalDate by mutableStateOf(LocalDate.now())
     var isZoomed by mutableStateOf(false)
     var isLandScape by mutableStateOf(false)
-    var narrowSideLength by mutableStateOf(0)
-    var wideSideLength by mutableStateOf(0)
-    var offsetX by mutableStateOf(0)
-    var offsetY by mutableStateOf(0)
+    var shortSide by mutableIntStateOf(0)
+    var longSide by mutableIntStateOf(0)
+    var offsetXY by mutableStateOf(Offset.Zero)
 
-    private var offset by mutableStateOf(0f)
+    private var offset by mutableFloatStateOf(0f)
     private var direction by mutableStateOf(false)
 
     private val paint = Paint().apply { isAntiAlias = true }
@@ -67,24 +69,26 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
     private val skyBackGroundColor = context?.getColor(R.color.midnightBlue) ?: 0
 
     private val centerPosition
-        get() = (if (isZoomed) wideSideLength else narrowSideLength).let { it * 0.5f + offsetX to it * 0.5f + offsetY }
+        get() = ((if (isZoomed) longSide else shortSide) * 0.5f).let {
+            Offset(it, it) + offsetXY
+        }
 
     private val scale: Float
         get() {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
-            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
+            val drawAreaSize = (if (isZoomed) longSide else shortSide).toFloat()
+            return if (drawAreaSize > 0f) drawAreaSize / PanelGeometry.PREFERRED_SIZE else 1f
         }
 
     @Composable
     fun Content(modifier: Modifier = Modifier) {
         ComposeCanvas(modifier = modifier) {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            val drawAreaSize = if (isZoomed) longSide else shortSide
             if (drawAreaSize > 0) {
                 drawIntoCanvas { composeCanvas ->
                     val canvas = composeCanvas.nativeCanvas
                     canvas.withSave {
                         scale(scale, scale)
-                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        translate(PanelGeometry.CENTER, PanelGeometry.CENTER)
                         drawBackPanel(canvas)
                         drawGrid(canvas)
                         drawDate(canvas)
@@ -216,6 +220,7 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
                     paint
                 )
             }
+
             15 -> {
                 paint.color = monthNameColor
                 paint.style = Paint.Style.FILL
@@ -251,7 +256,7 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
      * @param [posOnFragment] a position on the fragment
      * @return true if a position is on the edge
      */
-    fun isOnSkyBackgroundEdge(posOnFragment: Pair<Float, Float>): Boolean {
+    fun isOnSkyBackgroundEdge(posOnFragment: Offset): Boolean {
         val radius = SKY_BACKGROUND_RADIUS * scale
         return posOnFragment.toCanvasXY().isNear(centerPosition, radius)
     }
@@ -261,37 +266,35 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
      * @param [posOnFragment] a position on the fragment
      * @return true if a position is on today grid
      */
-    fun isOnTodayGrid(posOnFragment: Pair<Float, Float>): Boolean {
+    fun isOnTodayGrid(posOnFragment: Offset): Boolean {
         val rotate =
             ((-360.0 / currentDate.lengthOfYear() * currentDate.dayOfYear + offset) * if (direction) -1.0 else 1.0) / 180.0 * PI
         val position =
-            SKY_BACKGROUND_RADIUS * sin(rotate).toFloat() to -SKY_BACKGROUND_RADIUS * cos(rotate).toFloat()
+            Offset(
+                (SKY_BACKGROUND_RADIUS * sin(rotate)).toFloat(),
+                (-SKY_BACKGROUND_RADIUS * cos(rotate)).toFloat()
+            )
         return posOnFragment.toCanvasXY().isNear(position.toAbsoluteXY(scale, centerPosition))
     }
 
     /**
      * Gets the rotate angle of a position
-     * @param [x] the x position
-     * @param [y] the y position
+     * @param [position] a position
      * @return the rotate angle
      */
-    fun getAngle(x: Float, y: Float): Float =
-        getAngle(x, y, centerPosition)
+    fun getAngle(position: Offset): Float = getAngle(position, centerPosition)
 
     /**
      * Gets the rotate angle of a position from January 1
-     * @param [x] the x position
-     * @param [y] the y position
+     * @param [position] a position
      * @return the rotate angle
      */
-    fun getAngleFromJan1(x: Float, y: Float): Float =
-        getAngle(x, y) + if (direction) offset else -offset
+    fun getAngleFromJan1(position: Offset): Float =
+        getAngle(position) + if (direction) offset else -offset
 
     /**
      * Converts a relative position to the absolute position on the canvas.
-     * @param [x] the x position
-     * @param [y] the y position
      * @return the absolute position on the canvas
      */
-    private fun Pair<Float, Float>.toCanvasXY(): Pair<Float, Float> = this
+    private fun Offset.toCanvasXY(): Offset = this
 }

@@ -25,7 +25,6 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import io.github.withlet11.clockwithplanisphere.R
-import java.time.LocalDate
 import java.time.LocalTime
 import androidx.core.graphics.withSave
 import androidx.compose.runtime.Composable
@@ -34,20 +33,20 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.Canvas as ComposeCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.isNear
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.isNear
 
 class ClockHandsPanel(context: Context?, attrs: AttributeSet? = null) {
     var localTime: LocalTime by mutableStateOf(LocalTime.MIDNIGHT)
     var isVisible by mutableStateOf(true)
     var isZoomed by mutableStateOf(false)
     var isLandScape by mutableStateOf(false)
-    var narrowSideLength by mutableIntStateOf(0)
-    var wideSideLength by mutableIntStateOf(0)
-    var offsetX by mutableIntStateOf(0)
-    var offsetY by mutableIntStateOf(0)
+    var shortSide by mutableIntStateOf(0)
+    var longSide by mutableIntStateOf(0)
+    var offsetXY by mutableStateOf(Offset.Zero)
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val path = Path()
@@ -57,12 +56,14 @@ class ClockHandsPanel(context: Context?, attrs: AttributeSet? = null) {
     private val shadow = context?.getColor(R.color.smoke) ?: 0
 
     private val centerPosition
-        get() = (if (isZoomed) wideSideLength else narrowSideLength).let { it * 0.5f + offsetX to it * 0.5f + offsetY }
+        get() = ((if (isZoomed) longSide else shortSide) * 0.5f).let {
+            Offset(it, it) + offsetXY
+        }
 
     private val scale: Float
         get() {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
-            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
+            val drawAreaSize = if (isZoomed) longSide else shortSide
+            return if (drawAreaSize > 0) drawAreaSize.toFloat() / PanelGeometry.PREFERRED_SIZE else 1f
         }
 
     private val hourHandGeometries = listOf(
@@ -166,13 +167,13 @@ class ClockHandsPanel(context: Context?, attrs: AttributeSet? = null) {
     @Composable
     fun Content(modifier: Modifier = Modifier) {
         ComposeCanvas(modifier = modifier) {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            val drawAreaSize = if (isZoomed) longSide else shortSide
             if (drawAreaSize > 0 && isVisible) {
                 drawIntoCanvas { composeCanvas ->
                     val canvas = composeCanvas.nativeCanvas
                     canvas.withSave {
                         scale(scale, scale)
-                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        translate(PanelGeometry.CENTER, PanelGeometry.CENTER)
                         drawHourHand(canvas)
                         drawMinuteHand(canvas)
                         drawSecondHand(canvas)
@@ -255,6 +256,5 @@ class ClockHandsPanel(context: Context?, attrs: AttributeSet? = null) {
     }
 
     /** Checks if a position is in the center of the canvas. */
-    fun isCenter(position: Pair<Float, Float>): Boolean =
-        position.isNear(centerPosition)
+    fun isCenter(position: Offset): Boolean = position.isNear(centerPosition)
 }

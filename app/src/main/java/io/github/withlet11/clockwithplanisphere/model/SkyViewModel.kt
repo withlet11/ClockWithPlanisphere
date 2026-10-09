@@ -22,6 +22,7 @@
 package io.github.withlet11.clockwithplanisphere.model
 
 import android.content.Context
+import androidx.compose.ui.geometry.Offset
 import io.github.withlet11.clockwithplanisphere.model.AbstractSkyModel.ConstellationLineGeometry
 import io.github.withlet11.clockwithplanisphere.model.AbstractSkyModel.MilkyWayDot
 import io.github.withlet11.clockwithplanisphere.model.AbstractSkyModel.StarGeometry
@@ -73,10 +74,10 @@ class SkyViewModel(
     val offset: Float
         get() = solarAndSiderealTime.offset
 
-    val horizon: List<Pair<Float, Float>>
+    val horizon: List<Offset>
         get() = horizonModel.horizon
 
-    val altAzimuth: List<List<Pair<Float, Float>?>>
+    val altAzimuth: List<List<Offset?>>
         get() = horizonModel.altAzimuth
 
     val directionLetters: List<Triple<String, Float, Float>>
@@ -97,19 +98,19 @@ class SkyViewModel(
     val equatorial: List<Pair<Int, Float>>
         get() = skyModel.equatorial
 
-    val ecliptic: List<Pair<Float, Float>>
+    val ecliptic: List<Offset>
         get() = skyModel.ecliptic
 
-    val analemma: List<Pair<Float, Float>>
+    val analemma: List<Offset>
         get() = sunAndMoonModel.analemmaGeometryList
 
-    val monthlySunPositionList: List<Pair<Float, Float>>
+    val monthlySunPositionList: List<Offset>
         get() = sunAndMoonModel.monthlyPositionList
 
-    val currentSunPosition: Pair<Pair<Float, Float>, Double>
+    val currentSunPosition: Pair<Offset, Double>
         get() = sunAndMoonModel.getSunPosition(solarAndSiderealTime.jc)
 
-    val currentMoonPosition: Pair<Pair<Float, Float>, Double>
+    val currentMoonPosition: Pair<Offset, Double>
         get() = sunAndMoonModel.getMoonPosition(solarAndSiderealTime.jc)
 
     val tenMinuteGridStep: Float

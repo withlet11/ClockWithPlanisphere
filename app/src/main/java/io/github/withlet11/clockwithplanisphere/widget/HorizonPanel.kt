@@ -26,11 +26,12 @@ import android.graphics.Canvas
 import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
+import androidx.compose.ui.geometry.Offset
 import io.github.withlet11.clockwithplanisphere.R
 
 class HorizonPanel(context: Context) : AbstractPanel() {
-    private var horizon = listOf<Pair<Float, Float>>()
-    private var altAzimuth = listOf<List<Pair<Float, Float>?>>()
+    private var horizon = listOf<Offset>()
+    private var altAzimuth = listOf<List<Offset?>>()
     private var directionLetters = listOf<Triple<String, Float, Float>>()
 
     private val paint = Paint().apply { isAntiAlias = true }
@@ -122,8 +123,8 @@ class HorizonPanel(context: Context) : AbstractPanel() {
     }
 
     fun set(
-        horizon: List<Pair<Float, Float>>,
-        altAzimuth: List<List<Pair<Float, Float>?>>,
+        horizon: List<Offset>,
+        altAzimuth: List<List<Offset?>>,
         directionLetters: List<Triple<String, Float, Float>>
     ) {
         this.horizon = horizon

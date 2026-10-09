@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -39,9 +41,6 @@ import io.github.withlet11.clockwithplanisphere.view.*
 import kotlinx.coroutines.delay
 import java.time.ZonedDateTime
 import kotlin.Int
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.pow
 import kotlin.time.Duration.Companion.milliseconds
 
 private enum class SwipeStatus { ANYTHING, SUN, SKY_EDGE, DATE }
@@ -57,15 +56,11 @@ fun ClockScreen(
     isClockHandsVisible: Boolean,
     onClockHandsVisibilityChanged: (Boolean) -> Unit,
     isLandScape: Boolean,
-    narrowSideLength: Int,
-    wideSideLength: Int,
-    scrollableHorizonMin: Int,
-    scrollableHorizonMax: Int,
-    scrollableVerticalMin: Int,
-    scrollableVerticalMax: Int,
-    offsetX: Int,
-    offsetY: Int,
-    onOffsetChanged: (Int, Int) -> Unit,
+    shortSide: Int,
+    longSide: Int,
+    scrollBounds: Rect,
+    offsetXY: Offset,
+    onOffsetChanged: (Float, Float) -> Unit,
 ) {
     val context = LocalContext.current
 
@@ -133,26 +128,19 @@ fun ClockScreen(
     }
 
     // Touch and swipe management
-    var previousActionX by remember { mutableFloatStateOf(0f) }
-    var previousActionY by remember { mutableFloatStateOf(0f) }
+    var previousActionXY by remember { mutableStateOf(Offset.Zero) }
     var previousRotate by remember { mutableFloatStateOf(0f) }
     var clickCount by remember { mutableIntStateOf(0) }
     var previousClickTime by remember { mutableLongStateOf(0L) }
     var swipeStatus by remember { mutableStateOf(SwipeStatus.ANYTHING) }
 
-    LaunchedEffect(offsetX, offsetY) {
-        clockBasePanel.offsetX = offsetX
-        clockBasePanel.offsetY = offsetY
-        sunPanel.offsetX = offsetX
-        sunPanel.offsetY = offsetY
-        clockHandsPanel.offsetX = offsetX
-        clockHandsPanel.offsetY = offsetY
-        skyPanel.offsetX = offsetX
-        skyPanel.offsetY = offsetY
-        sunAndMoonPanel.offsetX = offsetX
-        sunAndMoonPanel.offsetY = offsetY
-        horizonPanel.offsetX = offsetX
-        horizonPanel.offsetY = offsetY
+    LaunchedEffect(offsetXY) {
+        clockBasePanel.offsetXY = offsetXY
+        sunPanel.offsetXY = offsetXY
+        clockHandsPanel.offsetXY = offsetXY
+        skyPanel.offsetXY = offsetXY
+        sunAndMoonPanel.offsetXY = offsetXY
+        horizonPanel.offsetXY = offsetXY
     }
 
     fun refreshPanels() {
@@ -238,11 +226,10 @@ fun ClockScreen(
         isZoomed = isZoomed,
         isClockHandsVisible = isClockHandsVisible,
         isLandScape = isLandScape,
-        narrowSideLength = narrowSideLength,
-        wideSideLength = wideSideLength,
-        offsetX = offsetX,
-        offsetY = offsetY,
-        onTap = { x, y ->
+        shortSide = shortSide,
+        longSide = longSide,
+        offsetXY = offsetXY,
+        onTap = { xy ->
             when {
                 clickCount > 0 && SystemClock.elapsedRealtime() - previousClickTime < 200L -> {
                     onZoomedChanged(!isZoomed)
@@ -250,7 +237,7 @@ fun ClockScreen(
                     previousClickTime = 0L
                 }
 
-                clockHandsPanel.isCenter(x to y) -> {
+                clockHandsPanel.isCenter(xy) -> {
                     clickCount = 0
                     val newVisibility = !isClockHandsVisible
                     onClockHandsVisibilityChanged(newVisibility)
@@ -266,64 +253,49 @@ fun ClockScreen(
                 }
             }
         },
-        onDragStart = { x, y ->
-            previousActionX = x
-            previousActionY = y
-            previousRotate = clockBasePanel.getAngle(x, y)
+        onDragStart = { xy ->
+            previousActionXY = xy
+            previousRotate = clockBasePanel.getAngle(previousActionXY)
 
             if (!isClockHandsVisible) {
                 swipeStatus = when {
-                    sunPanel.isOnAnalemma(x to y) -> SwipeStatus.SUN
-                    clockBasePanel.isOnTodayGrid(x to y) -> SwipeStatus.DATE
-                    clockBasePanel.isOnSkyBackgroundEdge(x to y) -> SwipeStatus.SKY_EDGE
+                    sunPanel.isOnAnalemma(previousActionXY) -> SwipeStatus.SUN
+                    clockBasePanel.isOnTodayGrid(previousActionXY) -> SwipeStatus.DATE
+                    clockBasePanel.isOnSkyBackgroundEdge(previousActionXY) -> SwipeStatus.SKY_EDGE
                     else -> SwipeStatus.ANYTHING
                 }
             }
         },
-        onDrag = { x, y ->
+        onDrag = { xy ->
             when (swipeStatus) {
                 SwipeStatus.SUN -> {
-                    val rotate = sunPanel.getAngle(x, y)
+                    val rotate = sunPanel.getAngle(xy)
                     skyViewModel.changeDateWithFixedSiderealTime(rotate)
                     refreshPanels()
                 }
 
                 SwipeStatus.DATE -> {
-                    val rotate = clockBasePanel.getAngleFromJan1(x, y)
+                    val rotate = clockBasePanel.getAngleFromJan1(xy)
                     skyViewModel.changeDateWithFixedSolarTime(rotate)
                     refreshPanels()
                 }
 
                 SwipeStatus.SKY_EDGE -> {
-                    val rotate = clockBasePanel.getAngle(x, y)
-                    skyViewModel.changeSiderealTimeWithFixedDate(
-                        rotate - previousRotate
-                    )
+                    val rotate = clockBasePanel.getAngle(xy)
+                    skyViewModel.changeSiderealTimeWithFixedDate(rotate - previousRotate)
                     previousRotate = rotate
                     refreshPanels()
                 }
 
                 else -> {
-                    val newX = max(
-                        min(
-                            offsetX + (x - previousActionX).toInt(),
-                            scrollableHorizonMax
-                        ),
-                        scrollableHorizonMin
+                    val tempXY = offsetXY + (xy - previousActionXY)
+
+                    onOffsetChanged(
+                        tempXY.x.coerceIn(scrollBounds.left, scrollBounds.right),
+                        tempXY.y.coerceIn(scrollBounds.top, scrollBounds.bottom)
                     )
 
-                    val newY = max(
-                        min(
-                            offsetY + (y - previousActionY).toInt(),
-                            scrollableVerticalMax
-                        ),
-                        scrollableVerticalMin
-                    )
-
-                    onOffsetChanged(newX, newY)
-
-                    previousActionX = x
-                    previousActionY = y
+                    previousActionXY = xy
                 }
             }
         },
@@ -345,13 +317,12 @@ fun ClockContent(
     isZoomed: Boolean,
     isClockHandsVisible: Boolean,
     isLandScape: Boolean,
-    narrowSideLength: Int,
-    wideSideLength: Int,
-    offsetX: Int,
-    offsetY: Int,
-    onTap: (Float, Float) -> Unit,
-    onDragStart: (Float, Float) -> Unit,
-    onDrag: (Float, Float) -> Unit,
+    shortSide: Int,
+    longSide: Int,
+    offsetXY: Offset,
+    onTap: (Offset) -> Unit,
+    onDragStart: (Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
     onDragEnd: () -> Unit
 ) {
     val density = LocalDensity.current
@@ -363,44 +334,44 @@ fun ClockContent(
 
     clockBasePanel.isZoomed = isZoomed
     clockBasePanel.isLandScape = isLandScape
-    clockBasePanel.narrowSideLength = narrowSideLength
-    clockBasePanel.wideSideLength = wideSideLength
+    clockBasePanel.shortSide = shortSide
+    clockBasePanel.longSide = longSide
 
     skyPanel.isZoomed = isZoomed
     skyPanel.isLandScape = isLandScape
-    skyPanel.narrowSideLength = narrowSideLength
-    skyPanel.wideSideLength = wideSideLength
+    skyPanel.shortSide = shortSide
+    skyPanel.longSide = longSide
 
     sunPanel.isZoomed = isZoomed
     sunPanel.isLandScape = isLandScape
-    sunPanel.narrowSideLength = narrowSideLength
-    sunPanel.wideSideLength = wideSideLength
+    sunPanel.shortSide = shortSide
+    sunPanel.longSide = longSide
 
     sunAndMoonPanel.isZoomed = isZoomed
     sunAndMoonPanel.isLandScape = isLandScape
-    sunAndMoonPanel.narrowSideLength = narrowSideLength
-    sunAndMoonPanel.wideSideLength = wideSideLength
+    sunAndMoonPanel.shortSide = shortSide
+    sunAndMoonPanel.longSide = longSide
 
     horizonPanel.isZoomed = isZoomed
     horizonPanel.isLandScape = isLandScape
-    horizonPanel.narrowSideLength = narrowSideLength
-    horizonPanel.wideSideLength = wideSideLength
+    horizonPanel.shortSide = shortSide
+    horizonPanel.longSide = longSide
 
     clockHandsPanel.isZoomed = isZoomed
     clockHandsPanel.isLandScape = isLandScape
-    clockHandsPanel.narrowSideLength = narrowSideLength
-    clockHandsPanel.wideSideLength = wideSideLength
+    clockHandsPanel.shortSide = shortSide
+    clockHandsPanel.longSide = longSide
 
     Box(
         modifier = modifier
-            .size(with(density) { wideSideLength.toDp() })
+            .size(with(density) { longSide.toDp() })
             .pointerInput(isZoomed) {
                 awaitPointerEventScope {
                     while (true) {
                         val down = awaitFirstDown()
                         val start = down.position
 
-                        currentOnDragStart(start.x, start.y)
+                        currentOnDragStart(start)
 
                         var isDragging = false
 
@@ -414,12 +385,9 @@ fun ClockContent(
                             if (!change.pressed) {
                                 val end = change.position
                                 val elapsed = SystemClock.elapsedRealtime() - downTime
-                                val distanceSquared =
-                                    (start.x - end.x).pow(2) +
-                                            (start.y - end.y).pow(2)
-
+                                val distanceSquared = (start - end).getDistanceSquared()
                                 if (!isDragging && elapsed < 200L && distanceSquared < 50f) {
-                                    currentOnTap(end.x, end.y)
+                                    currentOnTap(end)
                                 } else {
                                     currentOnDragEnd()
                                 }
@@ -430,25 +398,20 @@ fun ClockContent(
                             val position = change.position
 
                             if (!isDragging) {
-                                val distanceSquared =
-                                    (start.x - position.x).pow(2) +
-                                            (start.y - position.y).pow(2)
-
-                                if (distanceSquared >= 5f) {
-                                    isDragging = true
-                                }
+                                val distanceSquared = (start - position).getDistanceSquared()
+                                isDragging = distanceSquared >= 5f
                             }
 
                             if (isDragging) {
                                 change.consume()
-                                currentOnDrag(position.x, position.y)
+                                currentOnDrag(position)
                             }
                         }
                     }
                 }
             }
             .graphicsLayer(
-                translationX = offsetX.toFloat(), translationY = offsetY.toFloat()
+                translationX = offsetXY.x, translationY = offsetXY.y
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -476,14 +439,10 @@ fun ClockScreenPreview() {
         isClockHandsVisible = true,
         onClockHandsVisibilityChanged = {},
         isLandScape = false,
-        narrowSideLength = 500,
-        wideSideLength = 800,
-        offsetX = 0,
-        offsetY = 0,
-        scrollableHorizonMin = 0,
-        scrollableHorizonMax = 500,
-        scrollableVerticalMin = 0,
-        scrollableVerticalMax = 800,
+        shortSide = 500,
+        longSide = 800,
+        offsetXY = Offset.Zero,
+        scrollBounds = Rect(left = 0f, right = 500f, top = 0f, bottom = 800f),
         onOffsetChanged = { _, _ -> },
     )
 }

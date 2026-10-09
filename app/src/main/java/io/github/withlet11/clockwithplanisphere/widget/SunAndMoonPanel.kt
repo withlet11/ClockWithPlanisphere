@@ -25,18 +25,20 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import androidx.compose.ui.geometry.Offset
 import io.github.withlet11.clockwithplanisphere.R
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sign
 import androidx.core.graphics.withSave
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.MOON_RADIUS
 
 class SunAndMoonPanel(context: Context) : AbstractPanel() {
-    private var analemma = listOf<Pair<Float, Float>>()
-    private var monthlyPositionList = listOf<Pair<Float, Float>>()
+    private var analemma = listOf<Offset>()
+    private var monthlyPositionList = listOf<Offset>()
 
-    private var sunPosition = 0f to 0f
-    private var moonPosition = 0f to 0f
+    private var sunPosition = Offset.Zero
+    private var moonPosition = Offset.Zero
     private var longitudeOfSun = 0.0
     private var longitudeOfMoon = 0.0
     private var differenceOfLongitude = 0.0
@@ -114,7 +116,7 @@ class SunAndMoonPanel(context: Context) : AbstractPanel() {
     private fun Canvas.drawMoon() {
         withSave {
             rotate(rotateAngleOfMoon, 0f, 0f)
-            translate(moonPosition.first.toCanvas(), moonPosition.second.toCanvas())
+            translate(moonPosition.x.toCanvas(), moonPosition.y.toCanvas())
             rotate(
                 rotateAngleOfSun - rotateAngleOfMoon -
                         if (tenMinuteGridStep > 0.0) (180 - differenceOfLongitude.toFloat())
@@ -122,7 +124,7 @@ class SunAndMoonPanel(context: Context) : AbstractPanel() {
             )
             paint.style = Paint.Style.FILL
             val phase =
-                abs(cos(Math.toRadians(differenceOfLongitude)).toFloat() * io.github.withlet11.clockwithplanisphere.view.AbstractPanel.MOON_RADIUS)
+                abs(cos(Math.toRadians(differenceOfLongitude)).toFloat() * MOON_RADIUS)
             val (isFirstHalf, color) = when {
                 differenceOfLongitude < 90 -> true to moonDarkSideColor
                 differenceOfLongitude < 180 -> true to moonColor
@@ -133,9 +135,9 @@ class SunAndMoonPanel(context: Context) : AbstractPanel() {
             paint.color = color
             drawOval(
                 -phase,
-                -io.github.withlet11.clockwithplanisphere.view.AbstractPanel.MOON_RADIUS,
+                -MOON_RADIUS,
                 phase,
-                io.github.withlet11.clockwithplanisphere.view.AbstractPanel.MOON_RADIUS,
+                MOON_RADIUS,
                 paint
             )
         }
@@ -143,12 +145,12 @@ class SunAndMoonPanel(context: Context) : AbstractPanel() {
 
     private fun Canvas.drawHalfMoon(isFirstHalf: Boolean) {
         paint.color = moonColor
-        drawCircle(0f, 0f, io.github.withlet11.clockwithplanisphere.view.AbstractPanel.MOON_RADIUS, paint)
+        drawCircle(0f, 0f, MOON_RADIUS, paint)
         paint.color = moonDarkSideColor
         drawArc(
-            -io.github.withlet11.clockwithplanisphere.view.AbstractPanel.MOON_RADIUS, -io.github.withlet11.clockwithplanisphere.view.AbstractPanel.MOON_RADIUS,
-            io.github.withlet11.clockwithplanisphere.view.AbstractPanel.MOON_RADIUS,
-            io.github.withlet11.clockwithplanisphere.view.AbstractPanel.MOON_RADIUS,
+            -MOON_RADIUS, -MOON_RADIUS,
+            MOON_RADIUS,
+            MOON_RADIUS,
             if (isFirstHalf) 90f else -90f,
             180f,
             false,
@@ -157,10 +159,10 @@ class SunAndMoonPanel(context: Context) : AbstractPanel() {
     }
 
     fun set(
-        analemma: List<Pair<Float, Float>>,
-        monthlyPositionList: List<Pair<Float, Float>>,
-        currentSunPosition: Pair<Pair<Float, Float>, Double>,
-        currentMoonPosition: Pair<Pair<Float, Float>, Double>,
+        analemma: List<Offset>,
+        monthlyPositionList: List<Offset>,
+        currentSunPosition: Pair<Offset, Double>,
+        currentMoonPosition: Pair<Offset, Double>,
         tenMinuteGridStep: Float
     ) {
         this.analemma = analemma

@@ -22,6 +22,7 @@
 package io.github.withlet11.clockwithplanisphere.model
 
 import android.content.Context
+import androidx.compose.ui.geometry.Offset
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -89,7 +90,7 @@ abstract class AbstractSkyModel {
                 val (dec, ra) = convertToEquatorialFromEcliptic(it.toDouble())
                 val radius = toRadius(dec)
                 val angle = toRadiansFromDegrees(-ra) // need hour angle
-                (-radius * sin(angle)).toFloat() to (-radius * cos(angle)).toFloat()
+                Offset((-radius * sin(angle)).toFloat(), (-radius * cos(angle)).toFloat())
             }
         }
 
@@ -97,7 +98,7 @@ abstract class AbstractSkyModel {
     abstract val tenMinuteGridStep: Float
 
     var equatorial = listOf<Pair<Int, Float>>()
-    var ecliptic = listOf<Pair<Float, Float>>()
+    var ecliptic = listOf<Offset>()
 
     var starGeometryList = listOf<StarGeometry>()
         protected set
@@ -128,10 +129,10 @@ abstract class AbstractSkyModel {
                 val xy1 = convertToXYPositionWithNull(dec1, -ra1)
                 val xy2 = convertToXYPositionWithNull(dec2, -ra2)
                 if (xy1 != null && xy2 != null) ConstellationLineGeometry(
-                    xy1.first,
-                    xy1.second,
-                    xy2.first,
-                    xy2.second
+                    xy1.x,
+                    xy1.y,
+                    xy2.x,
+                    xy2.y
                 ) else null
             }
     }
@@ -147,26 +148,26 @@ abstract class AbstractSkyModel {
     private fun calculateStarPosition(dec: Double, ra: Double, radius: Float): StarGeometry? =
         convertToXYPositionWithNull(dec, -ra)?.let { (x, y) -> StarGeometry(x, y, radius) }
 
-    fun convertToXYPositionWithNull(dec: Double, ha: Double): Pair<Float, Float>? {
+    fun convertToXYPositionWithNull(dec: Double, ha: Double): Offset? {
         val radius = toRadius(dec)
         return when {
             radius < 1.0 -> {
                 val angle = toRadiansFromHours(ha)
-                (-radius * sin(angle)).toFloat() to (-radius * cos(angle)).toFloat()
+                Offset((-radius * sin(angle)).toFloat(), (-radius * cos(angle)).toFloat())
             }
             else -> null
         }
     }
 
-    fun convertToXYPosition(dec: Double, ha: Double): Pair<Float, Float> {
+    fun convertToXYPosition(dec: Double, ha: Double): Offset {
         val radius = min(toRadius(dec), 1.0)
         val angle = toRadiansFromHours(ha)
-        return (-radius * sin(angle)).toFloat() to (-radius * cos(angle)).toFloat()
+        return Offset((-radius * sin(angle)).toFloat(), (-radius * cos(angle)).toFloat())
     }
 
-    fun getXYPositionOnOuterCircle(degree: Double): Pair<Float, Float> {
+    fun getXYPositionOnOuterCircle(degree: Double): Offset {
         val radian = toRadiansFromDegrees(degree)
-        return cos(radian).toFloat() to sin(radian.toFloat())
+        return Offset(cos(radian).toFloat(), sin(radian.toFloat()))
     }
 
     private fun convertToEquatorialFromEcliptic(eclipticLongitude: Double): Pair<Double, Double> {

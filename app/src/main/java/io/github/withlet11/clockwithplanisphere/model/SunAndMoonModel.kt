@@ -21,6 +21,7 @@
 
 package io.github.withlet11.clockwithplanisphere.model
 
+import androidx.compose.ui.geometry.Offset
 import java.lang.Math.toDegrees
 import java.lang.Math.toRadians
 import kotlin.math.*
@@ -36,14 +37,14 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
             updateAnalemma()
         }
 
-    var analemmaGeometryList = listOf<Pair<Float, Float>>()
-    var monthlyPositionList = listOf<Pair<Float, Float>>()
+    var analemmaGeometryList = listOf<Offset>()
+    var monthlyPositionList = listOf<Offset>()
 
     /**
      * Calculates the position of the Sun.
      * @param jc Julian centuries
      */
-    fun getSunPosition(jc: Double): Pair<Pair<Float, Float>, Double> {
+    fun getSunPosition(jc: Double): Pair<Offset, Double> {
         // orbital parameters
         val epoch = SolarAndSiderealTime.getJc(2000, 1, 1, SECONDS_IN_HALF_DAY) // J2000.0
         val eccentricity = 0.0167086 // e
@@ -87,7 +88,7 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
      * Calculates the position of the Moon
      * @param jc Julian centuries
      */
-    fun getMoonPosition(jc: Double): Pair<Pair<Float, Float>, Double> {
+    fun getMoonPosition(jc: Double): Pair<Offset, Double> {
         val t = jc * 100.0
         val inclination = toRadians(AXIAL_TILT)
         val a = parameterA.sumOf { (p, q, r) -> p * sin(toRadians(q + r * t)) }

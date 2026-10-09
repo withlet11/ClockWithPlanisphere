@@ -1,5 +1,5 @@
 /*
- * AbstractPanel.kt
+ * PanelGeometry.kt
  *
  * Copyright 2020-2026 Yasuhiro Yamakawa <withlet11@gmail.com>
  *
@@ -21,16 +21,14 @@
 
 package io.github.withlet11.clockwithplanisphere.view
 
+import androidx.compose.ui.geometry.Offset
 import java.lang.Math.toDegrees
 import kotlin.math.*
 
-object AbstractPanel {
+object PanelGeometry {
     const val PREFERRED_SIZE = 800f
     const val CENTER = PREFERRED_SIZE * 0.5f
     private const val CIRCLE_RADIUS = PREFERRED_SIZE * 0.4f
-    const val MOON_AGE_RING_RADIUS = 40f
-    const val MOON_AGE_RING_THICKNESS = 20f
-    const val MOON_AGE_HAND_THICKNESS = 5f
     const val MOON_RADIUS = 10f
     const val BEZEL_RADIUS = 400f
     const val DATE_PANEL_RADIUS = 368f
@@ -50,11 +48,11 @@ object AbstractPanel {
      * @param [radius] the radius of the circle
      * @return true if 2 positions are near
      */
-    fun Pair<Float, Float>.isNear(center: Pair<Float, Float>, radius: Float): Boolean {
-        val r2 = (first - center.first).pow(2) + (second - center.second).pow(2)
-        val minR2 = (radius - 50).pow(2)
-        val maxR2 = (radius + 50).pow(2)
-        return r2 > minR2 && r2 < maxR2
+    fun Offset.isNear(center: Offset, radius: Float): Boolean {
+        val r2 = (this - center).getDistanceSquared()
+        val minR = radius - 50
+        val maxR = radius + 50
+        return r2 > minR * minR && r2 < maxR * maxR
     }
 
     /**
@@ -62,8 +60,7 @@ object AbstractPanel {
      * @receiver a position on the canvas
      * @return true if 2 positions are near
      */
-    fun Pair<Float, Float>.isNear(other: Pair<Float, Float>): Boolean =
-        abs(first - other.first) < 50 && abs(second - other.second) < 50
+    fun Offset.isNear(other: Offset): Boolean = (this - other).getDistanceSquared() < 2500
 
     /**
      * Converts a relative position to the absolute position on the canvas with a rotate angle.
@@ -73,13 +70,14 @@ object AbstractPanel {
      * @param [centerPosition] the center position
      * @return the absolute position on the canvas
      */
-    fun Pair<Float, Float>.toAbsoluteXY(rotate: Float, scale: Float, centerPosition: Pair<Float, Float>): Pair<Float, Float> {
-        val x = first.toCanvas()
-        val y = second.toCanvas()
+    fun Offset.toAbsoluteXY(rotate: Float, scale: Float, centerPosition: Offset): Offset {
+        val x = this.x.toCanvas()
+        val y = this.y.toCanvas()
         val rad = Math.toRadians(rotate.toDouble())
-        val absoluteX = (x * cos(rad) - y * sin(rad)).toFloat() * scale + centerPosition.first
-        val absoluteY = (x * sin(rad) + y * cos(rad)).toFloat() * scale + centerPosition.second
-        return absoluteX to absoluteY
+        return Offset(
+            (x * cos(rad) - y * sin(rad)).toFloat(),
+            (x * sin(rad) + y * cos(rad)).toFloat()
+        ) * scale + centerPosition
     }
 
     /**
@@ -89,10 +87,8 @@ object AbstractPanel {
      * @param [centerPosition] the center position
      * @return the absolute position on the canvas
      */
-    fun Pair<Float, Float>.toAbsoluteXY(scale: Float, centerPosition: Pair<Float, Float>): Pair<Float, Float> {
-        val absoluteX = first * scale + centerPosition.first
-        val absoluteY = second * scale + centerPosition.second
-        return absoluteX to absoluteY
+    fun Offset.toAbsoluteXY(scale: Float, centerPosition: Offset): Offset {
+        return this * scale + centerPosition
     }
 
     /**
@@ -102,7 +98,7 @@ object AbstractPanel {
      * @param [centerPosition] the center position
      * @return the absolute position on the canvas
      */
-    fun Float.toAbsoluteXY(scale: Float, centerPosition: Pair<Float, Float>): Pair<Pair<Float, Float>, Float> {
+    fun Float.toAbsoluteXY(scale: Float, centerPosition: Offset): Pair<Offset, Float> {
         val radius = this * scale
         return centerPosition to radius
     }
@@ -110,17 +106,16 @@ object AbstractPanel {
     /**
      * Calculates the rotate angle of a position with the center position.
      * @receiver a position on the canvas
-     * @param [x] the x position
-     * @param [y] the y position
+     * @param [position] a position
      * @param [centerPosition] the center position
      * @return the rotate angle
      */
-    fun getAngle(x: Float, y: Float, centerPosition: Pair<Float, Float>): Float =
-        (x to y).let { (absX, absY) ->
+    fun getAngle(position: Offset, centerPosition: Offset): Float =
+        position.let { (absX, absY) ->
             toDegrees(
                 atan2(
-                    (absX - centerPosition.first).toDouble(),
-                    -(absY - centerPosition.second).toDouble()
+                    (absX - centerPosition.x).toDouble(),
+                    -(absY - centerPosition.y).toDouble()
                 )
             ).toFloat()
         }

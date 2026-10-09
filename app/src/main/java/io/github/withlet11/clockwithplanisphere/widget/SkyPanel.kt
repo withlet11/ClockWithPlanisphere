@@ -25,6 +25,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import androidx.compose.ui.geometry.Offset
 import io.github.withlet11.clockwithplanisphere.R
 import io.github.withlet11.clockwithplanisphere.model.AbstractSkyModel
 import kotlin.math.PI
@@ -39,7 +40,7 @@ class SkyPanel(context: Context) : AbstractPanel() {
     private var milkyWayDotList = listOf<AbstractSkyModel.MilkyWayDot>()
     private var milkyWayDotSize = 0f
     private var equatorial = listOf<Pair<Int, Float>>()
-    private var ecliptic = listOf<Pair<Float, Float>>()
+    private var ecliptic = listOf<Offset>()
 
     var siderealAngle = 0f
     private var tenMinuteGridStep = 180f / 72f
@@ -174,7 +175,7 @@ class SkyPanel(context: Context) : AbstractPanel() {
         milkyWayDotList: List<AbstractSkyModel.MilkyWayDot>,
         milkyWayDotSize: Float,
         equatorial: List<Pair<Int, Float>>,
-        ecliptic: List<Pair<Float, Float>>,
+        ecliptic: List<Offset>,
         tenMinuteGridStep: Float
     ) {
         this.starGeometryList = starGeometryList

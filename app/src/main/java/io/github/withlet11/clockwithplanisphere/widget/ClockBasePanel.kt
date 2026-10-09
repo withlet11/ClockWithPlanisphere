@@ -77,7 +77,7 @@ class ClockBasePanel(context: Context) : AbstractPanel() {
         val doubleRect2OffsetX = intervalOfDoubleRect * 0.5f
         val singleRectOffsetX = rectangleSize * 0.5f
         val offsetY =
-            -io.github.withlet11.clockwithplanisphere.view.AbstractPanel.DATE_PANEL_RADIUS - rectangleSize
+            -io.github.withlet11.clockwithplanisphere.view.PanelGeometry.DATE_PANEL_RADIUS - rectangleSize
         val dot1OffsetY = offsetY + rectangleSize * 0.5f
         val dot2OffsetY = offsetY + rectangleSize * 0.5f
 
@@ -155,8 +155,8 @@ class ClockBasePanel(context: Context) : AbstractPanel() {
                 paint.color = monthBorderColor
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = 2f
-                val startY = io.github.withlet11.clockwithplanisphere.view.AbstractPanel.SKY_BACKGROUND_RADIUS
-                val stopY = io.github.withlet11.clockwithplanisphere.view.AbstractPanel.DATE_PANEL_RADIUS
+                val startY = io.github.withlet11.clockwithplanisphere.view.PanelGeometry.SKY_BACKGROUND_RADIUS
+                val stopY = io.github.withlet11.clockwithplanisphere.view.PanelGeometry.DATE_PANEL_RADIUS
                 val offsetRate = PI.toFloat() / if (direction) 365f else -365f
                 drawLine(
                     startY * offsetRate,

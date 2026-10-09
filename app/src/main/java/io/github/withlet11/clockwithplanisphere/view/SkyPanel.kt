@@ -32,30 +32,32 @@ import kotlin.math.*
 import androidx.core.graphics.withSave
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.Canvas as ComposeCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.toCanvas
-import io.github.withlet11.clockwithplanisphere.view.AbstractPanel.SKY_BACKGROUND_RADIUS
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toCanvas
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.SKY_BACKGROUND_RADIUS
 
 class SkyPanel(context: Context?, attrs: AttributeSet? = null) {
     private var starGeometryList by mutableStateOf(listOf<StarGeometry>())
     private var constellationLineList by mutableStateOf(listOf<ConstellationLineGeometry>())
     private var milkyWayDotList by mutableStateOf(listOf<MilkyWayDot>())
-    private var milkyWayDotSize by mutableStateOf(0f)
+    private var milkyWayDotSize by mutableFloatStateOf(0f)
     private var equatorial by mutableStateOf(listOf<Pair<Int, Float>>())
-    private var ecliptic by mutableStateOf(listOf<Pair<Float, Float>>())
+    private var ecliptic by mutableStateOf(listOf<Offset>())
 
-    var siderealAngle by mutableStateOf(0f)
+    var siderealAngle by mutableFloatStateOf(0f)
     var isZoomed by mutableStateOf(false)
     var isLandScape by mutableStateOf(false)
-    var narrowSideLength by mutableStateOf(0)
-    var wideSideLength by mutableStateOf(0)
-    var offsetX by mutableStateOf(0)
-    var offsetY by mutableStateOf(0)
+    var shortSide by mutableIntStateOf(0)
+    var longSide by mutableIntStateOf(0)
+    var offsetXY by mutableStateOf(Offset.Zero)
 
     private var tenMinuteGridStep = 180f / 72f
 
@@ -71,20 +73,20 @@ class SkyPanel(context: Context?, attrs: AttributeSet? = null) {
 
     private val scale: Float
         get() {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
-            return if (drawAreaSize > 0) drawAreaSize.toFloat() / AbstractPanel.PREFERRED_SIZE else 1f
+            val drawAreaSize = if (isZoomed) longSide else shortSide
+            return if (drawAreaSize > 0) drawAreaSize.toFloat() / PanelGeometry.PREFERRED_SIZE else 1f
         }
 
     @Composable
     fun Content(modifier: Modifier = Modifier) {
         ComposeCanvas(modifier = modifier) {
-            val drawAreaSize = if (isZoomed) wideSideLength else narrowSideLength
+            val drawAreaSize = if (isZoomed) longSide else shortSide
             if (drawAreaSize > 0) {
                 drawIntoCanvas { composeCanvas ->
                     val canvas = composeCanvas.nativeCanvas
                     canvas.withSave {
                         scale(scale, scale)
-                        translate(AbstractPanel.CENTER, AbstractPanel.CENTER)
+                        translate(PanelGeometry.CENTER, PanelGeometry.CENTER)
                         canvas.rotate(-siderealAngle * sign(tenMinuteGridStep), 0f, 0f)
                         drawEquatorial(canvas)
                         drawEcliptic(canvas)
@@ -203,7 +205,7 @@ class SkyPanel(context: Context?, attrs: AttributeSet? = null) {
         milkyWayDotList: List<MilkyWayDot>,
         milkyWayDotSize: Float,
         equatorial: List<Pair<Int, Float>>,
-        ecliptic: List<Pair<Float, Float>>,
+        ecliptic: List<Offset>,
         tenMinuteGridStep: Float
     ) {
         this.starGeometryList = starGeometryList
