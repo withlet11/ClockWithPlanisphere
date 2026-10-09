@@ -47,7 +47,8 @@ class SolarAndSiderealTime {
 
         }
 
-    private var zonedDateTime = ZonedDateTime.now()
+    var zonedDateTime: ZonedDateTime = ZonedDateTime.now()
+        private set
 
     private val dut1: Duration = Duration.ofNanos(-243 * 1000000)  // 2020-06-25
 
@@ -77,8 +78,8 @@ class SolarAndSiderealTime {
         get() = getJc(ut1.year, ut1.monthValue, ut1.dayOfMonth, elapsedSeconds.seconds)
 
     /** Set current time to the properties */
-    fun setCurrentTime() {
-        zonedDateTime = ZonedDateTime.now()
+    fun setCurrentTime(dateTime: ZonedDateTime = ZonedDateTime.now()) {
+        zonedDateTime = dateTime
         localDateTime = zonedDateTime.toLocalDateTime()
     }
 
@@ -125,10 +126,12 @@ class SolarAndSiderealTime {
                     targetDayOfYear -= 1
                     target + 86400
                 }
+
                 target >= 86400 -> {
                     targetDayOfYear += 1
                     target - 86400
                 }
+
                 else -> {
                     target
                 }

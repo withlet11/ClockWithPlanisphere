@@ -28,6 +28,7 @@ import io.github.withlet11.clockwithplanisphere.model.AbstractSkyModel.StarGeome
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZonedDateTime
 import kotlin.math.sign
 
 class SkyViewModel(
@@ -127,9 +128,11 @@ class SkyViewModel(
         }
     }
 
-    fun setCurrentTime() {
-        solarAndSiderealTime.setCurrentTime()
+    fun setCurrentTime(dateTime: ZonedDateTime = ZonedDateTime.now()) {
+        solarAndSiderealTime.setCurrentTime(dateTime)
     }
+
+    fun getZonedDateTime(): ZonedDateTime = solarAndSiderealTime.zonedDateTime
 
     fun changeLocation(latitude: Double, longitude: Double) {
         this.latitude = latitude

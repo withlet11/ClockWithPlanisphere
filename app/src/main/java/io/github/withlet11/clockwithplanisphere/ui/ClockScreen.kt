@@ -37,6 +37,7 @@ import io.github.withlet11.clockwithplanisphere.model.SkyViewModel
 import io.github.withlet11.clockwithplanisphere.model.SouthernSkyModel
 import io.github.withlet11.clockwithplanisphere.view.*
 import kotlinx.coroutines.delay
+import java.time.ZonedDateTime
 import kotlin.Int
 import kotlin.math.max
 import kotlin.math.min
@@ -68,13 +69,17 @@ fun ClockScreen(
 ) {
     val context = LocalContext.current
 
+    var observedDateTime by remember { mutableStateOf(ZonedDateTime.now()) }
+
     val skyViewModel = remember(isSouthernSky, latitude, longitude) {
         SkyViewModel(
             context,
             if (isSouthernSky) SouthernSkyModel() else NorthernSkyModel(),
             latitude,
             longitude
-        )
+        ).apply {
+            setCurrentTime(observedDateTime)
+        }
     }
 
     val skyPanel = remember(isSouthernSky, latitude, longitude) {
@@ -198,6 +203,8 @@ fun ClockScreen(
                 skyViewModel.localDateTime
             )
         }
+
+        observedDateTime = skyViewModel.getZonedDateTime()
     }
 
     fun refreshClock() {
@@ -212,7 +219,8 @@ fun ClockScreen(
     LaunchedEffect(isClockHandsVisible) {
         if (isClockHandsVisible) {
             while (true) {
-                skyViewModel.setCurrentTime()
+                observedDateTime = ZonedDateTime.now()
+                skyViewModel.setCurrentTime(observedDateTime)
                 refreshClock()
                 delay(250L.milliseconds)
             }
