@@ -21,7 +21,6 @@
 
 package io.github.withlet11.clockwithplanisphere.ui
 
-import android.content.Context.MODE_PRIVATE
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -32,22 +31,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.core.content.edit
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -58,64 +54,24 @@ import io.github.withlet11.clockwithplanisphere.fragment.LocationSettingDialog
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
-private const val DEFAULT_LATITUDE = 45.0
-private const val DEFAULT_LONGITUDE = 0.0
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     onPrivacyPolicyClick: () -> Unit,
     onLicensesClick: () -> Unit,
     onCreditsClick: () -> Unit,
+    viewModel: MainViewModel = viewModel()
 ) {
-    val context = LocalContext.current
-
     val defaultColor = colorResource(R.color.defaultBackGround).toArgb()
 
-    var latitude by remember { mutableDoubleStateOf(DEFAULT_LATITUDE) }
-    var longitude by remember { mutableDoubleStateOf(DEFAULT_LONGITUDE) }
-    var backgroundColor by remember { mutableIntStateOf(0) }
-    var isSouthernSky by remember { mutableStateOf(false) }
-
-    fun loadPreviousSettings() {
-        val previous = context.getSharedPreferences("observation_position", MODE_PRIVATE)
-
-        try {
-            latitude = previous.getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
-            longitude = previous.getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
-            isSouthernSky = previous.getBoolean("isSouthernSky", false)
-            backgroundColor = previous.getInt( "backgroundColor", defaultColor )
-        } catch (_: ClassCastException) {
-            latitude = DEFAULT_LATITUDE
-            longitude = DEFAULT_LONGITUDE
-            isSouthernSky = false
-            backgroundColor = defaultColor
-        }
+    LaunchedEffect(defaultColor) {
+        viewModel.initialize(defaultColor)
     }
 
-    fun loadPreviousPosition() {
-        val previous = context.getSharedPreferences("observation_position", MODE_PRIVATE)
-
-        try {
-            latitude = previous.getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
-            longitude = previous.getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
-        } catch (_: ClassCastException) {
-            latitude = DEFAULT_LATITUDE
-            longitude = DEFAULT_LONGITUDE
-        }
-    }
-
-    fun loadColorSettings() {
-        val previous = context.getSharedPreferences("observation_position", MODE_PRIVATE)
-
-        backgroundColor = try {
-            previous.getInt("backgroundColor", defaultColor)
-        } catch (_: ClassCastException) {
-            defaultColor
-        }
-    }
-
-    loadPreviousSettings()
+    val latitude = viewModel.latitude
+    val longitude = viewModel.longitude
+    val isSouthernSky = viewModel.isSouthernSky
+    val backgroundColor = if (viewModel.isInitialized) viewModel.backgroundColor else defaultColor
 
     var menuExpanded by remember { mutableStateOf(false) }
     var showLocationDialog by remember { mutableStateOf(false) }
@@ -155,14 +111,7 @@ fun MainScreen(
                         )
                         Switch(
                             checked = isSouthernSky,
-                            onCheckedChange = {
-                                isSouthernSky = it
-                                context.getSharedPreferences("observation_position", MODE_PRIVATE)
-                                    .edit {
-                                        putBoolean("isSouthernSky", isSouthernSky)
-                                        putInt("backgroundColor", backgroundColor)
-                                    }
-                            },
+                            onCheckedChange = viewModel::updateSouthernSky,
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.primary,
                                 uncheckedThumbColor = MaterialTheme.colorScheme.primary,
@@ -248,7 +197,7 @@ fun MainScreen(
                     },
                     onLocationSaved = {
                         showLocationDialog = false
-                        loadPreviousPosition()
+                        viewModel.loadPreviousPosition()
                     },
                 )
             }
@@ -259,7 +208,7 @@ fun MainScreen(
                     },
                     onColorSaved = {
                         showColorDialog = false
-                        loadColorSettings()
+                        viewModel.loadColorSettings(defaultColor)
                     },
                 )
             }
