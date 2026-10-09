@@ -22,7 +22,6 @@
 package io.github.withlet11.clockwithplanisphere.ui
 
 import android.os.SystemClock
-import android.util.Log
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -52,7 +51,6 @@ fun ClockScreen(
     latitude: Double,
     longitude: Double,
     isSouthernSky: Boolean,
-
     isZoomed: Boolean,
     onZoomedChanged: (Boolean) -> Unit,
     isClockHandsVisible: Boolean,
@@ -66,11 +64,11 @@ fun ClockScreen(
     scrollableVerticalMax: Int,
     offsetX: Int,
     offsetY: Int,
-    onChangeOffset: (Int, Int) -> Unit,
+    onOffsetChanged: (Int, Int) -> Unit,
 ) {
     val context = LocalContext.current
 
-    val skyViewModel = remember(isSouthernSky) {
+    val skyViewModel = remember(isSouthernSky, latitude, longitude) {
         SkyViewModel(
             context,
             if (isSouthernSky) SouthernSkyModel() else NorthernSkyModel(),
@@ -79,24 +77,65 @@ fun ClockScreen(
         )
     }
 
-    val skyPanel = remember(skyViewModel) { SkyPanel(context, null) }
-    val sunPanel = remember(skyViewModel) { SunPanel(context, null) }
-    val sunAndMoonPanel = remember(skyViewModel) { SunAndMoonPanel(context, null) }
-    val horizonPanel = remember(skyViewModel) { HorizonPanel(context, null) }
-    val clockBasePanel = remember(skyViewModel) { ClockBasePanel(context, null) }
-    val clockHandsPanel = remember(skyViewModel) { ClockHandsPanel(context, null) }
+    val skyPanel = remember(isSouthernSky, latitude, longitude) {
+        SkyPanel(context, null).apply {
+            set(
+                skyViewModel.starGeometryList,
+                skyViewModel.constellationLineList,
+                skyViewModel.milkyWayDotList,
+                skyViewModel.milkyWayDotSize,
+                skyViewModel.equatorial,
+                skyViewModel.ecliptic,
+                skyViewModel.tenMinuteGridStep
+            )
+        }
+    }
+
+    val sunPanel = remember(isSouthernSky, latitude, longitude) {
+        SunPanel(context, null).apply {
+            set(
+                skyViewModel.analemma,
+                skyViewModel.monthlySunPositionList,
+                skyViewModel.currentSunPosition.first,
+                skyViewModel.tenMinuteGridStep
+            )
+        }
+    }
+    val sunAndMoonPanel = remember(isSouthernSky, latitude, longitude) {
+        SunAndMoonPanel(context, null).apply {
+            set(
+                skyViewModel.currentMoonPosition,
+                skyViewModel.currentSunPosition.second,
+                skyViewModel.tenMinuteGridStep
+            )
+        }
+    }
+
+    val horizonPanel = remember(isSouthernSky, latitude, longitude) {
+        HorizonPanel(context, null).apply {
+            set(skyViewModel.horizon, skyViewModel.altAzimuth, skyViewModel.directionLetters)
+        }
+    }
+
+    val clockBasePanel = remember(isSouthernSky, latitude, longitude) {
+        ClockBasePanel(context, null).apply {
+            set(skyViewModel.offset, skyViewModel.direction)
+        }
+    }
+
+    val clockHandsPanel = remember {
+        ClockHandsPanel(context, null)
+    }
 
     // Touch and swipe management
     var previousActionX by remember { mutableFloatStateOf(0f) }
     var previousActionY by remember { mutableFloatStateOf(0f) }
     var previousRotate by remember { mutableFloatStateOf(0f) }
-
     var clickCount by remember { mutableIntStateOf(0) }
     var previousClickTime by remember { mutableLongStateOf(0L) }
-
     var swipeStatus by remember { mutableStateOf(SwipeStatus.ANYTHING) }
 
-    fun updatePanelOffsets() {
+    LaunchedEffect(offsetX, offsetY) {
         clockBasePanel.offsetX = offsetX
         clockBasePanel.offsetY = offsetY
         sunPanel.offsetX = offsetX
@@ -109,41 +148,6 @@ fun ClockScreen(
         sunAndMoonPanel.offsetY = offsetY
         horizonPanel.offsetX = offsetX
         horizonPanel.offsetY = offsetY
-    }
-
-    updatePanelOffsets()
-
-    fun setStarDataList() {
-        with(skyViewModel) {
-            skyPanel.set(
-                starGeometryList,
-                constellationLineList,
-                milkyWayDotList,
-                milkyWayDotSize,
-                equatorial,
-                ecliptic,
-                tenMinuteGridStep
-            )
-            sunPanel.set(
-                analemma,
-                monthlySunPositionList,
-                currentSunPosition.first,
-                tenMinuteGridStep
-            )
-            sunAndMoonPanel.set(
-                currentMoonPosition,
-                currentSunPosition.second,
-                tenMinuteGridStep
-            )
-        }
-    }
-
-    fun setHorizonPanel() {
-        with(skyViewModel) { horizonPanel.set(horizon, altAzimuth, directionLetters) }
-    }
-
-    fun setClockBasePanel() {
-        with(skyViewModel) { clockBasePanel.set(offset, direction) }
     }
 
     fun refreshPanels() {
@@ -194,7 +198,6 @@ fun ClockScreen(
                 skyViewModel.localDateTime
             )
         }
-
     }
 
     fun refreshClock() {
@@ -202,15 +205,8 @@ fun ClockScreen(
         refreshPanels()
     }
 
-    LaunchedEffect(isSouthernSky, latitude, longitude) {
-        skyViewModel.changeLocation(latitude, longitude)
-        setStarDataList()
-        setHorizonPanel()
-        setClockBasePanel()
-        skyViewModel.setCurrentTime()
-        refreshClock()
-
-        updatePanelOffsets()
+    LaunchedEffect(isSouthernSky) {
+        refreshPanels()
     }
 
     LaunchedEffect(isClockHandsVisible) {
@@ -316,12 +312,10 @@ fun ClockScreen(
                         scrollableVerticalMin
                     )
 
-                    onChangeOffset(newX, newY)
+                    onOffsetChanged(newX, newY)
 
                     previousActionX = x
                     previousActionY = y
-
-                    updatePanelOffsets()
                 }
             }
         },
@@ -464,7 +458,6 @@ fun ClockContent(
 @Preview
 @Composable
 fun ClockScreenPreview() {
-
     ClockScreen(
         latitude = 45.0,
         longitude = 0.0,
@@ -483,6 +476,6 @@ fun ClockScreenPreview() {
         scrollableHorizonMax = 500,
         scrollableVerticalMin = 0,
         scrollableVerticalMax = 800,
-        onChangeOffset = { _, _ -> },
+        onOffsetChanged = { _, _ -> },
     )
 }

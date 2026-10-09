@@ -21,7 +21,6 @@
 
 package io.github.withlet11.clockwithplanisphere.ui
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,19 +31,15 @@ import androidx.compose.ui.unit.IntSize
 
 @Composable
 fun CwpScreen(
+    modifier: Modifier = Modifier,
     isSouthernSky: Boolean,
     latitude: Double,
     longitude: Double,
-    isClockHandsVisible: Boolean,
-    onClockHandsVisibilityChanged: (Boolean) -> Unit,
-    backgroundColor: Int,
-    modifier: Modifier = Modifier
+    backgroundColor: Int
 ) {
-    var offsetX by remember { mutableIntStateOf(0) }
-    var offsetY by remember { mutableIntStateOf(0) }
-
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
     var isZoomed by remember { mutableStateOf(false) }
+    var isClockHandsVisible by remember { mutableStateOf(true) }
 
     val isLandScape = screenSize.width > screenSize.height
     val wideSideLength: Int
@@ -86,11 +81,11 @@ fun CwpScreen(
         scrollableVerticalMax = totalDifference
     }
 
-    LaunchedEffect(screenSize, isZoomed) {
-        if (screenSize != IntSize.Zero) {
-            offsetX = (scrollableHorizonMax + scrollableHorizonMin) / 2
-            offsetY = (scrollableVerticalMax + scrollableVerticalMin) / 2
-        }
+    var offsetX by remember(screenSize, isZoomed) {
+        mutableIntStateOf((scrollableHorizonMax + scrollableHorizonMin) / 2)
+    }
+    var offsetY by remember(screenSize, isZoomed) {
+        mutableIntStateOf((scrollableVerticalMax + scrollableVerticalMin) / 2)
     }
 
     Box(
@@ -104,11 +99,10 @@ fun CwpScreen(
             latitude = latitude,
             longitude = longitude,
             isSouthernSky = isSouthernSky,
-
             isZoomed = isZoomed,
             onZoomedChanged = { isZoomed = it },
             isClockHandsVisible = isClockHandsVisible,
-            onClockHandsVisibilityChanged = onClockHandsVisibilityChanged,
+            onClockHandsVisibilityChanged = { isClockHandsVisible = it },
             isLandScape = isLandScape,
             narrowSideLength = narrowSideLength,
             wideSideLength = wideSideLength,
@@ -118,9 +112,9 @@ fun CwpScreen(
             scrollableVerticalMax = scrollableVerticalMax,
             offsetX = offsetX,
             offsetY = offsetY,
-            onChangeOffset = { newX, newY ->
-                offsetX = newX
-                offsetY = newY
+            onOffsetChanged = { x, y ->
+                offsetX = x
+                offsetY = y
             },
         )
     }

@@ -74,7 +74,6 @@ fun MainScreen(
 
     var latitude by remember { mutableDoubleStateOf(DEFAULT_LATITUDE) }
     var longitude by remember { mutableDoubleStateOf(DEFAULT_LONGITUDE) }
-    var isClockHandsVisible by remember { mutableStateOf(true) }
     var backgroundColor by remember { mutableIntStateOf(0) }
     var isSouthernSky by remember { mutableStateOf(false) }
 
@@ -269,8 +268,6 @@ fun MainScreen(
                 isSouthernSky = isSouthernSky,
                 latitude = latitude,
                 longitude = longitude,
-                isClockHandsVisible = isClockHandsVisible,
-                onClockHandsVisibilityChanged = { isClockHandsVisible = it },
                 backgroundColor = backgroundColor,
                 modifier = Modifier.fillMaxSize()
             )
