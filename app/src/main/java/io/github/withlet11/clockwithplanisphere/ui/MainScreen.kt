@@ -90,7 +90,7 @@ fun MainScreen(
             CwpTopAppBar(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
+                    .height(72.dp),
                 title = {
                     Text(
                         stringResource(R.string.app_name),
