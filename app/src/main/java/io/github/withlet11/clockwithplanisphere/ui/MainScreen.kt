@@ -23,8 +23,9 @@ package io.github.withlet11.clockwithplanisphere.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
@@ -36,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -86,18 +88,22 @@ fun MainScreen(
     Scaffold(
         topBar = {
             CwpTopAppBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
                 title = {
                     Text(
                         stringResource(R.string.app_name),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.titleMedium
                     )
                 },
                 navigationIcon = {
                     Image(
                         painter = painterResource(R.drawable.ic_launcher_foreground),
                         contentDescription = null,
-                        modifier = Modifier.size(60.dp)
+                        modifier = Modifier.size(48.dp)
                     )
                 },
                 actions = {
@@ -105,33 +111,44 @@ fun MainScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        Text(
-                            text = stringResource(R.string.north_label),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Switch(
-                            checked = isSouthernSky,
-                            onCheckedChange = viewModel::updateSouthernSky,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                                uncheckedBorderColor = MaterialTheme.colorScheme.primary
-                            ),
-                            thumbContent = {
+
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable { viewModel.updateSouthernSky(!isSouthernSky) },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            listOf(
+                                stringResource(R.string.north_label),
+                                stringResource(R.string.south_label)
+                            ).forEachIndexed { index, label ->
+                                val selected = (index == 1) == isSouthernSky
+
                                 Box(
                                     modifier = Modifier
-                                        .size(40.dp)
-                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
-                                )
-                            },
-                        )
-                        Text(
-                            text = stringResource(R.string.south_label),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                                        .background(
+                                            color = if (selected) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.surfaceVariant
+                                            }
+                                        )
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (selected) {
+                                            MaterialTheme.colorScheme.onPrimary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            }
+                        }
 
                         Box {
                             IconButton(onClick = { menuExpanded = true }) {

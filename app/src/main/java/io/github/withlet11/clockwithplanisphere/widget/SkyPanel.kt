@@ -123,8 +123,14 @@ class SkyPanel(context: Context) : AbstractPanel() {
     private fun Canvas.drawConstellationLines() {
         paint.strokeWidth = 1f
         paint.color = constellationLineColor
-        constellationLineList.forEach { (x1, y1, x2, y2) ->
-            drawLine(x1.toCanvas(), y1.toCanvas(), x2.toCanvas(), y2.toCanvas(), paint)
+        constellationLineList.forEach { (xy1, xy2) ->
+            drawLine(
+                xy1.x.toCanvas(),
+                xy1.y.toCanvas(),
+                xy2.x.toCanvas(),
+                xy2.y.toCanvas(),
+                paint
+            )
         }
     }
 

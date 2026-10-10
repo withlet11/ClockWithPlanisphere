@@ -1,5 +1,7 @@
 <resources>
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/ic_launcher_background</item>
+        <item name="android:navigationBarColor">@color/cwp_dark_surface</item>
+        <item name="android:statusBarColor">@color/cwp_dark_surface</item>
     </style>
 </resources>

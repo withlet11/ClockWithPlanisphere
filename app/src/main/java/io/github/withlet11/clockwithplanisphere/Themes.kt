@@ -126,10 +126,11 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun CwpTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    // darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    // val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = DarkColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,

@@ -215,6 +215,8 @@ fun ClockScreen(
         }
     }
 
+    refreshPanels()
+
     ClockContent(
         modifier = modifier,
         clockBasePanel = clockBasePanel,

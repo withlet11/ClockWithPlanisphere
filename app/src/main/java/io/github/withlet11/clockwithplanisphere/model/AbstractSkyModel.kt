@@ -63,7 +63,7 @@ abstract class AbstractSkyModel {
     )
 
     data class StarGeometry(val x: Float, val y: Float, val r: Float)
-    data class ConstellationLineGeometry(val x1: Float, val y1: Float, val x2: Float, val y2: Float)
+    data class ConstellationLineGeometry(val xy1: Offset, val xy2: Offset)
     data class MilkyWayDot(val x: Float, val y: Float, val color: Int)
 
     companion object {
@@ -128,12 +128,7 @@ abstract class AbstractSkyModel {
             cwpDao.getAllConstellationLines().mapNotNull { (_, ra1, dec1, ra2, dec2) ->
                 val xy1 = convertToXYPositionWithNull(dec1, -ra1)
                 val xy2 = convertToXYPositionWithNull(dec2, -ra2)
-                if (xy1 != null && xy2 != null) ConstellationLineGeometry(
-                    xy1.x,
-                    xy1.y,
-                    xy2.x,
-                    xy2.y
-                ) else null
+                if (xy1 != null && xy2 != null) ConstellationLineGeometry(xy1, xy2) else null
             }
     }
 
@@ -155,6 +150,7 @@ abstract class AbstractSkyModel {
                 val angle = toRadiansFromHours(ha)
                 Offset((-radius * sin(angle)).toFloat(), (-radius * cos(angle)).toFloat())
             }
+
             else -> null
         }
     }

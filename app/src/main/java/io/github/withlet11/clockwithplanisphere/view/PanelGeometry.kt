@@ -111,12 +111,8 @@ object PanelGeometry {
      * @return the rotate angle
      */
     fun getAngle(position: Offset, centerPosition: Offset): Float =
-        position.let { (absX, absY) ->
-            toDegrees(
-                atan2(
-                    (absX - centerPosition.x).toDouble(),
-                    -(absY - centerPosition.y).toDouble()
-                )
-            ).toFloat()
+        position.let { absXY ->
+            val pos = absXY - centerPosition
+            toDegrees(atan2(pos.x.toDouble(), -pos.y.toDouble())).toFloat()
         }
 }
