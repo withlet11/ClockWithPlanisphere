@@ -22,7 +22,6 @@
 package io.github.withlet11.clockwithplanisphere.fragment
 
 import android.content.Context
-import android.util.Log
 import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -35,7 +34,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -51,9 +52,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.edit
-import io.github.withlet11.clockwithplanisphere.CwpTheme
-import io.github.withlet11.clockwithplanisphere.R
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -64,12 +62,20 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.IntOffset
 import androidx.core.graphics.blue
 import androidx.core.graphics.green
 import androidx.core.graphics.red
+import androidx.core.content.edit
+import io.github.withlet11.clockwithplanisphere.CwpTheme
+import io.github.withlet11.clockwithplanisphere.R
 
 
 private const val PREFERENCES_NAME = "observation_position"
@@ -120,7 +126,7 @@ fun ColorSettingDialog(
         value = hsv[2]
     }
 
-    fun updateColor(
+    fun updateRgbColor(
         newRed: Int = red,
         newGreen: Int = green,
         newBlue: Int = blue,
@@ -138,7 +144,7 @@ fun ColorSettingDialog(
         isPositiveButtonEnabled = true
     }
 
-    fun updateColor2(
+    fun updateHsvColor(
         newHue: Int = hue,
         newSaturation: Int = saturation,
         newValue: Int = value,
@@ -166,13 +172,13 @@ fun ColorSettingDialog(
                 hue = hue,
                 saturation = saturation,
                 value = value,
-                onRedChanged = { value -> updateColor(newRed = value) },
-                onGreenChanged = { value -> updateColor(newGreen = value) },
-                onBlueChanged = { value -> updateColor(newBlue = value) },
-                onHueChanged = { value -> updateColor2(newHue = value) },
-                onSaturationChanged = { value -> updateColor2(newSaturation = value) },
-                onValueChanged = { value -> updateColor2(newValue = value) },
-                onColorSelected = { r, g, b -> updateColor(newRed = r, newGreen = g, newBlue = b) }
+                onRedChanged = { value -> updateRgbColor(newRed = value) },
+                onGreenChanged = { value -> updateRgbColor(newGreen = value) },
+                onBlueChanged = { value -> updateRgbColor(newBlue = value) },
+                onHueChanged = { value -> updateHsvColor(newHue = value) },
+                onSaturationChanged = { value -> updateHsvColor(newSaturation = value) },
+                onValueChanged = { value -> updateHsvColor(newValue = value) },
+                onColorSelected = { r, g, b -> updateRgbColor(newRed = r, newGreen = g, newBlue = b) }
             )
         },
         confirmButton = {
@@ -223,29 +229,27 @@ fun ColorSettingContent(
     var isRgbMode by rememberSaveable { mutableStateOf(true) }
 
     Column(
-        modifier = modifier
-            .padding(16.dp)
-            .width(320.dp),
+        modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IntrinsicSize.Min),
+                .aspectRatio(1.1f),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Column(
                 modifier = modifier
                     .fillMaxHeight()
-                    .align(Alignment.CenterVertically)
-                    .padding(vertical = 4.dp),
+                    .weight(0.4f)
+                    .align(Alignment.CenterVertically),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(74.dp)
+                        .size(100.dp)
                         .background(backgroundColor)
                         .border(1.dp, MaterialTheme.colorScheme.outline)
                 )
@@ -279,17 +283,62 @@ fun ColorSettingContent(
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 },
-                                style = MaterialTheme.typography.labelMedium
+                                style = MaterialTheme.typography.labelLarge
                             )
                         }
                     }
                 }
+
+                if (isRgbMode)
+                    Column {
+
+                        Text(
+                            text = "${stringResource(R.string.red)}:${red.toString().padStart(3)}",
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text(
+                            text = "${stringResource(R.string.green)}:${
+                                green.toString().padStart(3)
+                            }",
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text(
+                            text = "${stringResource(R.string.blue)}:${
+                                blue.toString().padStart(3)
+                            }",
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                else
+                    Column {
+                        Text(
+                            text = "${stringResource(R.string.hsv_h)}:${
+                                hue.toString().padStart(3)
+                            }°",
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text(
+                            text = "${stringResource(R.string.hsv_s)}:${
+                                saturation.toString().padStart(3)
+                            }%",
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text(
+                            text = "${stringResource(R.string.hsv_v)}:${
+                                value.toString().padStart(3)
+                            }%",
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
             }
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                if (isRgbMode) {
+            if (isRgbMode)
+                Column(
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .align(alignment = Alignment.Top),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     HorizontalRuler(
                         label = stringResource(R.string.red),
                         value = red,
@@ -310,27 +359,31 @@ fun ColorSettingContent(
                         colorAtValue = { blue -> Color(0, 0, blue) },
                         onValueChange = onBlueChanged
                     )
-                } else {
+                }
+            else
+                Column(
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .align(alignment = Alignment.Top),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     HueDial(
-                        label = "Hue", // stringResource(R.string.red),
+                        label = stringResource(R.string.hsv_h),
                         value = hue,
                         colorAtValue = { hue -> hsvToColor(hue, 100, 100) },
                         onValueChange = onHueChanged
                     )
 
                     ColorPad(
-                        labelX = "Sat.",
-                        valueX = saturation,
-                        labelY = "Val.",
-                        valueY = value,
+                        values = IntOffset(saturation, value),
+                        labels = stringResource(R.string.hsv_s) to stringResource(R.string.hsv_v),
                         colorAtValues = { saturation, value -> hsvToColor(hue, saturation, value) },
-                        onValuesChange = { saturation, value ->
+                        onValuesChange = { (saturation, value) ->
                             onSaturationChanged(saturation)
                             onValueChanged(value)
                         },
                     )
                 }
-            }
         }
 
         Text(
@@ -421,16 +474,12 @@ fun HorizontalRuler(
     var dragRemainder by remember { mutableFloatStateOf(0f) }
     val tickColor = MaterialTheme.colorScheme.onSurfaceVariant
     val activeColor = MaterialTheme.colorScheme.primary
+    val outline = MaterialTheme.colorScheme.outline
 
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "$label [$value]",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -458,60 +507,31 @@ fun HorizontalRuler(
                     )
                 },
         ) {
-            val centerX = size.width / 2f
-            val centerY = size.height / 2f
-            val thirdWidth = size.width / 3f
+            val oneThirdWidth = size.width / 2f
+            val visibleUnits = (oneThirdWidth / pixelsPerUnit).toInt() // + tickInterval
 
-            val visibleUnits = (thirdWidth / pixelsPerUnit).toInt() + tickInterval
-            Log.d("CwpScreen", "Ruler visibleUnits: $visibleUnits")
-
-            val firstValue = maxOf(0, value - visibleUnits)
-            val lastValue = minOf(maxValue, value + visibleUnits)
-
-            val startX = centerX + (firstValue - value) * pixelsPerUnit
-            val endX = centerX + (lastValue - value) * pixelsPerUnit
-
-            drawRect(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(colorAtValue(firstValue), colorAtValue(lastValue)),
-                    startX = startX,
-                    endX = endX,
-                ),
-                topLeft = Offset(startX, 0f),
-                size = Size(endX - startX, size.height)
-            )
-
-            for (tickValue in firstValue..lastValue) {
-                if (tickValue % tickInterval != 0) continue
-
-                val x = centerX + (tickValue - value) * pixelsPerUnit
-
-                val isMajor = tickValue % majorTickInterval == 0
-                val tickHeight = when {
-                    isMajor -> 28.dp
-                    else -> 14.dp
-                }
-
-                val halfHeight = with(density) {
-                    tickHeight.toPx() / 2f
-                }
-
-                drawLine(
-                    color = tickColor,
-                    start = Offset(x, centerY - halfHeight),
-                    end = Offset(x, centerY + halfHeight),
-                    strokeWidth = with(density) { 1.dp.toPx() },
-                )
-            }
-            drawLine(
-                color = activeColor,
-                start = Offset(centerX, 0f),
-                end = Offset(centerX, size.height),
-                strokeWidth = with(density) { 2.dp.toPx() },
+            drawBarArea(
+                value = value,
+                leftValue = maxOf(0, value - visibleUnits),
+                rightValue = minOf(maxValue, value + visibleUnits),
+                visibleUnits = visibleUnits,
+                tickInterval = tickInterval,
+                majorTickInterval = majorTickInterval,
+                pixelsPerUnit = pixelsPerUnit,
+                tickColor = tickColor,
+                activeColor = activeColor,
+                outlineColor = outline,
+                colorAtValue = colorAtValue
             )
         }
+
+        Text(
+            text = "◀ $label ▶",
+            style = MaterialTheme.typography.labelMedium,
+        )
     }
 }
+
 
 @Composable
 fun HueDial(
@@ -534,17 +554,12 @@ fun HueDial(
     var dragRemainder by remember { mutableFloatStateOf(0f) }
     val tickColor = MaterialTheme.colorScheme.onSurfaceVariant
     val activeColor = MaterialTheme.colorScheme.primary
-
+    val outline = MaterialTheme.colorScheme.outline
 
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "$label [${value}]",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -572,68 +587,36 @@ fun HueDial(
                     )
                 },
         ) {
-            val centerX = size.width / 2f
-            val centerY = size.height / 2f
-            val thirdWidth = size.width / 3f
+            val thirdWidth = size.width / 2f
+            val visibleUnits = (thirdWidth / pixelsPerUnit).toInt() // + tickInterval / 2
 
-            val visibleUnits = (thirdWidth / pixelsPerUnit).toInt() + tickInterval / 2
-            Log.d("CwpScreen", "Dial visibleUnits: $visibleUnits")
-
-            val firstValue = value - visibleUnits
-            val lastValue = value + visibleUnits
-
-            val startX = centerX - visibleUnits * pixelsPerUnit
-            val endX = centerX + visibleUnits * pixelsPerUnit
-
-            drawRect(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(colorAtValue(firstValue), colorAtValue(lastValue)),
-                    startX = startX,
-                    endX = endX,
-                ),
-                topLeft = Offset(startX, 0f),
-                size = Size(endX - startX, size.height)
-            )
-
-            for (tickValue in firstValue..lastValue) {
-                if (tickValue % tickInterval != 0) continue
-
-                val x = centerX + (tickValue - value) * pixelsPerUnit
-
-                val isMajor = tickValue % majorTickInterval == 0
-                val tickHeight = when {
-                    isMajor -> 28.dp
-                    else -> 14.dp
-                }
-
-                val halfHeight = with(density) {
-                    tickHeight.toPx() / 2f
-                }
-
-                drawLine(
-                    color = tickColor,
-                    start = Offset(x, centerY - halfHeight),
-                    end = Offset(x, centerY + halfHeight),
-                    strokeWidth = with(density) { 1.dp.toPx() },
-                )
-            }
-            drawLine(
-                color = activeColor,
-                start = Offset(centerX, 0f),
-                end = Offset(centerX, size.height),
-                strokeWidth = with(density) { 2.dp.toPx() },
+            drawBarArea(
+                value = value,
+                leftValue = value - visibleUnits,
+                rightValue = value + visibleUnits,
+                visibleUnits = visibleUnits,
+                tickInterval = tickInterval,
+                majorTickInterval = majorTickInterval,
+                pixelsPerUnit = pixelsPerUnit,
+                tickColor = tickColor,
+                activeColor = activeColor,
+                outlineColor = outline,
+                colorAtValue = colorAtValue
             )
         }
+
+        Text(
+            text = "◀ $label ▶",
+            style = MaterialTheme.typography.labelMedium
+        )
     }
 }
 
 @Composable
-fun ColorPad(
-    valueX: Int,
-    labelX: String,
-    valueY: Int,
-    labelY: String,
-    onValuesChange: (Int, Int) -> Unit,
+private fun ColorPad(
+    values: IntOffset,
+    labels: Pair<String, String>,
+    onValuesChange: (IntOffset) -> Unit,
     colorAtValues: (Int, Int) -> Color,
     modifier: Modifier = Modifier,
 ) {
@@ -645,23 +628,18 @@ fun ColorPad(
     val density = LocalDensity.current
     val pixelsPerUnit = with(density) { dpPerUnit.toPx() }
 
-    val currentValueX by rememberUpdatedState(valueX)
-    val currentValueY by rememberUpdatedState(valueY)
+    val currentValues by rememberUpdatedState(values)
     val currentOnValuesChange by rememberUpdatedState(onValuesChange)
     val currentColorAtValues by rememberUpdatedState(colorAtValues)
     var dragRemainder by remember { mutableStateOf(Offset.Zero) }
     val tickColor = MaterialTheme.colorScheme.onSurfaceVariant
     val activeColor = MaterialTheme.colorScheme.primary
+    val outlineColor = MaterialTheme.colorScheme.outline
 
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "$labelX [$valueX] / $labelY [$valueY]",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -675,110 +653,224 @@ fun ColorPad(
                             dragRemainder -= dragAmount / pixelsPerUnit
 
                             if (dragRemainder != Offset.Zero) {
-                                val deltaX = dragRemainder.x.toInt()
-                                val deltaY = dragRemainder.y.toInt()
+                                val delta = IntOffset(
+                                    dragRemainder.x.toInt(),
+                                    dragRemainder.y.toInt()
+                                )
 
-                                val newValueX = (currentValueX + deltaX).coerceIn(0, maxValue)
-                                val newValueY = (currentValueY - deltaY).coerceIn(0, maxValue)
+                                val newValues = IntOffset(
+                                    (currentValues + delta).x.coerceIn(0, maxValue),
+                                    (currentValues - delta).y.coerceIn(0, maxValue)
+                                )
 
-                                if (newValueX != currentValueX || newValueY != currentValueY) {
-                                    currentOnValuesChange(newValueX, newValueY)
+                                if (newValues != currentValues) {
+                                    currentOnValuesChange(newValues)
                                 }
 
-                                dragRemainder -= Offset(deltaX.toFloat(), deltaY.toFloat())
+                                dragRemainder -= Offset(delta.x.toFloat(), delta.y.toFloat())
                             }
                         },
                     )
                 },
         ) {
-            val centerX = size.width / 2f
-            val centerY = size.height / 2f
-            val thirdWidth = size.width / 3f
+            val oneThirdWidth = size.width / 2f
+            val visibleUnits = (oneThirdWidth / pixelsPerUnit).toInt() // + tickInterval
 
-            val visibleUnits = (thirdWidth / pixelsPerUnit).toInt() + tickInterval
-            Log.d("CwpScreen", "Pad visibleUnits: $visibleUnits")
-
-            val firstValueX = maxOf(0, valueX - visibleUnits)
-            val lastValueX = minOf(maxValue, valueX + visibleUnits)
-            val startX = centerX + (firstValueX - valueX) * pixelsPerUnit
-            val endX = centerX + (lastValueX - valueX) * pixelsPerUnit
-
-            val firstValueY = maxOf(0, valueY - visibleUnits)
-            val lastValueY = minOf(maxValue, valueY + visibleUnits)
-            val startY = centerY - (firstValueY - valueY) * pixelsPerUnit
-            val endY = centerY - (lastValueY - valueY) * pixelsPerUnit
-
-            for (tickValue in firstValueY..lastValueY) {
-                val y = centerY - (tickValue - valueY) * pixelsPerUnit
-
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            currentColorAtValues(firstValueX, tickValue),
-                            currentColorAtValues(lastValueX, tickValue)
-                        ),
-                        startX = startX,
-                        endX = endX,
-                    ),
-                    topLeft = Offset(startX, y),
-                    size = Size(endX - startX, pixelsPerUnit * 1.1f)
-                )
-            }
-
-            for (tickValue in firstValueX..lastValueX) {
-                if (tickValue % tickInterval != 0) continue
-
-                val x = centerX + (tickValue - valueX) * pixelsPerUnit
-
-                val isMajor = tickValue % majorTickInterval == 0
-                val strokeWidth = (if (isMajor) 1f else 0.5f).dp.toPx()
-
-                drawLine(
-                    color = tickColor,
-                    start = Offset(x, startY),
-                    end = Offset(x, endY),
-                    strokeWidth = strokeWidth,
-                )
-            }
-
-            for (tickValue in firstValueY..lastValueY) {
-                if (tickValue % tickInterval != 0) continue
-
-                val y = centerY - (tickValue - valueY) * pixelsPerUnit
-
-                val isMajor = tickValue % majorTickInterval == 0
-                val strokeWidth = (if (isMajor) 1f else 0.5f).dp.toPx()
-
-                drawLine(
-                    color = tickColor,
-                    start = Offset(startX, y),
-                    end = Offset(endX, y),
-                    strokeWidth = strokeWidth,
-                )
-            }
-            drawCircle(
-                color = activeColor,
-                center = Offset(centerX, centerY),
-                radius = 3.dp.toPx(),
-                style = Stroke(width = 1.dp.toPx())
-            )
-            drawCircle(
-                color = tickColor,
-                center = Offset(centerX, centerY),
-                radius = 3.dp.toPx(),
-                style = Stroke(width = 2.dp.toPx())
+            drawSquareArea(
+                values = values,
+                topLeftValues = IntOffset(
+                    maxOf(0, values.x - visibleUnits),
+                    maxOf(0, values.y - visibleUnits)
+                ),
+                bottomRightValues = IntOffset(
+                    minOf(maxValue, values.x + visibleUnits),
+                    minOf(maxValue, values.y + visibleUnits)
+                ),
+                visibleUnits = visibleUnits,
+                tickInterval = tickInterval,
+                majorTickInterval = majorTickInterval,
+                pixelsPerUnit = pixelsPerUnit,
+                tickColor = tickColor,
+                activeColor = activeColor,
+                outlineColor = outlineColor,
+                currentColorAtValues = currentColorAtValues
             )
         }
+
+        Text(
+            text = "◀ ${labels.first} ▶ | ▲ ${labels.second} ▼",
+            style = MaterialTheme.typography.labelMedium,
+        )
     }
 }
 
-fun rgbToHsv(color: Int): IntArray {
+private fun DrawScope.drawBarArea(
+    value: Int,
+    leftValue: Int,
+    rightValue: Int,
+    visibleUnits: Int,
+    tickInterval: Int,
+    majorTickInterval: Int,
+    pixelsPerUnit: Float,
+    tickColor: Color,
+    activeColor: Color,
+    outlineColor: Color,
+    colorAtValue: (Int) -> Color,
+) {
+    translate(left = center.x, top = center.y) {
+        val left = (leftValue - value) * pixelsPerUnit
+        val right = (rightValue - value) * pixelsPerUnit
+
+        drawRect(
+            brush = Brush.horizontalGradient(
+                colors = listOf(colorAtValue(leftValue), colorAtValue(rightValue)),
+                startX = left,
+                endX = right,
+            ),
+            topLeft = Offset(left, -size.height / 2f),
+            size = Size(right - left, size.height)
+        )
+
+        for (tickValue in leftValue..rightValue) {
+            if (tickValue % tickInterval != 0) continue
+
+            val x = (tickValue - value) * pixelsPerUnit
+
+            val isMajor = tickValue % majorTickInterval == 0
+            val tickHeight = if (isMajor) 24.dp else 12.dp
+            val y = tickHeight.toPx() / 2f
+
+            drawLine(
+                color = tickColor,
+                start = Offset(x, -y),
+                end = Offset(x, y),
+                strokeWidth = 1.dp.toPx(),
+            )
+        }
+
+        drawLine(
+            color = activeColor,
+            start = Offset(0f, -size.height / 2f),
+            end = Offset(0f, size.height / 2f),
+            strokeWidth = 2.dp.toPx(),
+        )
+
+        drawBorder(
+            areaSize = Size(visibleUnits * 2f * pixelsPerUnit, size.height),
+            color = outlineColor
+        )
+    }
+}
+
+private fun DrawScope.drawSquareArea(
+    values: IntOffset,
+    topLeftValues: IntOffset,
+    bottomRightValues: IntOffset,
+    visibleUnits: Int,
+    tickInterval: Int,
+    majorTickInterval: Int,
+    pixelsPerUnit: Float,
+    tickColor: Color,
+    activeColor: Color,
+    outlineColor: Color,
+    currentColorAtValues: (Int, Int) -> Color
+) {
+    translate(center.x, center.y) {
+        val topLeft = (topLeftValues - values).run {
+            Offset(x * pixelsPerUnit, -y * pixelsPerUnit)
+        }
+
+        val bottomRight = (bottomRightValues - values).run {
+            Offset(x * pixelsPerUnit, -y * pixelsPerUnit)
+        }
+
+        for (tickValue in topLeftValues.y..bottomRightValues.y) {
+            val y = -(tickValue - values.y) * pixelsPerUnit
+
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        currentColorAtValues(topLeftValues.x, tickValue),
+                        currentColorAtValues(bottomRightValues.x, tickValue)
+                    ),
+                    startX = topLeft.x,
+                    endX = bottomRight.x,
+                ),
+                topLeft = Offset(topLeft.x, y),
+                size = Size((bottomRight - topLeft).x, pixelsPerUnit * 1.1f)
+            )
+        }
+
+        for (tickValue in topLeftValues.x..bottomRightValues.x) {
+            if (tickValue % tickInterval != 0) continue
+
+            val isMajor = tickValue % majorTickInterval == 0
+            val strokeWidth = (if (isMajor) 1f else 0.5f).dp.toPx()
+
+            val x = (tickValue - values.x) * pixelsPerUnit
+
+            drawLine(
+                color = tickColor,
+                start = Offset(x, topLeft.y),
+                end = Offset(x, bottomRight.y),
+                strokeWidth = strokeWidth,
+            )
+        }
+
+        for (tickValue in topLeftValues.y..bottomRightValues.y) {
+            if (tickValue % tickInterval != 0) continue
+
+            val isMajor = tickValue % majorTickInterval == 0
+            val strokeWidth = (if (isMajor) 1f else 0.5f).dp.toPx()
+
+            val y = -(tickValue - values.y) * pixelsPerUnit
+
+            drawLine(
+                color = tickColor,
+                start = Offset(topLeft.x, y),
+                end = Offset(bottomRight.x, y),
+                strokeWidth = strokeWidth,
+            )
+        }
+
+        drawCircle(
+            color = activeColor,
+            center = Offset.Zero,
+            radius = 3.dp.toPx(),
+            style = Stroke(width = 1.dp.toPx())
+        )
+
+        drawCircle(
+            color = tickColor,
+            center = Offset.Zero,
+            radius = 3.dp.toPx(),
+            style = Stroke(width = 2.dp.toPx())
+        )
+
+        drawBorder(
+            areaSize = (visibleUnits * 2f * pixelsPerUnit).let { Size(it, it) },
+            color = outlineColor
+        )
+    }
+
+}
+
+private fun DrawScope.drawBorder(areaSize: Size, color: Color) {
+    drawRect(
+        color = color,
+        topLeft = -areaSize.center,
+        size = areaSize,
+        style = Stroke(width = 0.5.dp.toPx())
+    )
+}
+
+private fun rgbToHsv(color: Int): IntArray {
     val hsv = FloatArray(3)
     AndroidColor.colorToHSV(color, hsv)
     return intArrayOf(hsv[0].toInt(), (hsv[1] * 100f).toInt(), (hsv[2] * 100f).toInt())
 }
 
-fun hsvToColor(hue: Int, saturation: Int, value: Int): Color {
+private fun hsvToColor(hue: Int, saturation: Int, value: Int): Color {
     val hsv = floatArrayOf(hue.toFloat(), saturation / 100f, value / 100f)
     return Color(AndroidColor.HSVToColor(hsv))
 }

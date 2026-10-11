@@ -47,4 +47,7 @@
     <string name="navy">ネイビー</string>
     <string name="fuchsia">フクシャ</string>
     <string name="purple">紫</string>
+    <string name="hsv_h">色相</string>
+    <string name="hsv_s">彩度 </string>
+    <string name="hsv_v">明度</string>
 </resources>

@@ -37,10 +37,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -326,62 +327,59 @@ fun LocationSettingContent(
 ) {
     Column(
         modifier = modifier
-            .padding(16.dp)
-            .wrapContentSize(),
+            .width(320.dp)
+            .wrapContentSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier.width(320.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(R.string.latitude),
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End
-                )
-                OutlinedTextField(
-                    value = latitudeText,
-                    onValueChange = onLatitudeChanged,
-                    modifier = Modifier.weight(1f),
-                    isError = isLatitudeError,
-                    singleLine = true,
-                    placeholder = { Text(stringResource(R.string.latitudeHint)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(R.string.longitude),
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End
-                )
-                OutlinedTextField(
-                    value = longitudeText,
-                    onValueChange = onLongitudeChanged,
-                    modifier = Modifier.weight(1f),
-                    isError = isLongitudeError,
-                    singleLine = true,
-                    placeholder = { Text(stringResource(R.string.longitudeHint)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            }
+            Text(
+                text = stringResource(R.string.latitude),
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.End
+            )
+            OutlinedTextField(
+                value = latitudeText,
+                onValueChange = onLatitudeChanged,
+                modifier = Modifier.weight(1f),
+                isError = isLatitudeError,
+                singleLine = true,
+                placeholder = { Text(stringResource(R.string.latitudeHint)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(R.string.longitude),
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.End
+            )
+            OutlinedTextField(
+                value = longitudeText,
+                onValueChange = onLongitudeChanged,
+                modifier = Modifier.weight(1f),
+                isError = isLongitudeError,
+                singleLine = true,
+                placeholder = { Text(stringResource(R.string.longitudeHint)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+        }
 
-            Button(
-                onClick = onGetLocationClick,
-                enabled = isGetLocationEnabled,
-                modifier = Modifier.width(320.dp)
-            ) {
-                Text(stringResource(R.string.gps))
-            }
+        Button(
+            onClick = onGetLocationClick,
+            enabled = isGetLocationEnabled,
+            modifier = Modifier.width(120.dp)
+        ) {
+            Text(stringResource(R.string.gps))
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -390,6 +388,7 @@ fun LocationSettingContent(
             text = statusMessage,
             modifier = Modifier
                 .width(320.dp)
+                .height(64.dp)
         )
     }
 }

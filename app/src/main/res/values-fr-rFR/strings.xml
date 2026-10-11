@@ -68,4 +68,7 @@
     <string name="navy">Bleu marine</string>
     <string name="fuchsia">Fuchsia</string>
     <string name="purple">Violet</string>
+    <string name="hsv_h">Teinte</string>
+    <string name="hsv_s">Sat</string>
+    <string name="hsv_v">Val</string>
 </resources>
