@@ -23,13 +23,28 @@ package io.github.withlet11.clockwithplanisphere.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import java.time.format.DateTimeFormatter
+import kotlin.math.absoluteValue
+import androidx.compose.ui.tooling.preview.Preview
+import io.github.withlet11.clockwithplanisphere.CwpTheme
+import java.time.LocalTime
+import java.time.ZonedDateTime
 
 @Composable
 fun CwpScreen(
@@ -37,11 +52,15 @@ fun CwpScreen(
     isSouthernSky: Boolean,
     latitude: Double,
     longitude: Double,
-    backgroundColor: Int
+    backgroundColor: Int,
 ) {
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
     var isZoomed by remember { mutableStateOf(false) }
     var isClockHandsVisible by remember { mutableStateOf(true) }
+
+    var utc by remember { mutableStateOf(LocalTime.now()) }
+    var solarTime by remember { mutableStateOf(LocalTime.now()) }
+    var siderealTime by remember { mutableStateOf(LocalTime.now()) }
 
     val isLandScape = screenSize.width > screenSize.height
     val longSide: Int
@@ -67,15 +86,31 @@ fun CwpScreen(
     }
 
     var offsetXY by remember(screenSize, isZoomed) {
-        mutableStateOf(scrollBounds.center)
+        mutableStateOf(
+            if (isZoomed) scrollBounds.center else (scrollBounds.center + scrollBounds.center / 1.5f)
+        )
     }
+
+    val textColor = Color.LightGray // MaterialTheme.colorScheme.onPrimaryContainer
+    val shadowColor = Color.Black // MaterialTheme.colorScheme.primaryContainer
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(androidx.compose.ui.graphics.Color(backgroundColor))
+            .background(Color(backgroundColor))
             .onSizeChanged { screenSize = it }
     ) {
+        LocationAndDateInfo(
+            modifier = Modifier.offset(x = 16.dp, y = 16.dp),
+            utc = utc,
+            solarTime = solarTime,
+            siderealTime = siderealTime,
+            latitude = latitude,
+            longitude = longitude,
+            textColor = textColor,
+            shadowColor = shadowColor
+        )
+
         ClockScreen(
             modifier = Modifier.fillMaxSize(),
             latitude = latitude,
@@ -91,6 +126,146 @@ fun CwpScreen(
             scrollBounds = scrollBounds,
             offsetXY = offsetXY,
             onOffsetChanged = { x, y -> offsetXY = Offset(x, y) },
+            onTimeUpdate = { t1, t2, t3 ->
+                utc = t1
+                solarTime = t2
+                siderealTime = t3
+            }
+        )
+    }
+}
+
+@Composable
+fun LocationAndDateInfo(
+    modifier: Modifier = Modifier,
+    utc: LocalTime,
+    solarTime: LocalTime,
+    siderealTime: LocalTime,
+    latitude: Double,
+    longitude: Double,
+    textColor: Color,
+    shadowColor: Color,
+) {
+    Column(
+        modifier = modifier
+    ) {
+        Text(
+            text = "${ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}",
+            color = textColor,
+            style = MaterialTheme.typography.headlineSmall.copy(
+                shadow = Shadow(
+                    color = shadowColor,
+                    offset = Offset.Zero,
+                    blurRadius = 2f
+                )
+            ),
+        )
+
+        Text(
+            text = "${ZonedDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))}",
+            color = textColor,
+            style = MaterialTheme.typography.displayLarge.copy(
+                shadow = Shadow(
+                    color = shadowColor,
+                    offset = Offset.Zero,
+                    blurRadius = 2f
+                )
+            ),
+            fontWeight = FontWeight.SemiBold
+
+        )
+
+        Text(
+            text = "UTC ${
+                utc.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+            }",
+            style = MaterialTheme.typography.headlineSmall.copy(
+                shadow = Shadow(
+                    color = shadowColor,
+                    offset = Offset.Zero,
+                    blurRadius = 2f
+                )
+            ),
+            fontFamily = FontFamily.Monospace,
+            color = textColor
+        )
+
+        Text(
+            text = "MST ${
+                solarTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+            }",
+            style = MaterialTheme.typography.headlineSmall.copy(
+                shadow = Shadow(
+                    color = shadowColor,
+                    offset = Offset.Zero,
+                    blurRadius = 2f
+                )
+            ),
+            fontFamily = FontFamily.Monospace,
+            color = textColor
+        )
+
+        Text(
+            text = "LST ${
+                siderealTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+            }",
+            style = MaterialTheme.typography.headlineSmall.copy(
+                shadow = Shadow(
+                    color = shadowColor,
+                    offset = Offset.Zero,
+                    blurRadius = 2f
+                )
+            ),
+            fontFamily = FontFamily.Monospace,
+            color = textColor
+        )
+
+        Text(
+            text = "${latitude.toLatitudeString()}, ${longitude.toLongitudeString()}",
+            style = MaterialTheme.typography.bodyLarge.copy(
+                shadow = Shadow(
+                    color = shadowColor,
+                    offset = Offset.Zero,
+                    blurRadius = 2f
+                )
+            ),
+            fontFamily = FontFamily.Monospace,
+            color = textColor
+        )
+    }
+}
+
+private fun Double.toLatitudeString(): String {
+    val (degrees, minutes, seconds) = this.degreeToDms()
+    return "${degrees.absoluteValue}\u00b0${minutes.toString().padStart(2, '0')}\u2032${
+        seconds.toString().padStart(2, '0')
+    }\u2033${if (this < 0) "S" else "N"}"
+}
+
+private fun Double.toLongitudeString(): String {
+    val (degrees, minutes, seconds) = this.degreeToDms()
+    return "${degrees.absoluteValue}\u00b0${minutes.toString().padStart(2, '0')}\u2032${
+        seconds.toString().padStart(2, '0')
+    }\u2033${if (this < 0) "W" else "E"}"
+}
+
+private fun Double.degreeToDms(): Triple<Int, Int, Int> {
+    val absDegree = this.absoluteValue
+    val degrees = absDegree.toInt()
+    val minutes = ((absDegree - degrees) * 60).toInt()
+    val seconds = (((absDegree - degrees) * 3600 - minutes * 60)).toInt()
+    return Triple(degrees * (if (this < 0) -1 else 1), minutes, seconds)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CwpScreenPreview() {
+    CwpTheme {
+        CwpScreen(
+            isSouthernSky = false,
+            latitude = 35.6895,
+            longitude = 139.6917,
+            backgroundColor = android.graphics.Color.BLACK
         )
     }
 }

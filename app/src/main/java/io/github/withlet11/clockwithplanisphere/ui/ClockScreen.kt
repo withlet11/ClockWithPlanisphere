@@ -39,6 +39,7 @@ import io.github.withlet11.clockwithplanisphere.model.SkyViewModel
 import io.github.withlet11.clockwithplanisphere.model.SouthernSkyModel
 import io.github.withlet11.clockwithplanisphere.view.*
 import kotlinx.coroutines.delay
+import java.time.LocalTime
 import java.time.ZonedDateTime
 import kotlin.Int
 import kotlin.time.Duration.Companion.milliseconds
@@ -61,6 +62,7 @@ fun ClockScreen(
     scrollBounds: Rect,
     offsetXY: Offset,
     onOffsetChanged: (Float, Float) -> Unit,
+    onTimeUpdate: (LocalTime, LocalTime, LocalTime) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -72,9 +74,7 @@ fun ClockScreen(
             if (isSouthernSky) SouthernSkyModel() else NorthernSkyModel(),
             latitude,
             longitude
-        ).apply {
-            setCurrentTime(observedDateTime)
-        }
+        )
     }
 
     val skyPanel = remember(isSouthernSky, latitude, longitude) {
@@ -123,9 +123,7 @@ fun ClockScreen(
         }
     }
 
-    val clockHandsPanel = remember {
-        ClockHandsPanel(context, null)
-    }
+    val clockHandsPanel = remember { ClockHandsPanel(context, null) }
 
     // Touch and swipe management
     var previousActionXY by remember { mutableStateOf(Offset.Zero) }
@@ -133,15 +131,6 @@ fun ClockScreen(
     var clickCount by remember { mutableIntStateOf(0) }
     var previousClickTime by remember { mutableLongStateOf(0L) }
     var swipeStatus by remember { mutableStateOf(SwipeStatus.ANYTHING) }
-
-    LaunchedEffect(offsetXY) {
-        clockBasePanel.offsetXY = offsetXY
-        sunPanel.offsetXY = offsetXY
-        clockHandsPanel.offsetXY = offsetXY
-        skyPanel.offsetXY = offsetXY
-        sunAndMoonPanel.offsetXY = offsetXY
-        horizonPanel.offsetXY = offsetXY
-    }
 
     fun refreshPanels() {
         clockBasePanel.currentDate = skyViewModel.localDate
@@ -193,6 +182,13 @@ fun ClockScreen(
         }
 
         observedDateTime = skyViewModel.getZonedDateTime()
+
+        val solarTime =
+            LocalTime.ofSecondOfDay((((solarAngle % 360 + 540) % 360) / 360.0 * 86400).toLong())
+        val siderealTime =
+            LocalTime.ofSecondOfDay((((siderealAngle % 360 + 360) % 360) / 360.0 * 86400).toLong())
+
+        onTimeUpdate(skyViewModel.utc, solarTime, siderealTime)
     }
 
     fun refreshClock() {
@@ -200,22 +196,29 @@ fun ClockScreen(
         refreshPanels()
     }
 
+    LaunchedEffect(offsetXY) {
+        clockBasePanel.offsetXY = offsetXY
+        sunPanel.offsetXY = offsetXY
+        clockHandsPanel.offsetXY = offsetXY
+        skyPanel.offsetXY = offsetXY
+        sunAndMoonPanel.offsetXY = offsetXY
+        horizonPanel.offsetXY = offsetXY
+    }
+
     LaunchedEffect(isSouthernSky) {
+        skyViewModel.setCurrentTime(observedDateTime)
         refreshPanels()
     }
 
     LaunchedEffect(isClockHandsVisible) {
         if (isClockHandsVisible) {
             while (true) {
-                observedDateTime = ZonedDateTime.now()
-                skyViewModel.setCurrentTime(observedDateTime)
+                skyViewModel.setCurrentTime(ZonedDateTime.now())
                 refreshClock()
                 delay(250L.milliseconds)
             }
         }
     }
-
-    refreshPanels()
 
     ClockContent(
         modifier = modifier,
@@ -388,7 +391,7 @@ fun ClockContent(
                                 val end = change.position
                                 val elapsed = SystemClock.elapsedRealtime() - downTime
                                 val distanceSquared = (start - end).getDistanceSquared()
-                                if (!isDragging && elapsed < 200L && distanceSquared < 50f) {
+                                if (!isDragging && elapsed < 200L && distanceSquared < 2500f) {
                                     currentOnTap(end)
                                 } else {
                                     currentOnDragEnd()
@@ -435,7 +438,6 @@ fun ClockScreenPreview() {
         latitude = 45.0,
         longitude = 0.0,
         isSouthernSky = false,
-
         isZoomed = false,
         onZoomedChanged = {},
         isClockHandsVisible = true,
@@ -446,5 +448,6 @@ fun ClockScreenPreview() {
         offsetXY = Offset.Zero,
         scrollBounds = Rect(left = 0f, right = 500f, top = 0f, bottom = 800f),
         onOffsetChanged = { _, _ -> },
+        onTimeUpdate = { _, _, _ -> }
     )
 }

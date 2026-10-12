@@ -65,6 +65,8 @@ class SkyViewModel(
     val localTime: LocalTime
         get() = solarAndSiderealTime.localDateTime.toLocalTime()
 
+    val utc: LocalTime
+        get() = solarAndSiderealTime.utc.toLocalTime()
     val siderealAngle: Float
         get() = solarAndSiderealTime.siderealAngle
 

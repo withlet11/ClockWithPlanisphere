@@ -66,9 +66,7 @@ fun MainScreen(
 ) {
     val defaultColor = colorResource(R.color.defaultBackGround).toArgb()
 
-    LaunchedEffect(defaultColor) {
-        viewModel.initialize(defaultColor)
-    }
+    viewModel.initialize(defaultColor)
 
     val latitude = viewModel.latitude
     val longitude = viewModel.longitude
