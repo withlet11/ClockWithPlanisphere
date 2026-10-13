@@ -53,6 +53,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -61,6 +62,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Brush
@@ -69,7 +71,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.window.Dialog
 import androidx.core.graphics.blue
 import androidx.core.graphics.green
 import androidx.core.graphics.red
@@ -83,6 +88,8 @@ private const val BACKGROUND_COLOR_KEY = "backgroundColor"
 
 const val DEFAULT_BACKGROUND_COLOR = 0xffc0e0ffu
 
+enum class ColorMode { RGB, HSV, PALETTE }
+
 @Composable
 fun ColorSettingDialog(
     onDismiss: () -> Unit,
@@ -94,37 +101,16 @@ fun ColorSettingDialog(
         mutableIntStateOf(DEFAULT_BACKGROUND_COLOR.toInt())
     }
 
-    val hsv = rgbToHsv(backgroundColor)
     var red by rememberSaveable { mutableIntStateOf(backgroundColor.red) }
     var green by rememberSaveable { mutableIntStateOf(backgroundColor.green) }
     var blue by rememberSaveable { mutableIntStateOf(backgroundColor.blue) }
 
+    val hsv = rgbToHsv(backgroundColor)
     var hue by rememberSaveable { mutableIntStateOf(hsv[0]) }
     var saturation by rememberSaveable { mutableIntStateOf(hsv[1]) }
     var value by rememberSaveable { mutableIntStateOf(hsv[2]) }
 
-    var isPositiveButtonEnabled by rememberSaveable { mutableStateOf(true) }
-
-    LaunchedEffect(Unit) {
-        val preferences = context.getSharedPreferences(
-            PREFERENCES_NAME,
-            Context.MODE_PRIVATE
-        )
-
-        backgroundColor = preferences.getInt(
-            BACKGROUND_COLOR_KEY,
-            DEFAULT_BACKGROUND_COLOR.toInt()
-        )
-
-        red = backgroundColor.red
-        green = backgroundColor.green
-        blue = backgroundColor.blue
-
-        val hsv = rgbToHsv(backgroundColor)
-        hue = hsv[0]
-        saturation = hsv[1]
-        value = hsv[2]
-    }
+    var isPositiveButtonEnabled by rememberSaveable { mutableStateOf(false) }
 
     fun updateRgbColor(
         newRed: Int = red,
@@ -161,55 +147,198 @@ fun ColorSettingDialog(
         isPositiveButtonEnabled = true
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(R.string.bg_color)) },
-        text = {
-            ColorSettingContent(
-                red = red,
-                green = green,
-                blue = blue,
-                hue = hue,
-                saturation = saturation,
-                value = value,
-                onRedChanged = { value -> updateRgbColor(newRed = value) },
-                onGreenChanged = { value -> updateRgbColor(newGreen = value) },
-                onBlueChanged = { value -> updateRgbColor(newBlue = value) },
-                onHueChanged = { value -> updateHsvColor(newHue = value) },
-                onSaturationChanged = { value -> updateHsvColor(newSaturation = value) },
-                onValueChanged = { value -> updateHsvColor(newValue = value) },
-                onColorSelected = { r, g, b -> updateRgbColor(newRed = r, newGreen = g, newBlue = b) }
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    context.getSharedPreferences(
-                        PREFERENCES_NAME,
-                        Context.MODE_PRIVATE
-                    ).edit {
-                        putInt(BACKGROUND_COLOR_KEY, backgroundColor)
-                        commit()
+    LaunchedEffect(Unit) {
+        val preferences = context.getSharedPreferences(
+            PREFERENCES_NAME,
+            Context.MODE_PRIVATE
+        )
+
+        backgroundColor = preferences.getInt(
+            BACKGROUND_COLOR_KEY,
+            DEFAULT_BACKGROUND_COLOR.toInt()
+        )
+
+        red = backgroundColor.red
+        green = backgroundColor.green
+        blue = backgroundColor.blue
+
+        val hsv = rgbToHsv(backgroundColor)
+        hue = hsv[0]
+        saturation = hsv[1]
+        value = hsv[2]
+    }
+
+    val colorMode = rememberSaveable { mutableStateOf(ColorMode.RGB) }
+    val scrollState = rememberScrollState()
+    val fadeHeight = 24.dp
+    val dialogColor = MaterialTheme.colorScheme.surfaceContainer
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = dialogColor,
+        ) {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 500.dp)
+                    .drawWithContent {
+                        drawContent()
+
+                        val fadePx = fadeHeight.toPx()
+                        val fadeColor = dialogColor.copy(alpha = 0.9f)
+
+                        if (scrollState.value > 0) {
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(fadeColor, Color.Transparent),
+                                    startY = 0f,
+                                    endY = fadePx,
+                                ),
+                                size = Size(size.width, fadePx),
+                            )
+                        }
+
+                        if (scrollState.value < scrollState.maxValue) {
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, fadeColor),
+                                    startY = size.height - fadePx,
+                                    endY = size.height,
+                                ),
+                                topLeft = Offset(0f, size.height - fadePx),
+                                size = Size(size.width, fadePx),
+                            )
+                        }
+                    }
+                    .verticalScroll(scrollState)
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(intrinsicSize = IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+
+                    ) {
+                    Text(
+                        text = stringResource(R.string.bg_color),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    ColorModeSelector(colorMode = colorMode)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1.2f)
+                ) {
+                    ColorSettingContent(
+                        colorMode = colorMode,
+                        red = red,
+                        green = green,
+                        blue = blue,
+                        hue = hue,
+                        saturation = saturation,
+                        value = value,
+                        onRedChanged = { value -> updateRgbColor(newRed = value) },
+                        onGreenChanged = { value -> updateRgbColor(newGreen = value) },
+                        onBlueChanged = { value -> updateRgbColor(newBlue = value) },
+                        onHueChanged = { value -> updateHsvColor(newHue = value) },
+                        onSaturationChanged = { value -> updateHsvColor(newSaturation = value) },
+                        onValueChanged = { value -> updateHsvColor(newValue = value) },
+                        onColorSelected = { r, g, b ->
+                            updateRgbColor(
+                                newRed = r,
+                                newGreen = g,
+                                newBlue = b
+                            )
+                        }
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.cancel))
                     }
 
-                    onColorSaved()
-                    onDismiss()
-                },
-                enabled = isPositiveButtonEnabled
-            ) {
-                Text(stringResource(R.string.modify))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
+                    TextButton(
+                        onClick = {
+                            context.getSharedPreferences(
+                                PREFERENCES_NAME,
+                                Context.MODE_PRIVATE
+                            ).edit {
+                                putInt(BACKGROUND_COLOR_KEY, backgroundColor)
+                                commit()
+                            }
+
+                            onColorSaved()
+                            onDismiss()
+                        },
+                        enabled = isPositiveButtonEnabled
+                    ) {
+                        Text(stringResource(R.string.modify))
+                    }
+                }
             }
         }
-    )
+    }
+}
+
+@Composable
+fun ColorModeSelector(
+    colorMode: MutableState<ColorMode>,
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        listOf(
+            "RGB" to ColorMode.RGB,
+            "HSV" to ColorMode.HSV,
+            "Palette" to ColorMode.PALETTE
+        ).forEach { (label, mode) ->
+            val selected = mode == colorMode.value
+
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = if (selected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    )
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                    .clickable { colorMode.value = mode },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+    }
+
 }
 
 @Composable
 fun ColorSettingContent(
+    colorMode: MutableState<ColorMode>,
     red: Int,
     green: Int,
     blue: Int,
@@ -226,25 +355,18 @@ fun ColorSettingContent(
     modifier: Modifier = Modifier
 ) {
     val backgroundColor = Color(red, green, blue)
-    var isRgbMode by rememberSaveable { mutableStateOf(true) }
 
-    Column(
-        modifier = modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    if (colorMode.value != ColorMode.PALETTE)
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1.1f),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(
                 modifier = modifier
                     .fillMaxHeight()
                     .weight(0.4f)
-                    .align(Alignment.CenterVertically),
+                    .align(Alignment.Top),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(
@@ -254,46 +376,13 @@ fun ColorSettingContent(
                         .border(1.dp, MaterialTheme.colorScheme.outline)
                 )
 
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { isRgbMode = !isRgbMode },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    listOf("RGB", "HSV").forEachIndexed { index, label ->
-                        val selected = (index == 0) == isRgbMode
-
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    color = if (selected) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                    }
-                                )
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = label,
-                                color = if (selected) {
-                                    MaterialTheme.colorScheme.onPrimary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                    }
-                }
-
-                if (isRgbMode)
+                if (colorMode.value == ColorMode.RGB)
                     Column {
 
                         Text(
-                            text = "${stringResource(R.string.red)}:${red.toString().padStart(3)}",
+                            text = "${stringResource(R.string.red)}:${
+                                red.toString().padStart(3)
+                            }",
                             fontFamily = FontFamily.Monospace
                         )
                         Text(
@@ -332,7 +421,7 @@ fun ColorSettingContent(
                     }
             }
 
-            if (isRgbMode)
+            if (colorMode.value == ColorMode.RGB)
                 Column(
                     modifier = Modifier
                         .weight(0.6f)
@@ -377,7 +466,13 @@ fun ColorSettingContent(
                     ColorPad(
                         values = IntOffset(saturation, value),
                         labels = stringResource(R.string.hsv_s) to stringResource(R.string.hsv_v),
-                        colorAtValues = { saturation, value -> hsvToColor(hue, saturation, value) },
+                        colorAtValues = { saturation, value ->
+                            hsvToColor(
+                                hue,
+                                saturation,
+                                value
+                            )
+                        },
                         onValuesChange = { (saturation, value) ->
                             onSaturationChanged(saturation)
                             onValueChanged(value)
@@ -385,12 +480,7 @@ fun ColorSettingContent(
                     )
                 }
         }
-
-        Text(
-            text = stringResource(R.string.basic_colors),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.align(Alignment.Start)
-        )
+    else {
 
         val paletteColors = listOf(
             Triple(R.string.white, R.color.white, R.color.black),
@@ -413,12 +503,9 @@ fun ColorSettingContent(
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
-            userScrollEnabled = false
         ) {
             items(paletteColors) { (stringRes, bgColCode, textColCode) ->
                 val bgCol = colorResource(bgColCode)
@@ -437,9 +524,9 @@ fun ColorSettingContent(
                         contentColor = textCol
                     ),
                     contentPadding = PaddingValues(2.dp),
-                    shape = RoundedCornerShape(4.dp),
+                    shape = RoundedCornerShape(if (bgCol == backgroundColor) 24.dp else 4.dp),
                     modifier = Modifier
-                        .height(36.dp)
+                        .height(48.dp)
                         .fillMaxWidth()
                 ) {
                     Text(
@@ -880,6 +967,7 @@ private fun hsvToColor(hue: Int, saturation: Int, value: Int): Color {
 fun ColorSettingContentPreview() {
     CwpTheme {
         ColorSettingContent(
+            colorMode = remember { mutableStateOf(ColorMode.RGB) },
             red = 192,
             green = 224,
             blue = 255,
