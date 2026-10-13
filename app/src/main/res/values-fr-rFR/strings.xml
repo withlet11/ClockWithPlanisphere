@@ -4,15 +4,14 @@
     <string name="layoutSettings">Paramètres de mise en page</string>
     <string name="license">Licence</string>
     <string name="opensource_licenses">Licences open source</string>
-    <string name="latitude">"Latitude : "</string>
-    <string name="longitude">"Longitude : "</string>
+    <string name="latitude">Latitude : </string>
+    <string name="longitude">Longitude : </string>
     <string name="modify">Modifier</string>
     <string name="cancel">Annuler</string>
     <string name="inGettingLocation">Obtention de la localisation…</string>
     <string name="pleaseCheckIfGPSIsOn">Veuillez vérifier que le GPS est activé.</string>
     <string name="privacy_policy_header">Politique de confidentialité</string>
-    <string name="privacy_policy">
-        <i>Dernière mise à jour : 20 novembre 2020</i>\n\n
+    <string name="privacy_policy"><i>Dernière mise à jour : 20 novembre 2020</i>\n\n
         La présente politique de confidentialité décrit la manière dont nous traitons les
         informations fournies par les utilisateurs et dont nous les utilisons.\n\n
 
@@ -42,8 +41,7 @@
         <b>Nous contacter</b>\n
         Pour toute question concernant cette politique de confidentialité, vous pouvez nous
         contacter par e-mail :
-        <a href="mailto:withlet11@gmail.com" tools:ignore="Typos">withlet11@gmail.com</a>
-    </string>
+        <a href="mailto:withlet11@gmail.com" tools:ignore="Typos">withlet11@gmail.com</a></string>
     <string name="no_permission_to_access_location_permanent">Aucune autorisation d’accès à la localisation. Veuillez vérifier les autorisations de l’application dans les paramètres système.</string>
     <string name="no_permission_to_access_location_once">Aucune autorisation d’accès à la localisation.</string>
     <string name="clock_base_panel">Cadran de l’horloge</string>

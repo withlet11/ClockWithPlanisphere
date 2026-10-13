@@ -219,15 +219,18 @@ fun ColorSettingDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(intrinsicSize = IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
-
                     ) {
                     Text(
+                        modifier = Modifier.weight(0.6f),
                         text = stringResource(R.string.bg_color),
                         style = MaterialTheme.typography.titleLarge,
+                        maxLines = 2,
                     )
-                    ColorModeSelector(colorMode = colorMode)
+                    ColorModeSelector(
+                        modifier = Modifier.weight(0.5f),
+                        colorMode = colorMode)
                 }
 
                 Box(
@@ -293,18 +296,20 @@ fun ColorSettingDialog(
 
 @Composable
 fun ColorModeSelector(
+    modifier: Modifier = Modifier,
     colorMode: MutableState<ColorMode>,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(6.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         listOf(
             "RGB" to ColorMode.RGB,
             "HSV" to ColorMode.HSV,
-            "Palette" to ColorMode.PALETTE
+            "16C" to ColorMode.PALETTE
         ).forEach { (label, mode) ->
             val selected = mode == colorMode.value
 

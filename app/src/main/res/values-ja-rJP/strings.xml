@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="no_permission_to_access_location_permanent">位置情報へのアクセスの権限がありません。設定でアプリの権限についてご確認下さい。</string>
-    <string name="no_permission_to_access_location_once">位置情報へのアクセスの権限がありません。</string>
-    <string name="modify">変更する</string>
-    <string name="cancel">変更しない</string>
-    <string name="license">使用許諾</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="locationSettings">観測地設定</string>
     <string name="layoutSettings">レイアウト設定</string>
+    <string name="license">使用許諾</string>
     <string name="opensource_licenses">オープンソースライセンス</string>
     <string name="latitude">緯度：</string>
     <string name="longitude">経度：</string>
+    <string name="modify">変更する</string>
+    <string name="cancel">変更しない</string>
     <string name="inGettingLocation">位置情報を取得中…</string>
     <string name="pleaseCheckIfGPSIsOn">GPSがONかチェックして下さい。</string>
     <string name="privacy_policy_header">プライバシポリシー</string>
@@ -25,6 +23,8 @@
 本プライバシポリシー及びサードパーティのプライバシポリシーに同意の上でご利用下さい。もし、同意いただけない場合は本アプリをアンインストールして下さい。\n\n
 <b>お問い合わせ</b>\n
 プライバシポリシーにつきましてご質問がある場合は<a href="mailto:withlet11@gmail.com">withlet11@gmail.com</a>にお問い合わせ下さい。</string>
+    <string name="no_permission_to_access_location_permanent">位置情報へのアクセスの権限がありません。設定でアプリの権限についてご確認下さい。</string>
+    <string name="no_permission_to_access_location_once">位置情報へのアクセスの権限がありません。</string>
     <string name="clock_base_panel">時計文字盤パネル</string>
     <string name="sky_panel">星空パネル</string>
     <string name="sun_and_moon_panel">太陽・月パネル</string>

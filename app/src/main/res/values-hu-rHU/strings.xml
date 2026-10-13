@@ -4,15 +4,14 @@
     <string name="layoutSettings">Elrendezés beállításai</string>
     <string name="license">Licenc</string>
     <string name="opensource_licenses">Nyílt forráskódú licencek</string>
-    <string name="latitude">"Szélesség: "</string>
-    <string name="longitude">"Hosszúság: "</string>
+    <string name="latitude">Szélesség: </string>
+    <string name="longitude">Hosszúság: </string>
     <string name="modify">Módosítás</string>
     <string name="cancel">Mégse</string>
     <string name="inGettingLocation">Helyadatok lekérdezése…</string>
     <string name="pleaseCheckIfGPSIsOn">Ellenőrizze, hogy be van-e kapcsolva a GPS.</string>
     <string name="privacy_policy_header">Adatvédelmi irányelvek</string>
-    <string name="privacy_policy">
-        <i>Utoljára frissítve: 2020. november 20.</i>\n\n
+    <string name="privacy_policy"><i>Utoljára frissítve: 2020. november 20.</i>\n\n
         A jelen adatvédelmi irányelvek ismertetik, hogyan kezeljük a felhasználók által megadott
         információkat és hogyan használjuk fel azokat.\n\n
         <b>Felhasználói adatok gyűjtése</b>\n
@@ -40,8 +39,7 @@
         <b>Kapcsolat</b>\n
         Ha kérdése van a jelen adatvédelmi irányelvekkel kapcsolatban, e-mailben léphet
         kapcsolatba velünk:
-        <a href="mailto:withlet11@gmail.com" tools:ignore="Typos">withlet11@gmail.com</a>
-    </string>
+        <a href="mailto:withlet11@gmail.com" tools:ignore="Typos">withlet11@gmail.com</a></string>
     <string name="no_permission_to_access_location_permanent">Nincs engedély a helyadatokhoz való hozzáféréshez. Ellenőrizze az alkalmazás engedélyeit a rendszerbeállításokban.</string>
     <string name="no_permission_to_access_location_once">Nincs engedély a helyadatokhoz való hozzáféréshez.</string>
     <string name="clock_base_panel">Óralap panel</string>
