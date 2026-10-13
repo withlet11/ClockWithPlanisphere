@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="locationSettings">Paramètres du site d’observation</string>
+    <string name="layoutSettings">Paramètres de mise en page</string>
     <string name="license">Licence</string>
     <string name="opensource_licenses">Licences open source</string>
     <string name="latitude">"Latitude : "</string>

@@ -37,6 +37,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
@@ -47,12 +49,18 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.google.android.gms.location.*
@@ -70,6 +78,9 @@ fun LocationSettingDialog(
     onLocationSaved: () -> Unit,
 ) {
     val context = LocalContext.current
+
+    var currentLatitude by rememberSaveable { mutableStateOf<Double?>(null) }
+    var currentLongitude by rememberSaveable { mutableStateOf<Double?>(null) }
 
     var latitude by rememberSaveable { mutableStateOf<Double?>(null) }
     var longitude by rememberSaveable { mutableStateOf<Double?>(null) }
@@ -212,104 +223,157 @@ fun LocationSettingDialog(
 
         latitudeText = "%+f".format(latitude)
         longitudeText = "%+f".format(longitude)
+
+        currentLatitude = latitude
+        currentLongitude = longitude
     }
 
     val isPositiveButtonEnabled =
-        latitude != null && longitude != null
+        latitude != null && longitude != null &&
+                (latitude != currentLatitude || longitude != currentLongitude)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(text = stringResource(R.string.locationSettings))
-        },
-        text = {
-            LocationSettingContent(
-                latitudeText = latitudeText,
-                onLatitudeChanged = { text ->
-                    latitudeText = text
+    val scrollState = rememberScrollState()
+    val fadeHeight = 24.dp
+    val dialogColor = MaterialTheme.colorScheme.surfaceContainer
 
-                    val parsed = text
-                        .replace(',', '.')
-                        .toDoubleOrNull()
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = dialogColor,
+        ) {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 500.dp)
+                    .drawWithContent {
+                        drawContent()
 
-                    if (parsed != null && parsed in -90.0..90.0) {
-                        latitude = parsed
-                        isLatitudeError = false
-                    } else {
-                        latitude = null
-                        isLatitudeError = true
-                    }
-                },
-                isLatitudeError = isLatitudeError,
-                longitudeText = longitudeText,
-                onLongitudeChanged = { text ->
-                    longitudeText = text
+                        val fadePx = fadeHeight.toPx()
+                        val fadeColor = dialogColor.copy(alpha = 0.9f)
 
-                    val parsed = text
-                        .replace(',', '.')
-                        .toDoubleOrNull()
-
-                    if (parsed != null && parsed in -180.0..180.0) {
-                        longitude = parsed
-                        isLongitudeError = false
-                    } else {
-                        longitude = null
-                        isLongitudeError = true
-                    }
-                },
-                isLongitudeError = isLongitudeError,
-                statusMessage = statusMessage?.let { stringResource(it) } ?: "",
-                isGetLocationEnabled = isGetLocationEnabled,
-                onGetLocationClick = {
-                    startLocation(
-                        context = context,
-                        fusedLocationClient = fusedLocationClient,
-                        permissionLauncher = permissionLauncher,
-                        locationCallback = locationCallback,
-                        onStart = {
-                            isGetLocationEnabled = false
-                            statusMessage = R.string.inGettingLocation
-                        },
-                        onGpsDisabled = {
-                            isGetLocationEnabled = true
-                            statusMessage = R.string.pleaseCheckIfGPSIsOn
+                        if (scrollState.value > 0) {
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(fadeColor, Color.Transparent),
+                                    startY = 0f,
+                                    endY = fadePx,
+                                ),
+                                size = Size(size.width, fadePx),
+                            )
                         }
-                    )
-                }
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    context.getSharedPreferences(
-                        "observation_position",
-                        Context.MODE_PRIVATE
-                    ).edit {
-                        putFloat(
-                            "latitude",
-                            latitude!!.toFloat()
+
+                        if (scrollState.value < scrollState.maxValue) {
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, fadeColor),
+                                    startY = size.height - fadePx,
+                                    endY = size.height,
+                                ),
+                                topLeft = Offset(0f, size.height - fadePx),
+                                size = Size(size.width, fadePx),
+                            )
+                        }
+                    }
+                    .verticalScroll(scrollState)
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.locationSettings),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+
+                LocationSettingContent(
+                    latitudeText = latitudeText,
+                    onLatitudeChanged = { text ->
+                        latitudeText = text
+
+                        val parsed = text
+                            .replace(',', '.')
+                            .toDoubleOrNull()
+
+                        if (parsed != null && parsed in -90.0..90.0) {
+                            latitude = parsed
+                            isLatitudeError = false
+                        } else {
+                            latitude = null
+                            isLatitudeError = true
+                        }
+                    },
+                    isLatitudeError = isLatitudeError,
+                    longitudeText = longitudeText,
+                    onLongitudeChanged = { text ->
+                        longitudeText = text
+
+                        val parsed = text
+                            .replace(',', '.')
+                            .toDoubleOrNull()
+
+                        if (parsed != null && parsed in -180.0..180.0) {
+                            longitude = parsed
+                            isLongitudeError = false
+                        } else {
+                            longitude = null
+                            isLongitudeError = true
+                        }
+                    },
+                    isLongitudeError = isLongitudeError,
+                    statusMessage = statusMessage?.let { stringResource(it) } ?: "",
+                    isGetLocationEnabled = isGetLocationEnabled,
+                    onGetLocationClick = {
+                        startLocation(
+                            context = context,
+                            fusedLocationClient = fusedLocationClient,
+                            permissionLauncher = permissionLauncher,
+                            locationCallback = locationCallback,
+                            onStart = {
+                                isGetLocationEnabled = false
+                                statusMessage = R.string.inGettingLocation
+                            },
+                            onGpsDisabled = {
+                                isGetLocationEnabled = true
+                                statusMessage = R.string.pleaseCheckIfGPSIsOn
+                            }
                         )
-                        putFloat(
-                            "longitude",
-                            longitude!!.toFloat()
-                        )
-                        commit()
+                    }
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.cancel))
                     }
 
-                    onLocationSaved()
-                    onDismiss()
-                },
-                enabled = isPositiveButtonEnabled
-            ) {
-                Text(stringResource(R.string.modify))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
+                    TextButton(
+                        onClick = {
+                            context.getSharedPreferences(
+                                "observation_position",
+                                Context.MODE_PRIVATE
+                            ).edit {
+                                putFloat(
+                                    "latitude",
+                                    latitude!!.toFloat()
+                                )
+                                putFloat(
+                                    "longitude",
+                                    longitude!!.toFloat()
+                                )
+                                commit()
+                            }
+
+                            onLocationSaved()
+                            onDismiss()
+                        },
+                        enabled = isPositiveButtonEnabled
+                    ) {
+                        Text(stringResource(R.string.modify))
+                    }
+                }
             }
         }
-    )
+    }
 }
 
 @Composable
@@ -328,8 +392,7 @@ fun LocationSettingContent(
     Column(
         modifier = modifier
             .width(320.dp)
-            .wrapContentSize()
-            .verticalScroll(rememberScrollState()),
+            .wrapContentSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -377,7 +440,7 @@ fun LocationSettingContent(
         Button(
             onClick = onGetLocationClick,
             enabled = isGetLocationEnabled,
-            modifier = Modifier.width(120.dp)
+            modifier = Modifier.width(180.dp)
         ) {
             Text(stringResource(R.string.gps))
         }
@@ -387,7 +450,7 @@ fun LocationSettingContent(
         Text(
             text = statusMessage,
             modifier = Modifier
-                .width(320.dp)
+                .fillMaxWidth()
                 .height(64.dp)
         )
     }

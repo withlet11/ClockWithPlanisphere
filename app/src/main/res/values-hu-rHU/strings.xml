@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="locationSettings">Megfigyelési hely beállítása</string>
+    <string name="layoutSettings">Elrendezés beállításai</string>
     <string name="license">Licenc</string>
     <string name="opensource_licenses">Nyílt forráskódú licencek</string>
     <string name="latitude">"Szélesség: "</string>

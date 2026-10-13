@@ -27,7 +27,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Copyright
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -159,6 +167,12 @@ fun MainScreen(
                                 expanded = menuExpanded,
                                 onDismissRequest = { menuExpanded = false }) {
                                 DropdownMenuItem(
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.LocationOn,
+                                            contentDescription = null
+                                        )
+                                    },
                                     text = { Text(stringResource(R.string.locationSettings)) },
                                     onClick = {
                                         menuExpanded = false
@@ -166,6 +180,12 @@ fun MainScreen(
                                     },
                                 )
                                 DropdownMenuItem(
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Palette,
+                                            contentDescription = null
+                                        )
+                                    },
                                     text = { Text(stringResource(R.string.bg_color)) },
                                     onClick = {
                                         menuExpanded = false
@@ -173,6 +193,29 @@ fun MainScreen(
                                     },
                                 )
                                 DropdownMenuItem(
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Tune,
+                                            contentDescription = null
+                                        )
+                                    },
+                                    text = { Text(stringResource(R.string.layoutSettings)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showLocationDialog = true
+                                    },
+                                )
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(vertical = 0.5.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                DropdownMenuItem(
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.PrivacyTip,
+                                            contentDescription = null
+                                        )
+                                    },
                                     text = { Text(stringResource(R.string.privacy_policy_header)) },
                                     onClick = {
                                         menuExpanded = false
@@ -180,6 +223,12 @@ fun MainScreen(
                                     },
                                 )
                                 DropdownMenuItem(
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = null
+                                        )
+                                    },
                                     text = { Text(stringResource(R.string.license)) },
                                     onClick = {
                                         menuExpanded = false
@@ -187,6 +236,12 @@ fun MainScreen(
                                     },
                                 )
                                 DropdownMenuItem(
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Description,
+                                            contentDescription = null
+                                        )
+                                    },
                                     text = { Text(stringResource(R.string.opensource_licenses)) },
                                     onClick = {
                                         menuExpanded = false
