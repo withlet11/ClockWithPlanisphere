@@ -52,10 +52,10 @@ class SolarAndSiderealTime {
 
     private val dut1: Duration = Duration.ofNanos(-243 * 1000000)  // 2020-06-25
 
-    val utc: LocalDateTime
-        get() = LocalDateTime.ofInstant(zonedDateTime.toInstant(), ZoneOffset.UTC)
+    val utc: ZonedDateTime
+        get() = zonedDateTime.withZoneSameInstant(ZoneOffset.UTC)
 
-    private val ut1: LocalDateTime get() = utc + this.dut1
+    private val ut1: LocalDateTime get() = utc.toLocalDateTime() + this.dut1
 
     private val elapsedSeconds get() = Duration.ofNanos(ut1.toLocalTime().toNanoOfDay())
 
