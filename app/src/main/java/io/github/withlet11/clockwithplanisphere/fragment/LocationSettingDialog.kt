@@ -65,6 +65,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.google.android.gms.location.*
 import io.github.withlet11.clockwithplanisphere.CwpTheme
+import io.github.withlet11.clockwithplanisphere.LATITUDE_KEY
+import io.github.withlet11.clockwithplanisphere.LONGITUDE_KEY
+import io.github.withlet11.clockwithplanisphere.PREFERENCES_NAME
 import io.github.withlet11.clockwithplanisphere.R
 
 private const val MAXIMUM_UPDATE_INTERVAL = 10000L
@@ -207,17 +210,17 @@ fun LocationSettingDialog(
 
     LaunchedEffect(Unit) {
         val preferences = context.getSharedPreferences(
-            "observation_position",
+            PREFERENCES_NAME,
             Context.MODE_PRIVATE
         )
 
         latitude = preferences.getFloat(
-            "latitude",
+            LATITUDE_KEY,
             DEFAULT_LATITUDE.toFloat()
         ).toDouble()
 
         longitude = preferences.getFloat(
-            "longitude",
+            LONGITUDE_KEY,
             DEFAULT_LONGITUDE.toFloat()
         ).toDouble()
 
@@ -349,15 +352,15 @@ fun LocationSettingDialog(
                     TextButton(
                         onClick = {
                             context.getSharedPreferences(
-                                "observation_position",
+                                PREFERENCES_NAME,
                                 Context.MODE_PRIVATE
                             ).edit {
                                 putFloat(
-                                    "latitude",
+                                    LATITUDE_KEY,
                                     latitude!!.toFloat()
                                 )
                                 putFloat(
-                                    "longitude",
+                                    LONGITUDE_KEY,
                                     longitude!!.toFloat()
                                 )
                                 commit()

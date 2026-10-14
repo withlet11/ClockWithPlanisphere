@@ -27,9 +27,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Copyright
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
@@ -60,6 +58,7 @@ import com.google.android.gms.ads.AdView
 import io.github.withlet11.clockwithplanisphere.CwpTopAppBar
 import io.github.withlet11.clockwithplanisphere.R
 import io.github.withlet11.clockwithplanisphere.fragment.ColorSettingDialog
+import io.github.withlet11.clockwithplanisphere.fragment.LayoutSettingDialog
 import io.github.withlet11.clockwithplanisphere.fragment.LocationSettingDialog
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
@@ -80,10 +79,13 @@ fun MainScreen(
     val longitude = viewModel.longitude
     val isSouthernSky = viewModel.isSouthernSky
     val backgroundColor = if (viewModel.isInitialized) viewModel.backgroundColor else defaultColor
+    val horizontalPosition = viewModel.horizontalPosition
+    val verticalPosition = viewModel.verticalPosition
 
     var menuExpanded by remember { mutableStateOf(false) }
     var showLocationDialog by remember { mutableStateOf(false) }
     var showColorDialog by remember { mutableStateOf(false) }
+    var showLayoutDialog by remember { mutableStateOf(false) }
     var showAd by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
@@ -202,7 +204,7 @@ fun MainScreen(
                                     text = { Text(stringResource(R.string.layoutSettings)) },
                                     onClick = {
                                         menuExpanded = false
-                                        showLocationDialog = true
+                                        showLayoutDialog = true
                                     },
                                 )
                                 HorizontalDivider(
@@ -282,12 +284,25 @@ fun MainScreen(
                     },
                 )
             }
+            if (showLayoutDialog) {
+                LayoutSettingDialog(
+                    onDismiss = {
+                        showLayoutDialog = false
+                    },
+                    onLayoutSaved = {
+                        showLayoutDialog = false
+                        viewModel.loadLayoutSettings()
+                    },
+                )
+            }
 
             CwpScreen(
                 isSouthernSky = isSouthernSky,
                 latitude = latitude,
                 longitude = longitude,
                 backgroundColor = backgroundColor,
+                horizontalPosition = horizontalPosition,
+                verticalPosition = verticalPosition,
                 modifier = Modifier.fillMaxSize()
             )
 

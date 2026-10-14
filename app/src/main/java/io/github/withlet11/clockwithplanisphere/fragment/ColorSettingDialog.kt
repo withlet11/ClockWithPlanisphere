@@ -79,12 +79,11 @@ import androidx.core.graphics.blue
 import androidx.core.graphics.green
 import androidx.core.graphics.red
 import androidx.core.content.edit
+import io.github.withlet11.clockwithplanisphere.BACKGROUND_COLOR_KEY
 import io.github.withlet11.clockwithplanisphere.CwpTheme
+import io.github.withlet11.clockwithplanisphere.PREFERENCES_NAME
 import io.github.withlet11.clockwithplanisphere.R
 
-
-private const val PREFERENCES_NAME = "observation_position"
-private const val BACKGROUND_COLOR_KEY = "backgroundColor"
 
 const val DEFAULT_BACKGROUND_COLOR = 0xffc0e0ffu
 

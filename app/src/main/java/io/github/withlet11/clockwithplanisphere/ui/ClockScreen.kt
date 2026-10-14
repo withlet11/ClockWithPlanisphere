@@ -237,7 +237,6 @@ fun ClockScreen(
         onTap = { xy ->
             when {
                 clickCount > 0 && SystemClock.elapsedRealtime() - previousClickTime < 200L -> {
-                    // onZoomedChanged(!isZoomed)
                     isZoomed.value = !isZoomed.value
                     clickCount = 0
                     previousClickTime = 0L

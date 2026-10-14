@@ -44,6 +44,8 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.absoluteValue
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.withlet11.clockwithplanisphere.CwpTheme
+import io.github.withlet11.clockwithplanisphere.fragment.HorizontalPosition
+import io.github.withlet11.clockwithplanisphere.fragment.VerticalPosition
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 import java.time.ZonedDateTime
@@ -56,6 +58,8 @@ fun CwpScreen(
     latitude: Double,
     longitude: Double,
     backgroundColor: Int,
+    horizontalPosition: HorizontalPosition,
+    verticalPosition: VerticalPosition,
 ) {
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
     val isScreenLandScape by remember { derivedStateOf { screenSize.width > screenSize.height } }
@@ -106,8 +110,8 @@ fun CwpScreen(
             .onSizeChanged { screenSize = it },
         isLandScape = isScreenLandScape,
         isZoomed = isZoomed,
-        isInfoAtTop = false,
-        isInfoAtLeft = true,
+        verticalPosition = verticalPosition,
+        horizontalPosition = horizontalPosition,
         first = {
             LocationAndDateInfo(
                 isCurrentTime = isCurrentTime.value,
@@ -149,14 +153,14 @@ private fun OrientationLayout(
     modifier: Modifier = Modifier,
     isLandScape: Boolean,
     isZoomed: MutableState<Boolean>,
-    isInfoAtTop: Boolean,
-    isInfoAtLeft: Boolean,
+    verticalPosition: VerticalPosition,
+    horizontalPosition: HorizontalPosition,
     first: @Composable () -> Unit,
     second: @Composable () -> Unit
 ) {
     if (isLandScape) {
         Row(modifier = modifier) {
-            if (!isZoomed.value && isInfoAtLeft)
+            if (!isZoomed.value && horizontalPosition == HorizontalPosition.LEFT)
                 Box(modifier = Modifier.padding(top = 16.dp, start = 16.dp)) {
                     first()
                 }
@@ -165,14 +169,14 @@ private fun OrientationLayout(
                 second()
             }
 
-            if (!isZoomed.value && !isInfoAtLeft)
+            if (!isZoomed.value && horizontalPosition == HorizontalPosition.RIGHT)
                 Box(modifier = Modifier.padding(top = 16.dp, end = 16.dp)) {
                     first()
                 }
         }
     } else {
         Column(modifier = modifier) {
-            if (!isZoomed.value && isInfoAtTop)
+            if (!isZoomed.value && verticalPosition == VerticalPosition.TOP)
                 Box(modifier = Modifier.padding(top = 16.dp, start = 16.dp)) {
                     first()
                 }
@@ -181,7 +185,7 @@ private fun OrientationLayout(
                 second()
             }
 
-            if (!isZoomed.value && !isInfoAtTop)
+            if (!isZoomed.value && verticalPosition == VerticalPosition.BOTTOM)
                 Box(modifier = Modifier.padding(bottom = 16.dp, start = 16.dp)) {
                     first()
                 }
@@ -329,6 +333,8 @@ fun CwpScreenPreview() {
             isSouthernSky = false,
             latitude = 35.6895,
             longitude = 139.6917,
+            horizontalPosition = HorizontalPosition.LEFT,
+            verticalPosition = VerticalPosition.TOP,
             backgroundColor = android.graphics.Color.BLACK
         )
     }
