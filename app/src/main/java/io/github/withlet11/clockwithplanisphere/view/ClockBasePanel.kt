@@ -44,16 +44,15 @@ import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.BEZEL_RADIUS
 import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.DATE_PANEL_RADIUS
 import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.SKY_BACKGROUND_RADIUS
 import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.isNear
-import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toAbsoluteXY
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toAbsoluteXy
 import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.getAngle
 
 class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
     var currentDate: LocalDate by mutableStateOf(LocalDate.now())
     var isZoomed by mutableStateOf(false)
-    var isLandScape by mutableStateOf(false)
     var shortSide by mutableIntStateOf(0)
     var longSide by mutableIntStateOf(0)
-    var offsetXY by mutableStateOf(Offset.Zero)
+    var offsetXy by mutableStateOf(Offset.Zero)
 
     private var offset by mutableFloatStateOf(0f)
     private var direction by mutableStateOf(false)
@@ -70,7 +69,7 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
 
     private val centerPosition
         get() = ((if (isZoomed) longSide else shortSide) * 0.5f).let {
-            Offset(it, it) + offsetXY
+            Offset(it, it) + offsetXy
         }
 
     private val scale: Float
@@ -258,7 +257,7 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
      */
     fun isOnSkyBackgroundEdge(posOnFragment: Offset): Boolean {
         val radius = SKY_BACKGROUND_RADIUS * scale
-        return posOnFragment.toCanvasXY().isNear(centerPosition, radius)
+        return posOnFragment.toCanvasXy().isNear(centerPosition, radius)
     }
 
     /**
@@ -274,7 +273,7 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
                 (SKY_BACKGROUND_RADIUS * sin(rotate)).toFloat(),
                 (-SKY_BACKGROUND_RADIUS * cos(rotate)).toFloat()
             )
-        return posOnFragment.toCanvasXY().isNear(position.toAbsoluteXY(scale, centerPosition))
+        return posOnFragment.toCanvasXy().isNear(position.toAbsoluteXy(scale, centerPosition))
     }
 
     /**
@@ -296,5 +295,5 @@ class ClockBasePanel(context: Context?, attrs: AttributeSet? = null) {
      * Converts a relative position to the absolute position on the canvas.
      * @return the absolute position on the canvas
      */
-    private fun Offset.toCanvasXY(): Offset = this
+    private fun Offset.toCanvasXy(): Offset = this
 }

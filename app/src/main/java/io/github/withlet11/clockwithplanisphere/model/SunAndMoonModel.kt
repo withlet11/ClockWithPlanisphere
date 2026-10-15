@@ -66,7 +66,7 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
             reducedLatitudeToGeocentricLatitude(cos(inclination), argumentOfLatitude)
         val declination = asin(sin(inclination) * sin(argumentOfLatitude))
         val equationOfTime = differenceOfAnomaly * direction - rightAscension
-        return skyModel.convertToXYPosition(
+        return skyModel.convertToXyPosition(
             toDegrees(declination),
             toDegrees(equationOfTime) / DEGREES_IN_HOUR
         ) to toDegrees(argumentOfLatitude) % DEGREES_IN_CIRCLE
@@ -99,7 +99,7 @@ class SunAndMoonModel(private val skyModel: AbstractSkyModel) {
         val latitude = toRadians(5.1282 * sin(toRadians(93.273 + 4832.0202 * t + b))
                 + parameterBeta.sumOf { (p, q, r) -> p * sin(toRadians(q + r * t)) })
         val (declination, rightAscension) = eclipticToEquatorial(latitude, longitude, inclination)
-        return skyModel.convertToXYPosition(
+        return skyModel.convertToXyPosition(
             declination,
             -rightAscension
         ) to toDegrees(longitude) % DEGREES_IN_CIRCLE

@@ -46,7 +46,7 @@ import androidx.compose.foundation.Canvas as ComposeCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toCanvas
-import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toAbsoluteXY
+import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.toAbsoluteXy
 import io.github.withlet11.clockwithplanisphere.view.PanelGeometry.isNear
 
 class SunPanel(context: Context?, attrs: AttributeSet? = null) {
@@ -61,10 +61,9 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
     private var secondOfDay by mutableIntStateOf(0)
 
     var isZoomed by mutableStateOf(false)
-    var isLandScape by mutableStateOf(false)
     var shortSide by mutableIntStateOf(0)
     var longSide by mutableIntStateOf(0)
-    var offsetXY by mutableStateOf(Offset.Zero)
+    var offsetXy by mutableStateOf(Offset.Zero)
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val path = Path()
@@ -73,7 +72,7 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
 
     private val centerPosition
         get() = ((if (isZoomed) longSide else shortSide) * 0.5f).let {
-            Offset(it, it) + offsetXY
+            Offset(it, it) + offsetXy
         }
 
     private val scale: Float
@@ -153,7 +152,7 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
      */
     fun isOnAnalemma(posOnFragment: Offset): Boolean {
         val analemmaPosition =
-            sunPosition.toAbsoluteXY(-solarAngle * sign(tenMinuteGridStep), scale, centerPosition)
+            sunPosition.toAbsoluteXy(-solarAngle * sign(tenMinuteGridStep), scale, centerPosition)
         return posOnFragment.isNear(analemmaPosition)
     }
 
@@ -200,5 +199,5 @@ class SunPanel(context: Context?, attrs: AttributeSet? = null) {
 
     fun getAngle(position: Offset): Float = PanelGeometry.getAngle(position, centerPosition)
 
-    private fun Offset.toCanvasXY(): Offset = this + offsetXY
+    private fun Offset.toCanvasXy(): Offset = this + offsetXy
 }

@@ -54,10 +54,9 @@ class SkyPanel(context: Context?, attrs: AttributeSet? = null) {
 
     var siderealAngle by mutableFloatStateOf(0f)
     var isZoomed by mutableStateOf(false)
-    var isLandScape by mutableStateOf(false)
     var shortSide by mutableIntStateOf(0)
     var longSide by mutableIntStateOf(0)
-    var offsetXY by mutableStateOf(Offset.Zero)
+    var offsetXy by mutableStateOf(Offset.Zero)
 
     private var tenMinuteGridStep = 180f / 72f
 

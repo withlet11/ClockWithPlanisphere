@@ -59,7 +59,7 @@ class SunAndMoonPanel(context: Context?, attrs: AttributeSet? = null) {
     var isLandScape by mutableStateOf(false)
     var shortSide by mutableIntStateOf(0)
     var longSide by mutableIntStateOf(0)
-    var offsetXY by mutableStateOf(Offset.Zero)
+    var offsetXy by mutableStateOf(Offset.Zero)
 
     private val paint = Paint().apply { isAntiAlias = true }
     private val moonColor = context?.getColor(R.color.pastelYellow) ?: 0

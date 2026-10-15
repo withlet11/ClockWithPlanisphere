@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="locationSettings">Paramètres du site d’observation</string>
-    <string name="layoutSettings">Paramètres de mise en page</string>
     <string name="license">Licence</string>
     <string name="opensource_licenses">Licences open source</string>
     <string name="latitude">Latitude : </string>
@@ -70,4 +69,12 @@
     <string name="hsv_h">Teinte</string>
     <string name="hsv_s">Sat</string>
     <string name="hsv_v">Val</string>
+    <string name="layoutSettings">Paramètres de mise en page</string>
+    <string name="digitalClockPosition">Position de l’horloge numérique</string>
+    <string name="landscape">Paysage</string>
+    <string name="portrait">Portrait</string>
+    <string name="left">Gauche</string>
+    <string name="right">Droite</string>
+    <string name="top">Haut</string>
+    <string name="bottom">Bas</string>
 </resources>

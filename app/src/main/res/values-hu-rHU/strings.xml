@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="locationSettings">Megfigyelési hely beállítása</string>
-    <string name="layoutSettings">Elrendezés beállításai</string>
     <string name="license">Licenc</string>
     <string name="opensource_licenses">Nyílt forráskódú licencek</string>
     <string name="latitude">Szélesség: </string>
@@ -68,4 +67,12 @@
     <string name="hsv_h">Árny</string>
     <string name="hsv_s">Tel</string>
     <string name="hsv_v">Vil</string>
+    <string name="layoutSettings">Elrendezés beállításai</string>
+    <string name="digitalClockPosition">Digitális óra pozíciója</string>
+    <string name="landscape">Fekvő</string>
+    <string name="portrait">Álló</string>
+    <string name="left">Bal</string>
+    <string name="right">Jobb</string>
+    <string name="top">Fent</string>
+    <string name="bottom">Lent</string>
 </resources>

@@ -36,7 +36,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.outlined.CheckCircleOutline
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.*
@@ -45,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -116,7 +116,7 @@ fun LayoutSettingDialog(
                     style = MaterialTheme.typography.titleLarge,
                 )
 
-                Text(text = "Information Panel Position")
+                Text(text = stringResource(R.string.digitalClockPosition))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -137,8 +137,8 @@ fun LayoutSettingDialog(
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
                             listOf(
-                                "Left" to HorizontalPosition.LEFT,
-                                "Right" to HorizontalPosition.RIGHT,
+                                stringResource(R.string.left) to HorizontalPosition.LEFT,
+                                stringResource(R.string.right) to HorizontalPosition.RIGHT,
                             ).forEach { (label, value) ->
                                 val selected = horizontalPosition == value
 
@@ -160,7 +160,7 @@ fun LayoutSettingDialog(
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Column {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text(
                                             text = label,
                                             color = if (selected) {
@@ -188,7 +188,7 @@ fun LayoutSettingDialog(
                             }
                         }
 
-                        Text(text = "LandScape")
+                        Text(text = stringResource(R.string.landscape))
                     }
 
                     Column(
@@ -206,8 +206,8 @@ fun LayoutSettingDialog(
                             verticalArrangement = Arrangement.SpaceEvenly
                         ) {
                             listOf(
-                                "Top" to VerticalPosition.TOP,
-                                "Bottom" to VerticalPosition.BOTTOM,
+                                stringResource(R.string.top) to VerticalPosition.TOP,
+                                stringResource(R.string.bottom) to VerticalPosition.BOTTOM,
                             ).forEach { (label, value) ->
                                 val selected = verticalPosition == value
 
@@ -229,7 +229,7 @@ fun LayoutSettingDialog(
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Row {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
                                             text = label,
                                             color = if (selected) {
@@ -257,7 +257,7 @@ fun LayoutSettingDialog(
                             }
                         }
 
-                        Text(text = "Portrait")
+                        Text(text = stringResource(R.string.portrait))
                     }
                 }
 

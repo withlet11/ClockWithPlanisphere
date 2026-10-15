@@ -53,9 +53,9 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
                 List(361) { // 0 to 360 deg
                     val hourAngle = it / 15.0
                     val declination = calculateHorizon(hourAngle)
-                    skyModel.convertToXYPosition(declination, hourAngle)
+                    skyModel.convertToXyPosition(declination, hourAngle)
                 }.plus(List(361) { // 0 to 360 deg
-                    skyModel.getXYPositionOnOuterCircle(it.toDouble())
+                    skyModel.getXyPositionOnOuterCircle(it.toDouble())
                 })
             }
 
@@ -63,7 +63,7 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
                 List(361) { // 0 to 360 deg
                     val hourAngle = it / 15.0
                     val declination = calculateHorizon(hourAngle)
-                    skyModel.convertToXYPosition(declination, hourAngle)
+                    skyModel.convertToXyPosition(declination, hourAngle)
                 }
             }
         }
@@ -87,12 +87,12 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
             val azimuth = index * 90.0
             val visibility =
                 convertToEquatorialFromHorizontal(azimuth, 0.0).let { (dec, ha) ->
-                    skyModel.convertToXYPositionWithNull(dec, ha)
+                    skyModel.convertToXyPositionWithNull(dec, ha)
                 }
 
             visibility?.run {
                 convertToEquatorialFromHorizontal(azimuth, -5.0).let { (dec, ha) ->
-                    skyModel.convertToXYPosition(dec, ha).let { (x, y) ->
+                    skyModel.convertToXyPosition(dec, ha).let { (x, y) ->
                         Triple(text, x, y)
                     }
                 }
@@ -104,7 +104,7 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
         List(361) { // 0 to 360 deg
             val azimuth = it.toDouble()
             convertToEquatorialFromHorizontal(azimuth, altitude).let { (declination, hourAngle) ->
-                skyModel.convertToXYPositionWithNull(declination, hourAngle)
+                skyModel.convertToXyPositionWithNull(declination, hourAngle)
             }
         }
 
@@ -115,7 +115,7 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
             List(361) { // 0 to 360 deg
                 val hourAngle = it / 15.0
                 val declination = calculateHorizon(hourAngle)
-                skyModel.convertToXYPositionWithNull(declination, hourAngle)
+                skyModel.convertToXyPositionWithNull(declination, hourAngle)
             }
         }
 
@@ -126,7 +126,7 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
         List(91) { // 0 to 90 deg
             val altitude = it.toDouble()
             convertToEquatorialFromHorizontal(azimuth, altitude).let { (dec, ha) ->
-                skyModel.convertToXYPositionWithNull(dec, ha)
+                skyModel.convertToXyPositionWithNull(dec, ha)
             }
         }
 
@@ -146,8 +146,8 @@ class HorizonModel(private val skyModel: AbstractSkyModel) {
         }
 
         return listOf(
-            skyModel.convertToXYPosition(poleNearHorizon, hourAngle),
-            skyModel.convertToXYPosition(horizon00h, hourAngle)
+            skyModel.convertToXyPosition(poleNearHorizon, hourAngle),
+            skyModel.convertToXyPosition(horizon00h, hourAngle)
         )
     }
 

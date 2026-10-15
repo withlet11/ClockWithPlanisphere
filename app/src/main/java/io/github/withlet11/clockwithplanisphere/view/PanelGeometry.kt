@@ -70,7 +70,7 @@ object PanelGeometry {
      * @param [centerPosition] the center position
      * @return the absolute position on the canvas
      */
-    fun Offset.toAbsoluteXY(rotate: Float, scale: Float, centerPosition: Offset): Offset {
+    fun Offset.toAbsoluteXy(rotate: Float, scale: Float, centerPosition: Offset): Offset {
         val x = this.x.toCanvas()
         val y = this.y.toCanvas()
         val rad = Math.toRadians(rotate.toDouble())
@@ -87,7 +87,7 @@ object PanelGeometry {
      * @param [centerPosition] the center position
      * @return the absolute position on the canvas
      */
-    fun Offset.toAbsoluteXY(scale: Float, centerPosition: Offset): Offset {
+    fun Offset.toAbsoluteXy(scale: Float, centerPosition: Offset): Offset {
         return this * scale + centerPosition
     }
 
@@ -98,7 +98,7 @@ object PanelGeometry {
      * @param [centerPosition] the center position
      * @return the absolute position on the canvas
      */
-    fun Float.toAbsoluteXY(scale: Float, centerPosition: Offset): Pair<Offset, Float> {
+    fun Float.toAbsoluteXy(scale: Float, centerPosition: Offset): Pair<Offset, Float> {
         val radius = this * scale
         return centerPosition to radius
     }
@@ -111,8 +111,8 @@ object PanelGeometry {
      * @return the rotate angle
      */
     fun getAngle(position: Offset, centerPosition: Offset): Float =
-        position.let { absXY ->
-            val pos = absXY - centerPosition
+        position.let { absXy ->
+            val pos = absXy - centerPosition
             toDegrees(atan2(pos.x.toDouble(), -pos.y.toDouble())).toFloat()
         }
 }

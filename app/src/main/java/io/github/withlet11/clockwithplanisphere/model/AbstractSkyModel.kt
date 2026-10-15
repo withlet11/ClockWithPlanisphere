@@ -126,8 +126,8 @@ abstract class AbstractSkyModel {
 
         constellationLineList =
             cwpDao.getAllConstellationLines().mapNotNull { (_, ra1, dec1, ra2, dec2) ->
-                val xy1 = convertToXYPositionWithNull(dec1, -ra1)
-                val xy2 = convertToXYPositionWithNull(dec2, -ra2)
+                val xy1 = convertToXyPositionWithNull(dec1, -ra1)
+                val xy2 = convertToXyPositionWithNull(dec2, -ra2)
                 if (xy1 != null && xy2 != null) ConstellationLineGeometry(xy1, xy2) else null
             }
     }
@@ -141,9 +141,9 @@ abstract class AbstractSkyModel {
     }
 
     private fun calculateStarPosition(dec: Double, ra: Double, radius: Float): StarGeometry? =
-        convertToXYPositionWithNull(dec, -ra)?.let { (x, y) -> StarGeometry(x, y, radius) }
+        convertToXyPositionWithNull(dec, -ra)?.let { (x, y) -> StarGeometry(x, y, radius) }
 
-    fun convertToXYPositionWithNull(dec: Double, ha: Double): Offset? {
+    fun convertToXyPositionWithNull(dec: Double, ha: Double): Offset? {
         val radius = toRadius(dec)
         return when {
             radius < 1.0 -> {
@@ -155,13 +155,13 @@ abstract class AbstractSkyModel {
         }
     }
 
-    fun convertToXYPosition(dec: Double, ha: Double): Offset {
+    fun convertToXyPosition(dec: Double, ha: Double): Offset {
         val radius = min(toRadius(dec), 1.0)
         val angle = toRadiansFromHours(ha)
         return Offset((-radius * sin(angle)).toFloat(), (-radius * cos(angle)).toFloat())
     }
 
-    fun getXYPositionOnOuterCircle(degree: Double): Offset {
+    fun getXyPositionOnOuterCircle(degree: Double): Offset {
         val radian = toRadiansFromDegrees(degree)
         return Offset(cos(radian).toFloat(), sin(radian.toFloat()))
     }

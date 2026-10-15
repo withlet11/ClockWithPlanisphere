@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="locationSettings">観測地設定</string>
-    <string name="layoutSettings">レイアウト設定</string>
     <string name="license">使用許諾</string>
     <string name="opensource_licenses">オープンソースライセンス</string>
     <string name="latitude">緯度：</string>
@@ -51,4 +50,12 @@
     <string name="hsv_h">色相</string>
     <string name="hsv_s">彩度 </string>
     <string name="hsv_v">明度</string>
+    <string name="layoutSettings">レイアウト設定</string>
+    <string name="digitalClockPosition">デジタル時計の位置</string>
+    <string name="landscape">横向き</string>
+    <string name="portrait">縦向き</string>
+    <string name="left">左</string>
+    <string name="right">右</string>
+    <string name="top">上</string>
+    <string name="bottom">下</string>
 </resources>

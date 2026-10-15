@@ -302,8 +302,7 @@ fun MainScreen(
                 longitude = longitude,
                 backgroundColor = backgroundColor,
                 horizontalPosition = horizontalPosition,
-                verticalPosition = verticalPosition,
-                modifier = Modifier.fillMaxSize()
+                verticalPosition = verticalPosition
             )
 
             if (showAd) {

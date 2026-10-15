@@ -13,11 +13,6 @@
       (ja . "観測地設定")
       (hu . "Megfigyelési hely beállítása")
       (fr . "Paramètres du site d’observation")))
-    ("layoutSettings"
-     ((en . "Layout Settings")
-      (ja . "レイアウト設定")
-      (hu . "Elrendezés beállításai")
-      (fr . "Paramètres de mise en page")))
     ("license"
      ((en . "License")
       (ja . "使用許諾")
@@ -323,7 +318,47 @@
      ((en . "Val")
       (ja . "明度")
       (hu . "Vil")
-      (fr . "Val")))))
+      (fr . "Val")))
+    ("layoutSettings"
+     ((en . "Layout Settings")
+      (ja . "レイアウト設定")
+      (hu . "Elrendezés beállításai")
+      (fr . "Paramètres de mise en page")))
+    ("digitalClockPosition"
+     ((en . "Digital Clock Position")
+      (ja . "デジタル時計の位置")
+      (hu . "Digitális óra pozíciója")
+      (fr . "Position de l’horloge numérique")))
+    ("landscape"
+     ((en . "Landscape")
+      (ja . "横向き")
+      (hu . "Fekvő")
+      (fr . "Paysage")))
+    ("portrait"
+     ((en . "Portrait")
+      (ja . "縦向き")
+      (hu . "Álló")
+      (fr . "Portrait")))
+    ("left"
+     ((en . "Left")
+      (ja . "左")
+      (hu . "Bal")
+      (fr . "Gauche")))
+    ("right"
+     ((en . "Right")
+      (ja . "右")
+      (hu . "Jobb")
+      (fr . "Droite")))
+    ("top"
+     ((en . "Top")
+      (ja . "上")
+      (hu . "Fent")
+      (fr . "Haut")))
+    ("bottom"
+     ((en . "Bottom")
+      (ja . "下")
+      (hu . "Lent")
+      (fr . "Bas")))))
 
 (define (whole-xml-create lst lang)
   `("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
@@ -359,7 +394,7 @@
         (let ([val (assq '* vals)])
           (and val
                `(#t ,(normalize (cdr val))))))))
-  
+
 (define (normalize text)
   ;; (string-replace text "\"" "\\\""))
   text)

@@ -38,11 +38,9 @@ import io.github.withlet11.clockwithplanisphere.model.NorthernSkyModel
 import io.github.withlet11.clockwithplanisphere.model.SkyViewModel
 import io.github.withlet11.clockwithplanisphere.model.SouthernSkyModel
 import io.github.withlet11.clockwithplanisphere.view.*
-import kotlinx.coroutines.delay
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import kotlin.Int
-import kotlin.time.Duration.Companion.milliseconds
 
 private enum class SwipeStatus { ANYTHING, SUN, SKY_EDGE, DATE }
 
@@ -51,20 +49,21 @@ fun ClockScreen(
     modifier: Modifier = Modifier,
     latitude: Double,
     longitude: Double,
+    currentTime: MutableState<ZonedDateTime>,
     isCurrentTime: MutableState<Boolean>,
     isSouthernSky: Boolean,
-    isZoomed: MutableState<Boolean>,
+    isZoomed: Boolean,
+    toggleZoom: () -> Unit,
     isClockHandsVisible: MutableState<Boolean>,
     isLandScape: Boolean,
     shortSide: Int,
     longSide: Int,
     scrollBounds: Rect,
-    offsetXY: MutableState<Offset>,
+    offsetXy: Offset,
+    onOffsetXyChange: (Offset) -> Unit,
     onTimeUpdate: (ZonedDateTime, LocalTime, LocalTime) -> Unit
 ) {
     val context = LocalContext.current
-
-    var observedDateTime by remember { mutableStateOf(ZonedDateTime.now()) }
 
     val skyViewModel = remember(isSouthernSky, latitude, longitude) {
         SkyViewModel(
@@ -124,7 +123,7 @@ fun ClockScreen(
     val clockHandsPanel = remember { ClockHandsPanel(context, null) }
 
     // Touch and swipe management
-    var previousActionXY by remember { mutableStateOf(Offset.Zero) }
+    var previousActionXy by remember { mutableStateOf(Offset.Zero) }
     var previousRotate by remember { mutableFloatStateOf(0f) }
     var clickCount by remember { mutableIntStateOf(0) }
     var previousClickTime by remember { mutableLongStateOf(0L) }
@@ -179,7 +178,7 @@ fun ClockScreen(
             )
         }
 
-        observedDateTime = skyViewModel.getZonedDateTime()
+        currentTime.value = skyViewModel.getZonedDateTime()
 
         val solarTime =
             LocalTime.ofSecondOfDay((((solarAngle % 360 + 540) % 360) / 360.0 * 86400).toLong())
@@ -196,27 +195,28 @@ fun ClockScreen(
         refreshPanels()
     }
 
-    LaunchedEffect(offsetXY.value) {
-        clockBasePanel.offsetXY = offsetXY.value
-        sunPanel.offsetXY = offsetXY.value
-        clockHandsPanel.offsetXY = offsetXY.value
-        skyPanel.offsetXY = offsetXY.value
-        sunAndMoonPanel.offsetXY = offsetXY.value
-        horizonPanel.offsetXY = offsetXY.value
+//    if (isCurrentTime.value) {
+//        skyViewModel.setCurrentTime(ZonedDateTime.now())
+//    }
+//
+    LaunchedEffect(offsetXy) {
+        clockBasePanel.offsetXy = offsetXy
+        sunPanel.offsetXy = offsetXy
+        clockHandsPanel.offsetXy = offsetXy
+        skyPanel.offsetXy = offsetXy
+        sunAndMoonPanel.offsetXy = offsetXy
+        horizonPanel.offsetXy = offsetXy
     }
 
     LaunchedEffect(isSouthernSky) {
-        skyViewModel.setCurrentTime(observedDateTime)
+        skyViewModel.setCurrentTime(currentTime.value)
         refreshPanels()
     }
 
-    LaunchedEffect(isCurrentTime.value) {
+    LaunchedEffect(currentTime.value) {
         if (isCurrentTime.value) {
-            while (true) {
-                skyViewModel.setCurrentTime(ZonedDateTime.now())
-                refreshClock()
-                delay(250L.milliseconds)
-            }
+            skyViewModel.setCurrentTime(currentTime.value)
+            refreshClock()
         }
     }
 
@@ -228,16 +228,16 @@ fun ClockScreen(
         sunAndMoonPanel = sunAndMoonPanel,
         horizonPanel = horizonPanel,
         clockHandsPanel = clockHandsPanel,
-        isZoomed = isZoomed.value,
+        isZoomed = isZoomed,
         isClockHandsVisible = isClockHandsVisible.value,
         isLandScape = isLandScape,
         shortSide = shortSide,
         longSide = longSide,
-        offsetXY = offsetXY.value,
+        offsetXy = offsetXy,
         onTap = { xy ->
             when {
                 clickCount > 0 && SystemClock.elapsedRealtime() - previousClickTime < 200L -> {
-                    isZoomed.value = !isZoomed.value
+                    toggleZoom()
                     clickCount = 0
                     previousClickTime = 0L
                 }
@@ -260,14 +260,14 @@ fun ClockScreen(
             }
         },
         onDragStart = { xy ->
-            previousActionXY = xy
-            previousRotate = clockBasePanel.getAngle(previousActionXY)
+            previousActionXy = xy
+            previousRotate = clockBasePanel.getAngle(previousActionXy)
 
             if (!isClockHandsVisible.value) {
                 swipeStatus = when {
-                    sunPanel.isOnAnalemma(previousActionXY) -> SwipeStatus.SUN
-                    clockBasePanel.isOnTodayGrid(previousActionXY) -> SwipeStatus.DATE
-                    clockBasePanel.isOnSkyBackgroundEdge(previousActionXY) -> SwipeStatus.SKY_EDGE
+                    sunPanel.isOnAnalemma(previousActionXy) -> SwipeStatus.SUN
+                    clockBasePanel.isOnTodayGrid(previousActionXy) -> SwipeStatus.DATE
+                    clockBasePanel.isOnSkyBackgroundEdge(previousActionXy) -> SwipeStatus.SKY_EDGE
                     else -> SwipeStatus.ANYTHING
                 }
             }
@@ -297,14 +297,16 @@ fun ClockScreen(
                 }
 
                 else -> {
-                    val tempXY = offsetXY.value + (xy - previousActionXY)
+                    val tempXy = offsetXy + (xy - previousActionXy)
 
-                    offsetXY.value = Offset(
-                        tempXY.x.coerceIn(scrollBounds.left, scrollBounds.right),
-                        tempXY.y.coerceIn(scrollBounds.top, scrollBounds.bottom)
+                    onOffsetXyChange(
+                        Offset(
+                            tempXy.x.coerceIn(scrollBounds.left, scrollBounds.right),
+                            tempXy.y.coerceIn(scrollBounds.top, scrollBounds.bottom)
+                        )
                     )
 
-                    previousActionXY = xy
+                    previousActionXy = xy
                 }
             }
         },
@@ -328,7 +330,7 @@ fun ClockContent(
     isLandScape: Boolean,
     shortSide: Int,
     longSide: Int,
-    offsetXY: Offset,
+    offsetXy: Offset,
     onTap: (Offset) -> Unit,
     onDragStart: (Offset) -> Unit,
     onDrag: (Offset) -> Unit,
@@ -342,17 +344,14 @@ fun ClockContent(
     val currentOnDragEnd by rememberUpdatedState(onDragEnd)
 
     clockBasePanel.isZoomed = isZoomed
-    clockBasePanel.isLandScape = isLandScape
     clockBasePanel.shortSide = shortSide
     clockBasePanel.longSide = longSide
 
     skyPanel.isZoomed = isZoomed
-    skyPanel.isLandScape = isLandScape
     skyPanel.shortSide = shortSide
     skyPanel.longSide = longSide
 
     sunPanel.isZoomed = isZoomed
-    sunPanel.isLandScape = isLandScape
     sunPanel.shortSide = shortSide
     sunPanel.longSide = longSide
 
@@ -362,12 +361,10 @@ fun ClockContent(
     sunAndMoonPanel.longSide = longSide
 
     horizonPanel.isZoomed = isZoomed
-    horizonPanel.isLandScape = isLandScape
     horizonPanel.shortSide = shortSide
     horizonPanel.longSide = longSide
 
     clockHandsPanel.isZoomed = isZoomed
-    clockHandsPanel.isLandScape = isLandScape
     clockHandsPanel.shortSide = shortSide
     clockHandsPanel.longSide = longSide
 
@@ -421,7 +418,7 @@ fun ClockContent(
                 }
             }
             .graphicsLayer(
-                translationX = offsetXY.x, translationY = offsetXY.y
+                translationX = offsetXy.x, translationY = offsetXy.y
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -442,14 +439,17 @@ fun ClockScreenPreview() {
     ClockScreen(
         latitude = 45.0,
         longitude = 0.0,
+        currentTime = remember { mutableStateOf(ZonedDateTime.now()) },
         isCurrentTime = remember { mutableStateOf(false) },
         isSouthernSky = false,
-        isZoomed = remember { mutableStateOf(false) },
+        isZoomed = false,
+        toggleZoom = {},
         isClockHandsVisible = remember { mutableStateOf(true) },
         isLandScape = false,
         shortSide = 500,
         longSide = 800,
-        offsetXY = remember { mutableStateOf(Offset.Zero) },
+        offsetXy = Offset.Zero,
+        onOffsetXyChange = {},
         scrollBounds = Rect(left = 0f, right = 500f, top = 0f, bottom = 800f),
         onTimeUpdate = { _, _, _ -> }
     )

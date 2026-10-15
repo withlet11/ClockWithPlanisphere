@@ -22,15 +22,21 @@
 package io.github.withlet11.clockwithplanisphere.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -48,6 +54,7 @@ import io.github.withlet11.clockwithplanisphere.fragment.HorizontalPosition
 import io.github.withlet11.clockwithplanisphere.fragment.VerticalPosition
 import kotlinx.coroutines.delay
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -65,37 +72,20 @@ fun CwpScreen(
     val isScreenLandScape by remember { derivedStateOf { screenSize.width > screenSize.height } }
 
     var drawAreaSize by remember { mutableStateOf(IntSize.Zero) }
-    val isDrawAreaLandScape by remember { derivedStateOf { drawAreaSize.width > drawAreaSize.height } }
-    val longSide by remember { derivedStateOf { if (isDrawAreaLandScape) drawAreaSize.width else drawAreaSize.height } }
-    val shortSide by remember { derivedStateOf { if (isDrawAreaLandScape) drawAreaSize.height else drawAreaSize.width } }
+    var isDrawAreaLandScape by remember { mutableStateOf(false) }
+    var longSide by remember { mutableIntStateOf(0) }
+    var shortSide by remember { mutableIntStateOf(0) }
 
-    val isZoomed = remember { mutableStateOf(false) }
-    val scrollBounds by remember {
-        derivedStateOf {
-            val totalDifference = (longSide - shortSide).toFloat()
-            when {
-                isZoomed.value -> {
-                    if (isDrawAreaLandScape) {
-                        Rect(left = 0f, right = 0f, top = -totalDifference, bottom = 0f)
-                    } else {
-                        Rect(left = -totalDifference, right = 0f, top = 0f, bottom = 0f)
-                    }
-                }
+    var isZoomed by remember { mutableStateOf(false) }
 
-                isDrawAreaLandScape ->
-                    Rect(left = 0f, right = totalDifference, top = 0f, bottom = 0f)
-
-                else ->
-                    Rect(left = 0f, right = 0f, top = 0f, bottom = totalDifference)
-            }
-        }
-    }
-
-    val offsetXY = remember(scrollBounds) { mutableStateOf(scrollBounds.center) }
+    var scrollBounds by remember { mutableStateOf(Rect.Zero) }
+    var offsetXy by remember { mutableStateOf(Offset.Zero) }
+    var isOffsetXyReady by remember { mutableStateOf(false) }
 
     val isClockHandsVisible = remember { mutableStateOf(true) }
     val isCurrentTime = remember { mutableStateOf(true) }
 
+    val currentTime = remember { mutableStateOf(ZonedDateTime.now()) }
     var utc by remember { mutableStateOf(ZonedDateTime.now()) }
     var solarTime by remember { mutableStateOf(LocalTime.now()) }
     var siderealTime by remember { mutableStateOf(LocalTime.now()) }
@@ -103,18 +93,61 @@ fun CwpScreen(
     val textColor = Color.LightGray
     val shadowColor = Color.Black
 
+    LaunchedEffect(drawAreaSize, isZoomed, isScreenLandScape) {
+        isDrawAreaLandScape = drawAreaSize.width > drawAreaSize.height
+        longSide = if (isDrawAreaLandScape) drawAreaSize.width else drawAreaSize.height
+        shortSide = if (isDrawAreaLandScape) drawAreaSize.height else drawAreaSize.width
+
+        val totalDifference = (longSide - shortSide).toFloat()
+        scrollBounds = when {
+            isZoomed -> {
+                if (isDrawAreaLandScape) {
+                    Rect(left = 0f, right = 0f, top = -totalDifference, bottom = 0f)
+                } else {
+                    Rect(left = -totalDifference, right = 0f, top = 0f, bottom = 0f)
+                }
+            }
+
+            isDrawAreaLandScape ->
+                Rect(left = 0f, right = totalDifference, top = 0f, bottom = 0f)
+
+            else ->
+                Rect(left = 0f, right = 0f, top = 0f, bottom = totalDifference)
+        }
+
+        offsetXy = scrollBounds.center
+        isOffsetXyReady = true
+    }
+
+    var updateTime by remember { mutableLongStateOf(0L) }
+
+    LaunchedEffect(isCurrentTime.value) {
+        if (isCurrentTime.value) {
+            while (true) {
+                updateTime = System.currentTimeMillis()
+                currentTime.value = ZonedDateTime.now()
+                delay(250L.milliseconds)
+            }
+        }
+    }
+
     OrientationLayout(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(Color(backgroundColor))
-            .onSizeChanged { screenSize = it },
+            .onSizeChanged {
+                isOffsetXyReady = false
+                screenSize = it
+            },
         isLandScape = isScreenLandScape,
         isZoomed = isZoomed,
         verticalPosition = verticalPosition,
         horizontalPosition = horizontalPosition,
         first = {
             LocationAndDateInfo(
-                isCurrentTime = isCurrentTime.value,
+                isCurrentTime = isCurrentTime,
+                isClockHandsVisible = isClockHandsVisible,
+                currentTime = currentTime,
                 utc = utc,
                 solarTime = solarTime,
                 siderealTime = siderealTime,
@@ -125,25 +158,40 @@ fun CwpScreen(
             )
         },
         second = {
-            ClockScreen(
-                modifier = modifier.onSizeChanged { drawAreaSize = it },
-                latitude = latitude,
-                longitude = longitude,
-                isCurrentTime = isCurrentTime,
-                isSouthernSky = isSouthernSky,
-                isZoomed = isZoomed,
-                isClockHandsVisible = isClockHandsVisible,
-                isLandScape = isDrawAreaLandScape,
-                shortSide = shortSide,
-                longSide = longSide,
-                scrollBounds = scrollBounds,
-                offsetXY = offsetXY,
-                onTimeUpdate = { t1, t2, t3 ->
-                    utc = t1
-                    solarTime = t2
-                    siderealTime = t3
-                }
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .onSizeChanged {
+                        isOffsetXyReady = false
+                        drawAreaSize = it
+                    },
+            ) {
+                if (isOffsetXyReady)
+                    ClockScreen(
+                        latitude = latitude,
+                        longitude = longitude,
+                        currentTime = currentTime,
+                        isCurrentTime = isCurrentTime,
+                        isSouthernSky = isSouthernSky,
+                        isZoomed = isZoomed,
+                        toggleZoom = {
+                            isZoomed = !isZoomed
+                            isOffsetXyReady = false
+                        },
+                        isClockHandsVisible = isClockHandsVisible,
+                        isLandScape = isDrawAreaLandScape,
+                        shortSide = shortSide,
+                        longSide = longSide,
+                        scrollBounds = scrollBounds,
+                        offsetXy = offsetXy,
+                        onOffsetXyChange = { offsetXy = it },
+                        onTimeUpdate = { t1, t2, t3 ->
+                            utc = t1
+                            solarTime = t2
+                            siderealTime = t3
+                        }
+                    )
+            }
         }
     )
 }
@@ -152,7 +200,7 @@ fun CwpScreen(
 private fun OrientationLayout(
     modifier: Modifier = Modifier,
     isLandScape: Boolean,
-    isZoomed: MutableState<Boolean>,
+    isZoomed: Boolean,
     verticalPosition: VerticalPosition,
     horizontalPosition: HorizontalPosition,
     first: @Composable () -> Unit,
@@ -160,7 +208,7 @@ private fun OrientationLayout(
 ) {
     if (isLandScape) {
         Row(modifier = modifier) {
-            if (!isZoomed.value && horizontalPosition == HorizontalPosition.LEFT)
+            if (!isZoomed && horizontalPosition == HorizontalPosition.LEFT)
                 Box(modifier = Modifier.padding(top = 16.dp, start = 16.dp)) {
                     first()
                 }
@@ -169,14 +217,14 @@ private fun OrientationLayout(
                 second()
             }
 
-            if (!isZoomed.value && horizontalPosition == HorizontalPosition.RIGHT)
+            if (!isZoomed && horizontalPosition == HorizontalPosition.RIGHT)
                 Box(modifier = Modifier.padding(top = 16.dp, end = 16.dp)) {
                     first()
                 }
         }
     } else {
         Column(modifier = modifier) {
-            if (!isZoomed.value && verticalPosition == VerticalPosition.TOP)
+            if (!isZoomed && verticalPosition == VerticalPosition.TOP)
                 Box(modifier = Modifier.padding(top = 16.dp, start = 16.dp)) {
                     first()
                 }
@@ -185,7 +233,7 @@ private fun OrientationLayout(
                 second()
             }
 
-            if (!isZoomed.value && verticalPosition == VerticalPosition.BOTTOM)
+            if (!isZoomed && verticalPosition == VerticalPosition.BOTTOM)
                 Box(modifier = Modifier.padding(bottom = 16.dp, start = 16.dp)) {
                     first()
                 }
@@ -196,7 +244,9 @@ private fun OrientationLayout(
 @Composable
 private fun LocationAndDateInfo(
     modifier: Modifier = Modifier,
-    isCurrentTime: Boolean,
+    isCurrentTime: MutableState<Boolean>,
+    isClockHandsVisible: MutableState<Boolean>,
+    currentTime: MutableState<ZonedDateTime>,
     utc: ZonedDateTime,
     solarTime: LocalTime,
     siderealTime: LocalTime,
@@ -205,33 +255,70 @@ private fun LocationAndDateInfo(
     textColor: Color,
     shadowColor: Color,
 ) {
-    var updateTime by remember { mutableLongStateOf(0L) }
-    var currentTime by remember { mutableStateOf(ZonedDateTime.now()) }
+    val localDateTime = utc.withZoneSameInstant(ZoneId.systemDefault())
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            updateTime = System.currentTimeMillis()
-            currentTime = ZonedDateTime.now()
-            delay(250L.milliseconds)
-        }
-    }
+    Column {
+        Row(
+            modifier = Modifier.padding(end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "${
+                    (if (isCurrentTime.value) currentTime.value else localDateTime).format(
+                        DateTimeFormatter.ofPattern(
+                            "yyyy-MM-dd"
+                        )
+                    )
+                }",
+                color = if (isCurrentTime.value) textColor else textColor.copy(alpha = 0.5f),
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    shadow = Shadow(
+                        color = shadowColor,
+                        offset = Offset.Zero,
+                        blurRadius = 2f
+                    )
+                ),
+            )
 
-    Column(modifier = modifier) {
-        Text(
-            text = "${(if (isCurrentTime) currentTime else utc).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}",
-            color = if (isCurrentTime) textColor else textColor.copy(alpha = 0.5f),
-            style = MaterialTheme.typography.headlineSmall.copy(
-                shadow = Shadow(
-                    color = shadowColor,
-                    offset = Offset.Zero,
-                    blurRadius = 2f
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .clickable {
+                        isCurrentTime.value = !isCurrentTime.value
+                        isClockHandsVisible.value = false
+                    }
+                    .background(
+                        color = if (isCurrentTime.value) {
+                            textColor
+                        } else {
+                            textColor.copy(alpha = 0.5f)
+                        }
+                    )
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "LIVE",
+                    color = if (isCurrentTime.value) {
+                        shadowColor
+                    } else {
+                        shadowColor.copy(alpha = 0.5f)
+                    },
+                    style = MaterialTheme.typography.labelMedium
                 )
-            ),
-        )
+            }
+        }
 
         Text(
-            text = "${(if (isCurrentTime) currentTime else utc).format(DateTimeFormatter.ofPattern("HH:mm:ss"))}",
-            color = if (isCurrentTime) textColor else textColor.copy(alpha = 0.5f),
+            text = "${
+                (if (isCurrentTime.value) currentTime.value else localDateTime).format(
+                    DateTimeFormatter.ofPattern(
+                        "HH:mm:ss"
+                    )
+                )
+            }",
+            color = if (isCurrentTime.value) textColor else textColor.copy(alpha = 0.5f),
             style = MaterialTheme.typography.displayLarge.copy(
                 shadow = Shadow(
                     color = shadowColor,
