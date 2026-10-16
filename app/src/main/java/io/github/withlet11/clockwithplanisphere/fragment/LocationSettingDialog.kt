@@ -65,6 +65,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.google.android.gms.location.*
 import io.github.withlet11.clockwithplanisphere.CwpTheme
+import io.github.withlet11.clockwithplanisphere.DEFAULT_LATITUDE
+import io.github.withlet11.clockwithplanisphere.DEFAULT_LONGITUDE
 import io.github.withlet11.clockwithplanisphere.LATITUDE_KEY
 import io.github.withlet11.clockwithplanisphere.LONGITUDE_KEY
 import io.github.withlet11.clockwithplanisphere.PREFERENCES_NAME
@@ -72,8 +74,6 @@ import io.github.withlet11.clockwithplanisphere.R
 
 private const val MAXIMUM_UPDATE_INTERVAL = 10000L
 private const val MINIMUM_UPDATE_INTERVAL = 5000L
-const val DEFAULT_LATITUDE = 45.0
-const val DEFAULT_LONGITUDE = 0.0
 
 @Composable
 fun LocationSettingDialog(

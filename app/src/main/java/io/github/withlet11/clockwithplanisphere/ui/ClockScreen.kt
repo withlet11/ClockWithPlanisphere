@@ -34,6 +34,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import io.github.withlet11.clockwithplanisphere.DEFAULT_LATITUDE
+import io.github.withlet11.clockwithplanisphere.DEFAULT_LONGITUDE
 import io.github.withlet11.clockwithplanisphere.model.NorthernSkyModel
 import io.github.withlet11.clockwithplanisphere.model.SkyViewModel
 import io.github.withlet11.clockwithplanisphere.model.SouthernSkyModel
@@ -98,6 +100,7 @@ fun ClockScreen(
             )
         }
     }
+
     val sunAndMoonPanel = remember(isSouthernSky, latitude, longitude) {
         SunAndMoonPanel(context, null).apply {
             set(
@@ -114,7 +117,7 @@ fun ClockScreen(
         }
     }
 
-    val clockBasePanel = remember(isSouthernSky, latitude, longitude) {
+    val clockBasePanel = remember {
         ClockBasePanel(context, null).apply {
             set(skyViewModel.offset, skyViewModel.direction)
         }
@@ -195,10 +198,6 @@ fun ClockScreen(
         refreshPanels()
     }
 
-//    if (isCurrentTime.value) {
-//        skyViewModel.setCurrentTime(ZonedDateTime.now())
-//    }
-//
     LaunchedEffect(offsetXy) {
         clockBasePanel.offsetXy = offsetXy
         sunPanel.offsetXy = offsetXy
@@ -208,16 +207,14 @@ fun ClockScreen(
         horizonPanel.offsetXy = offsetXy
     }
 
-    LaunchedEffect(isSouthernSky) {
+    LaunchedEffect(isSouthernSky, latitude, longitude) {
         skyViewModel.setCurrentTime(currentTime.value)
         refreshPanels()
     }
 
-    LaunchedEffect(currentTime.value) {
-        if (isCurrentTime.value) {
-            skyViewModel.setCurrentTime(currentTime.value)
-            refreshClock()
-        }
+    if (isCurrentTime.value) {
+        skyViewModel.setCurrentTime(currentTime.value)
+        refreshClock()
     }
 
     ClockContent(
@@ -236,7 +233,7 @@ fun ClockScreen(
         offsetXy = offsetXy,
         onTap = { xy ->
             when {
-                clickCount > 0 && SystemClock.elapsedRealtime() - previousClickTime < 200L -> {
+                clickCount > 0 && SystemClock.elapsedRealtime() - previousClickTime < 300L -> {
                     toggleZoom()
                     clickCount = 0
                     previousClickTime = 0L
@@ -437,8 +434,8 @@ fun ClockContent(
 @Composable
 fun ClockScreenPreview() {
     ClockScreen(
-        latitude = 45.0,
-        longitude = 0.0,
+        latitude = DEFAULT_LATITUDE,
+        longitude = DEFAULT_LONGITUDE,
         currentTime = remember { mutableStateOf(ZonedDateTime.now()) },
         isCurrentTime = remember { mutableStateOf(false) },
         isSouthernSky = false,

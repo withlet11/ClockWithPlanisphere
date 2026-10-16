@@ -31,6 +31,8 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import io.github.withlet11.clockwithplanisphere.BACKGROUND_COLOR_KEY
+import io.github.withlet11.clockwithplanisphere.DEFAULT_LATITUDE
+import io.github.withlet11.clockwithplanisphere.DEFAULT_LONGITUDE
 import io.github.withlet11.clockwithplanisphere.HORIZONTAL_POSITION_KEY
 import io.github.withlet11.clockwithplanisphere.IS_SOUTH_SKY_KEY
 import io.github.withlet11.clockwithplanisphere.LATITUDE_KEY
@@ -39,9 +41,6 @@ import io.github.withlet11.clockwithplanisphere.PREFERENCES_NAME
 import io.github.withlet11.clockwithplanisphere.VERTICAL_POSITION_KEY
 import io.github.withlet11.clockwithplanisphere.fragment.HorizontalPosition
 import io.github.withlet11.clockwithplanisphere.fragment.VerticalPosition
-
-private const val DEFAULT_LATITUDE = 45.0
-private const val DEFAULT_LONGITUDE = 0.0
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val preferences =
@@ -69,8 +68,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (isInitialized) return
 
         try {
-            latitude = preferences.getFloat(LATITUDE_KEY, DEFAULT_LATITUDE.toFloat()).toDouble()
-            longitude = preferences.getFloat(LONGITUDE_KEY, DEFAULT_LONGITUDE.toFloat()).toDouble()
+            latitude = preferences.getFloat(
+                LATITUDE_KEY,
+                DEFAULT_LATITUDE.toFloat()
+            ).toDouble()
+            longitude = preferences.getFloat(
+                LONGITUDE_KEY,
+                DEFAULT_LONGITUDE.toFloat()
+            ).toDouble()
             isSouthernSky = preferences.getBoolean(IS_SOUTH_SKY_KEY, false)
             backgroundColor = preferences.getInt(BACKGROUND_COLOR_KEY, defaultColor)
 
@@ -101,8 +106,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadPreviousPosition() {
         try {
-            latitude = preferences.getFloat("latitude", DEFAULT_LATITUDE.toFloat()).toDouble()
-            longitude = preferences.getFloat("longitude", DEFAULT_LONGITUDE.toFloat()).toDouble()
+            latitude = preferences.getFloat(
+                LATITUDE_KEY,
+                DEFAULT_LATITUDE.toFloat()
+            ).toDouble()
+            longitude = preferences.getFloat(
+                LONGITUDE_KEY,
+                DEFAULT_LONGITUDE.toFloat()
+            ).toDouble()
         } catch (_: ClassCastException) {
             latitude = DEFAULT_LATITUDE
             longitude = DEFAULT_LONGITUDE

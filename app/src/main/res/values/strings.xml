@@ -50,7 +50,7 @@
         Privacy Policies you can uninstall this app.\n\n
         <b>Contact Us</b>\n
         If there are any questions regarding this Privacy Policy you may contact us by email:
-        <a href="mailto:withlet11@gmail.com" tools:ignore="Typos">withlet11@gmail.com</a></string>
+        <a href="mailto:withlet11@gmail.com">withlet11@gmail.com</a></string>
     <string name="north_label" translatable="false">N</string>
     <string name="south_label" translatable="false">S</string>
     <string name="ns_switch" translatable="false">NS Switch</string>

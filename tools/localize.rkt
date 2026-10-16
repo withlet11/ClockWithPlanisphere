@@ -100,7 +100,7 @@
         Privacy Policies you can uninstall this app.\\n\\n
         <b>Contact Us</b>\\n
         If there are any questions regarding this Privacy Policy you may contact us by email:
-        <a href=\"mailto:withlet11@gmail.com\" tools:ignore=\"Typos\">withlet11@gmail.com</a>")
+        <a href=\"mailto:withlet11@gmail.com\">withlet11@gmail.com</a>")
       (ja . "<u>最終更新：2020-11-20</u>\\n\\n
 本アプリのご利用に当たりまして、このプライバシポリシーにて個人情報の扱いをご確認下さい。\\n\\n
 <b>ユーザのデータの収集</b>\\n
@@ -141,7 +141,7 @@
         <b>Kapcsolat</b>\\n
         Ha kérdése van a jelen adatvédelmi irányelvekkel kapcsolatban, e-mailben léphet
         kapcsolatba velünk:
-        <a href=\"mailto:withlet11@gmail.com\" tools:ignore=\"Typos\">withlet11@gmail.com</a>")
+        <a href=\"mailto:withlet11@gmail.com\">withlet11@gmail.com</a>")
       (fr . "<i>Dernière mise à jour : 20 novembre 2020</i>\\n\\n
         La présente politique de confidentialité décrit la manière dont nous traitons les
         informations fournies par les utilisateurs et dont nous les utilisons.\\n\\n
@@ -172,7 +172,7 @@
         <b>Nous contacter</b>\\n
         Pour toute question concernant cette politique de confidentialité, vous pouvez nous
         contacter par e-mail :
-        <a href=\"mailto:withlet11@gmail.com\" tools:ignore=\"Typos\">withlet11@gmail.com</a>")))
+        <a href=\"mailto:withlet11@gmail.com\">withlet11@gmail.com</a>")))
     ("north_label"
      ((* . "N")))
     ("south_label"
@@ -362,7 +362,6 @@
 
 (define (whole-xml-create lst lang)
   `("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-    ;; "<resources xmlns:tools=\"http://schemas.android.com/tools\">"
     "<resources xmlns:tools=\"http://schemas.android.com/tools\">"
     ,@(filter
        string?

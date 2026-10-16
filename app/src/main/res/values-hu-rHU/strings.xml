@@ -38,7 +38,7 @@
         <b>Kapcsolat</b>\n
         Ha kérdése van a jelen adatvédelmi irányelvekkel kapcsolatban, e-mailben léphet
         kapcsolatba velünk:
-        <a href="mailto:withlet11@gmail.com" tools:ignore="Typos">withlet11@gmail.com</a></string>
+        <a href="mailto:withlet11@gmail.com">withlet11@gmail.com</a></string>
     <string name="no_permission_to_access_location_permanent">Nincs engedély a helyadatokhoz való hozzáféréshez. Ellenőrizze az alkalmazás engedélyeit a rendszerbeállításokban.</string>
     <string name="no_permission_to_access_location_once">Nincs engedély a helyadatokhoz való hozzáféréshez.</string>
     <string name="clock_base_panel">Óralap panel</string>

@@ -40,7 +40,7 @@
         <b>Nous contacter</b>\n
         Pour toute question concernant cette politique de confidentialité, vous pouvez nous
         contacter par e-mail :
-        <a href="mailto:withlet11@gmail.com" tools:ignore="Typos">withlet11@gmail.com</a></string>
+        <a href="mailto:withlet11@gmail.com">withlet11@gmail.com</a></string>
     <string name="no_permission_to_access_location_permanent">Aucune autorisation d’accès à la localisation. Veuillez vérifier les autorisations de l’application dans les paramètres système.</string>
     <string name="no_permission_to_access_location_once">Aucune autorisation d’accès à la localisation.</string>
     <string name="clock_base_panel">Cadran de l’horloge</string>

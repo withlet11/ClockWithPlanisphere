@@ -21,10 +21,6 @@
 
 package io.github.withlet11.clockwithplanisphere.widget
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import androidx.core.graphics.createBitmap
-
 abstract class AbstractPanel {
     companion object {
         const val PREFERRED_SIZE = 800f

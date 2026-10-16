@@ -44,11 +44,16 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import io.github.withlet11.clockwithplanisphere.DEFAULT_LATITUDE
+import io.github.withlet11.clockwithplanisphere.DEFAULT_LONGITUDE
+import io.github.withlet11.clockwithplanisphere.LATITUDE_KEY
+import io.github.withlet11.clockwithplanisphere.LONGITUDE_KEY
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import io.github.withlet11.clockwithplanisphere.MainActivity
+import io.github.withlet11.clockwithplanisphere.PREFERENCES_NAME
 import io.github.withlet11.clockwithplanisphere.R
 import io.github.withlet11.clockwithplanisphere.model.NorthernSkyModel
 import io.github.withlet11.clockwithplanisphere.model.SkyViewModel
@@ -70,11 +75,11 @@ class CwpWidget : GlanceAppWidgetReceiver() {
             var longitude: Double
             var isSouthernSky: Boolean
             val previous =
-                context.getSharedPreferences("observation_position", Context.MODE_PRIVATE)
+                context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
             try {
-                latitude = previous.getFloat("latitude", 0f).toDouble()
-                longitude = previous.getFloat("longitude", 0f).toDouble()
+                latitude = previous.getFloat(LATITUDE_KEY, DEFAULT_LATITUDE.toFloat()).toDouble()
+                longitude = previous.getFloat(LONGITUDE_KEY, DEFAULT_LONGITUDE.toFloat()).toDouble()
                 isSouthernSky = previous.getBoolean("isSouthernSky", false)
             } catch (_: ClassCastException) {
                 latitude = 0.0

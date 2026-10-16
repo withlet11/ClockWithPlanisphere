@@ -25,6 +25,8 @@ const val PREFERENCES_NAME = "observation_position"
 
 const val LATITUDE_KEY = "latitude"
 const val LONGITUDE_KEY = "longitude"
+const val DEFAULT_LATITUDE = 45.0
+const val DEFAULT_LONGITUDE = 0.0
 
 const val BACKGROUND_COLOR_KEY = "backgroundColor"
 
@@ -32,4 +34,3 @@ const val VERTICAL_POSITION_KEY = "verticalPosition"
 const val HORIZONTAL_POSITION_KEY = "horizontalPosition"
 
 const val IS_SOUTH_SKY_KEY = "isSouthernSky"
-
