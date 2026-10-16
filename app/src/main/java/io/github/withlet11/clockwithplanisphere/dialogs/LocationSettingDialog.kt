@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package io.github.withlet11.clockwithplanisphere.fragment
+package io.github.withlet11.clockwithplanisphere.dialogs
 
 import android.Manifest
 import android.annotation.SuppressLint

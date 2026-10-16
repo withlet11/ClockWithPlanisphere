@@ -57,9 +57,9 @@ import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import io.github.withlet11.clockwithplanisphere.CwpTopAppBar
 import io.github.withlet11.clockwithplanisphere.R
-import io.github.withlet11.clockwithplanisphere.fragment.ColorSettingDialog
-import io.github.withlet11.clockwithplanisphere.fragment.LayoutSettingDialog
-import io.github.withlet11.clockwithplanisphere.fragment.LocationSettingDialog
+import io.github.withlet11.clockwithplanisphere.dialogs.ColorSettingDialog
+import io.github.withlet11.clockwithplanisphere.dialogs.LayoutSettingDialog
+import io.github.withlet11.clockwithplanisphere.dialogs.LocationSettingDialog
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 

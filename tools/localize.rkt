@@ -1,64 +1,74 @@
 #lang racket
 
 (define lang-list '((en "../app/src/main/res/values/strings.xml")
-                    (ja "../app/src/main/res/values-ja-rJP/strings.xml")
-                    (hu "../app/src/main/res/values-hu-rHU/strings.xml")
-                    (fr "../app/src/main/res/values-fr-rFR/strings.xml")))
+                    (ja-rJP "../app/src/main/res/values-ja-rJP/strings.xml")
+                    (hu-rHU "../app/src/main/res/values-hu-rHU/strings.xml")
+                    (fr-rFR "../app/src/main/res/values-fr-rFR/strings.xml")
+                    (zh-rCN "../app/src/main/res/values-zh-rCN/strings.xml")))
 
 (define value-list
   '(("app_name"
      ((* . "Clock with Planisphere")))
     ("locationSettings"
      ((en . "Location Settings")
-      (ja . "観測地設定")
-      (hu . "Megfigyelési hely beállítása")
-      (fr . "Paramètres du site d’observation")))
+      (ja-rJP . "観測地設定")
+      (hu-rHU . "Megfigyelési hely beállítása")
+      (fr-rFR . "Paramètres du site d’observation")
+      (zh-rCN . "位置设置")))
     ("license"
      ((en . "License")
-      (ja . "使用許諾")
-      (hu . "Licenc")
-      (fr . "Licence")))
+      (ja-rJP . "使用許諾")
+      (hu-rHU . "Licenc")
+      (fr-rFR . "Licence")
+      (zh-rCN . "许可证")))
     ("opensource_licenses"
      ((en . "OpenSource Licenses")
-      (ja . "オープンソースライセンス")
-      (hu . "Nyílt forráskódú licencek")
-      (fr . "Licences open source")))
+      (ja-rJP . "オープンソースライセンス")
+      (hu-rHU . "Nyílt forráskódú licencek")
+      (fr-rFR . "Licences open source")
+      (zh-rCN . "开源许可证")))
     ("latitude"
      ((en . "Latitude: ")
-      (ja . "緯度：")
-      (hu . "Szélesség: ")
-      (fr . "Latitude : ")))
+      (ja-rJP . "緯度：")
+      (hu-rHU . "Szélesség: ")
+      (fr-rFR . "Latitude : ")
+      (zh-rCN . "纬度：")))
     ("latitudeHint"
      ((* . "+23.4567")))
     ("longitude"
      ((en . "Longitude: ")
-      (ja . "経度：")
-      (hu . "Hosszúság: ")
-      (fr . "Longitude : ")))
+      (ja-rJP . "経度：")
+      (hu-rHU . "Hosszúság: ")
+      (fr-rFR . "Longitude : ")
+      (zh-rCN . "经度：")))
     ("longitudeHint"
      ((* . "+123.456")))
     ("gps"
      ((* . "GPS")))
     ("modify"
      ((en . "Modify")
-      (ja . "変更する")
-      (hu . "Módosítás")
-      (fr . "Modifier")))
+      (ja-rJP . "変更する")
+      (hu-rHU . "Módosítás")
+      (fr-rFR . "Modifier")
+      (zh-rCN . "修改")))
     ("cancel"
      ((en . "Cancel")
-      (ja . "変更しない")
-      (hu . "Mégse")
-      (fr . "Annuler")))
+      (ja-rJP . "変更しない")
+      (hu-rHU . "Mégse")
+      (fr-rFR . "Annuler")
+      (zh-rCN . "取消")))
     ("inGettingLocation"
      ((en . "in getting location…")
-      (ja . "位置情報を取得中…")
-      (hu . "Helyadatok lekérdezése…")
-      (fr . "Obtention de la localisation…")))
+      (ja-rJP . "位置情報を取得中…")
+      (hu-rHU . "Helyadatok lekérdezése…")
+      (fr-rFR . "Obtention de la localisation…")
+      (zh-rCN . "正在获取位置…")))
     ("pleaseCheckIfGPSIsOn"
      ((en . "Please check if GPS is on.")
-      (ja . "GPSがONかチェックして下さい。")
-      (hu . "Ellenőrizze, hogy be van-e kapcsolva a GPS.")
-      (fr . "Veuillez vérifier que le GPS est activé.")))
+      (ja-rJP . "GPSがONかチェックして下さい。")
+      (hu-rHU . "Ellenőrizze, hogy be van-e kapcsolva a GPS.")
+      (fr-rFR . "Veuillez vérifier que le GPS est activé.")
+      (zh-rCN . "请检查 GPS 是否已开启。")))
     ("app_license"
      ((* . "Copyright 2020-2026 Yasuhiro Yamakawa &lt;withlet11@gmail.com&gt;\\n\\n
         Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -76,9 +86,10 @@
         DEALINGS IN THE SOFTWARE. ")))
     ("privacy_policy_header"
      ((en . "Privacy Policy")
-      (ja . "プライバシポリシー")
-      (hu . "Adatvédelmi irányelvek")
-      (fr . "Politique de confidentialité")))
+      (ja-rJP . "プライバシポリシー")
+      (hu-rHU . "Adatvédelmi irányelvek")
+      (fr-rFR . "Politique de confidentialité")
+      (zh-rCN . "隐私政策")))
     ("privacy_policy"
      ((en . "<i>Last updated on 20 Nov 2020</i>\\n\\n
         In order to clarify what we do on this matter and how the information provided by the
@@ -101,7 +112,7 @@
         <b>Contact Us</b>\\n
         If there are any questions regarding this Privacy Policy you may contact us by email:
         <a href=\"mailto:withlet11@gmail.com\">withlet11@gmail.com</a>")
-      (ja . "<u>最終更新：2020-11-20</u>\\n\\n
+      (ja-rJP . "<u>最終更新：2020-11-20</u>\\n\\n
 本アプリのご利用に当たりまして、このプライバシポリシーにて個人情報の扱いをご確認下さい。\\n\\n
 <b>ユーザのデータの収集</b>\\n
 本アプリの開発元は個人情報を収集しません。ただし、サードパーティの広告サービス（Google AdMob™）を利用しており、そのサービスが個人情報を収集することがあります。そのプライバシポリシーにつきましては、<a href=\"https://policies.google.com/privacy\">Google privacy polcy</a>でご確認下さい。\\n\\n
@@ -113,7 +124,7 @@
 本プライバシポリシー及びサードパーティのプライバシポリシーに同意の上でご利用下さい。もし、同意いただけない場合は本アプリをアンインストールして下さい。\\n\\n
 <b>お問い合わせ</b>\\n
 プライバシポリシーにつきましてご質問がある場合は<a href=\"mailto:withlet11@gmail.com\">withlet11@gmail.com</a>にお問い合わせ下さい。")
-      (hu . "<i>Utoljára frissítve: 2020. november 20.</i>\\n\\n
+      (hu-rHU . "<i>Utoljára frissítve: 2020. november 20.</i>\\n\\n
         A jelen adatvédelmi irányelvek ismertetik, hogyan kezeljük a felhasználók által megadott
         információkat és hogyan használjuk fel azokat.\\n\\n
         <b>Felhasználói adatok gyűjtése</b>\\n
@@ -142,7 +153,7 @@
         Ha kérdése van a jelen adatvédelmi irányelvekkel kapcsolatban, e-mailben léphet
         kapcsolatba velünk:
         <a href=\"mailto:withlet11@gmail.com\">withlet11@gmail.com</a>")
-      (fr . "<i>Dernière mise à jour : 20 novembre 2020</i>\\n\\n
+      (fr-rFR . "<i>Dernière mise à jour : 20 novembre 2020</i>\\n\\n
         La présente politique de confidentialité décrit la manière dont nous traitons les
         informations fournies par les utilisateurs et dont nous les utilisons.\\n\\n
 
@@ -172,6 +183,21 @@
         <b>Nous contacter</b>\\n
         Pour toute question concernant cette politique de confidentialité, vous pouvez nous
         contacter par e-mail :
+        <a href=\"mailto:withlet11@gmail.com\">withlet11@gmail.com</a>")
+      (zh-rCN . "<u>最后更新：2020年11月20日</u>\\n\\n
+        本隐私政策旨在说明我们如何处理用户提供的信息以及如何使用这些信息。\\n\\n
+        <b>用户数据收集</b>\\n
+        我们不会收集用户的个人信息，包括姓名、电话号码、电子邮件地址和密码。但是，本应用使用第三方广告服务（Google AdMob™），该服务可能会收集您的信息。有关该服务的隐私政策，请访问以下页面：
+            <a href=\"https://policies.google.com/privacy\">Google 隐私政策</a>\\n\\n
+        <b>其他权限</b>\\n
+        只有在您授权的情况下，本应用才会访问您的位置信息。这些数据仅存储在您的设备上，不会提供给其他应用或服务。\\n
+        本应用使用互联网连接显示广告横幅。\\n\\n
+        <b>变更</b>\\n
+        本隐私政策可能会因任何原因不时更新。\\n\\n
+        <b>您的同意</b>\\n
+        使用本应用即表示您同意本隐私政策以及上述第三方的隐私政策。如果您不同意本隐私政策或第三方的隐私政策，可以卸载本应用。\\n\\n
+        <b>联系我们</b>\\n
+        如果您对本隐私政策有任何疑问，请通过电子邮件联系我们：
         <a href=\"mailto:withlet11@gmail.com\">withlet11@gmail.com</a>")))
     ("north_label"
      ((* . "N")))
@@ -181,184 +207,222 @@
      ((* . "NS Switch")))
     ("no_permission_to_access_location_permanent"
      ((en . "No permission to access the location service. Please check the application permission in the system settings.")
-      (ja . "位置情報へのアクセスの権限がありません。設定でアプリの権限についてご確認下さい。")
-      (hu . "Nincs engedély a helyadatokhoz való hozzáféréshez. Ellenőrizze az alkalmazás engedélyeit a rendszerbeállításokban.")
-      (fr . "Aucune autorisation d’accès à la localisation. Veuillez vérifier les autorisations de l’application dans les paramètres système.")))
+      (ja-rJP . "位置情報へのアクセスの権限がありません。設定でアプリの権限についてご確認下さい。")
+      (hu-rHU . "Nincs engedély a helyadatokhoz való hozzáféréshez. Ellenőrizze az alkalmazás engedélyeit a rendszerbeállításokban.")
+      (fr-rFR . "Aucune autorisation d’accès à la localisation. Veuillez vérifier les autorisations de l’application dans les paramètres système.")
+      (zh-rCN . "没有访问定位服务的权限。请在系统设置中检查本应用的权限。")))
     ("no_permission_to_access_location_once"
      ((en . "No permission to access the location service.")
-      (ja . "位置情報へのアクセスの権限がありません。")
-      (hu . "Nincs engedély a helyadatokhoz való hozzáféréshez.")
-      (fr . "Aucune autorisation d’accès à la localisation.")))
+      (ja-rJP . "位置情報へのアクセスの権限がありません。")
+      (hu-rHU . "Nincs engedély a helyadatokhoz való hozzáféréshez.")
+      (fr-rFR . "Aucune autorisation d’accès à la localisation.")
+      (zh-rCN . "没有访问定位服务的权限。")))
     ("clock_base_panel"
      ((en . "Clock base panel")
-      (ja . "時計文字盤パネル")
-      (hu . "Óralap panel")
-      (fr . "Cadran de l’horloge")))
+      (ja-rJP . "時計文字盤パネル")
+      (hu-rHU . "Óralap panel")
+      (fr-rFR . "Cadran de l’horloge")
+      (zh-rCN . "钟面面板")))
     ("sky_panel"
      ((en . "Sky panel")
-      (ja . "星空パネル")
-      (hu . "Égbolt panel")
-      (fr . "Voûte céleste")))
+      (ja-rJP . "星空パネル")
+      (hu-rHU . "Égbolt panel")
+      (fr-rFR . "Voûte céleste")
+      (zh-rCN . "星空面板")))
     ("sun_and_moon_panel"
      ((en . "Sun and Moon panel")
-      (ja . "太陽・月パネル")
-      (hu . "Nap és Hold panel")
-      (fr . "Soleil et Lune")))
+      (ja-rJP . "太陽・月パネル")
+      (hu-rHU . "Nap és Hold panel")
+      (fr-rFR . "Soleil et Lune")
+      (zh-rCN . "太阳和月亮面板")))
     ("horizon_panel"
      ((en . "Horizon panel")
-      (ja . "地平線パネル")
-      (hu . "Horizont panel")
-      (fr . "Horizon")))
+      (ja-rJP . "地平線パネル")
+      (hu-rHU . "Horizont panel")
+      (fr-rFR . "Horizon")
+      (zh-rCN . "地平线面板")))
     ("clock_hands_panel"
      ((en . "Clock hands panel")
-      (ja . "時計針パネル")
-      (hu . "Óramutatók panel")
-      (fr . "Aiguilles de l’horloge")))
+      (ja-rJP . "時計針パネル")
+      (hu-rHU . "Óramutatók panel")
+      (fr-rFR . "Aiguilles de l’horloge")
+      (zh-rCN . "时针面板")))
     ("bg_color"
      ((en . "Background color")
-      (ja . "背景色")
-      (hu . "Háttérszín")
-      (fr . "Couleur d’arrière-plan")))
+      (ja-rJP . "背景色")
+      (hu-rHU . "Háttérszín")
+      (fr-rFR . "Couleur d’arrière-plan")
+      (zh-rCN . "背景颜色")))
     ("basic_colors"
      ((en . "Basic Colors")
-      (ja . "基本色")
-      (hu . "Alapszínek")
-      (fr . "Couleurs de base")))
+      (ja-rJP . "基本色")
+      (hu-rHU . "Alapszínek")
+      (fr-rFR . "Couleurs de base")
+      (zh-rCN . "基本颜色")))
     ("white"
      ((en . "White")
-      (ja . "白")
-      (hu . "Fehér")
-      (fr . "Blanc")))
+      (ja-rJP . "白")
+      (hu-rHU . "Fehér")
+      (fr-rFR . "Blanc")
+      (zh-rCN . "白色")))
     ("silver"
      ((en . "Silver")
-      (ja . "銀色")
-      (hu . "Ezüst")
-      (fr . "Argent")))
+      (ja-rJP . "銀色")
+      (hu-rHU . "Ezüst")
+      (fr-rFR . "Argent")
+      (zh-rCN . "银色")))
     ("gray"
      ((en . "Gray")
-      (ja . "灰色")
-      (hu . "Szürke")
-      (fr . "Gris")))
+      (ja-rJP . "灰色")
+      (hu-rHU . "Szürke")
+      (fr-rFR . "Gris")
+      (zh-rCN . "灰色")))
     ("black"
      ((en . "Black")
-      (ja . "黒")
-      (hu . "Fekete")
-      (fr . "Noir")))
+      (ja-rJP . "黒")
+      (hu-rHU . "Fekete")
+      (fr-rFR . "Noir")
+      (zh-rCN . "黑色")))
     ("red"
      ((en . "Red")
-      (ja . "赤")
-      (hu . "Piros")
-      (fr . "Rouge")))
+      (ja-rJP . "赤")
+      (hu-rHU . "Piros")
+      (fr-rFR . "Rouge")
+      (zh-rCN . "红色")))
     ("maroon"
      ((en . "Maroon")
-      (ja . "マルーン")
-      (hu . "Bordó")
-      (fr . "Marron")))
+      (ja-rJP . "マルーン")
+      (hu-rHU . "Bordó")
+      (fr-rFR . "Marron")
+      (zh-rCN . "栗色")))
     ("yellow"
      ((en . "Yellow")
-      (ja . "黄色")
-      (hu . "Sárga")
-      (fr . "Jaune")))
+      (ja-rJP . "黄色")
+      (hu-rHU . "Sárga")
+      (fr-rFR . "Jaune")
+      (zh-rCN . "黄色")))
     ("olive"
      ((en . "Olive")
-      (ja . "オリーブ")
-      (hu . "Olívazöld")
-      (fr . "Olive")))
+      (ja-rJP . "オリーブ")
+      (hu-rHU . "Olívazöld")
+      (fr-rFR . "Olive")
+      (zh-rCN . "橄榄绿")))
     ("lime"
      ((en . "Lime")
-      (ja . "ライム")
-      (hu . "Limezöld")
-      (fr . "Citron vert")))
+      (ja-rJP . "ライム")
+      (hu-rHU . "Limezöld")
+      (fr-rFR . "Citron vert")
+      (zh-rCN . "亮绿色")))
     ("green"
      ((en . "Green")
-      (ja . "緑")
-      (hu . "Zöld")
-      (fr . "Vert")))
+      (ja-rJP . "緑")
+      (hu-rHU . "Zöld")
+      (fr-rFR . "Vert")
+      (zh-rCN . "绿色")))
     ("aqua"
      ((en . "Aqua")
-      (ja . "水色")
-      (hu . "Akvamarin")
-      (fr . "Aqua")))
+      (ja-rJP . "水色")
+      (hu-rHU . "Akvamarin")
+      (fr-rFR . "Aqua")
+      (zh-rCN . "水蓝色")))
     ("teal"
      ((en . "Teal")
-      (ja . "ティール")
-      (hu . "Türkiz")
-      (fr . "Sarcelle")))
+      (ja-rJP . "ティール")
+      (hu-rHU . "Türkiz")
+      (fr-rFR . "Sarcelle")
+      (zh-rCN . "蓝绿色")))
     ("blue"
      ((en . "Blue")
-      (ja . "青")
-      (hu . "Kék")
-      (fr . "Bleu")))
+      (ja-rJP . "青")
+      (hu-rHU . "Kék")
+      (fr-rFR . "Bleu")
+      (zh-rCN . "蓝色")))
     ("navy"
      ((en . "Navy")
-      (ja . "ネイビー")
-      (hu . "Sötétkék")
-      (fr . "Bleu marine")))
+      (ja-rJP . "ネイビー")
+      (hu-rHU . "Sötétkék")
+      (fr-rFR . "Bleu marine")
+      (zh-rCN . "海军蓝")))
     ("fuchsia"
      ((en . "Fuchsia")
-      (ja . "フクシャ")
-      (hu . "Fukszia")
-      (fr . "Fuchsia")))
+      (ja-rJP . "フクシャ")
+      (hu-rHU . "Fukszia")
+      (fr-rFR . "Fuchsia")
+      (zh-rCN . "紫红色")))
     ("purple"
      ((en . "Purple")
-      (ja . "紫")
-      (hu . "Lila")
-      (fr . "Violet")))
+      (ja-rJP . "紫")
+      (hu-rHU . "Lila")
+      (fr-rFR . "Violet")
+      (zh-rCN . "紫色")))
     ("hsv_h"
      ((en . "Hue")
-      (ja . "色相")
-      (hu . "Árny")
-      (fr . "Teinte")))
+      (ja-rJP . "色相")
+      (hu-rHU . "Árnyalat")
+      (fr-rFR . "Teinte")
+      (zh-rCN . "色相")))
     ("hsv_s"
      ((en . "Sat")
-      (ja . "彩度 ")
-      (hu . "Tel")
-      (fr . "Sat")))
+      (ja-rJP . "彩度 ")
+      (hu-rHU . "Tel")
+      (fr-rFR . "Sat")
+      (zh-rCN . "饱和度")))
     ("hsv_v"
      ((en . "Val")
-      (ja . "明度")
-      (hu . "Vil")
-      (fr . "Val")))
+      (ja-rJP . "明度")
+      (hu-rHU . "Vil")
+      (fr-rFR . "Val")
+      (zh-rCN . "明度")))
     ("layoutSettings"
      ((en . "Layout Settings")
-      (ja . "レイアウト設定")
-      (hu . "Elrendezés beállításai")
-      (fr . "Paramètres de mise en page")))
+      (ja-rJP . "レイアウト設定")
+      (hu-rHU . "Elrendezés beállításai")
+      (fr-rFR . "Paramètres de mise en page")
+      (zh-rCN . "布局设置")))
     ("digitalClockPosition"
      ((en . "Digital Clock Position")
-      (ja . "デジタル時計の位置")
-      (hu . "Digitális óra pozíciója")
-      (fr . "Position de l’horloge numérique")))
+      (ja-rJP . "デジタル時計の位置")
+      (hu-rHU . "Digitális óra pozíciója")
+      (fr-rFR . "Position de l’horloge numérique")
+      (zh-rCN . "数字时钟位置")))
     ("landscape"
      ((en . "Landscape")
-      (ja . "横向き")
-      (hu . "Fekvő")
-      (fr . "Paysage")))
+      (ja-rJP . "横向き")
+      (hu-rHU . "Fekvő")
+      (fr-rFR . "Paysage")
+      (zh-rCN . "横向")))
     ("portrait"
      ((en . "Portrait")
-      (ja . "縦向き")
-      (hu . "Álló")
-      (fr . "Portrait")))
+      (ja-rJP . "縦向き")
+      (hu-rHU . "Álló")
+      (fr-rFR . "Portrait")
+      (zh-rCN . "纵向")))
     ("left"
      ((en . "Left")
-      (ja . "左")
-      (hu . "Bal")
-      (fr . "Gauche")))
+      (ja-rJP . "左")
+      (hu-rHU . "Bal")
+      (fr-rFR . "Gauche")
+      (zh-rCN . "左")))
     ("right"
      ((en . "Right")
-      (ja . "右")
-      (hu . "Jobb")
-      (fr . "Droite")))
+      (ja-rJP . "右")
+      (hu-rHU . "Jobb")
+      (fr-rFR . "Droite")
+      (zh-rCN . "右")))
     ("top"
      ((en . "Top")
-      (ja . "上")
-      (hu . "Fent")
-      (fr . "Haut")))
+      (ja-rJP . "上")
+      (hu-rHU . "Fent")
+      (fr-rFR . "Haut")
+      (zh-rCN . "上")))
     ("bottom"
      ((en . "Bottom")
-      (ja . "下")
-      (hu . "Lent")
-      (fr . "Bas")))))
+      (ja-rJP . "下")
+      (hu-rHU . "Lent")
+      (fr-rFR . "Bas")
+      (zh-rCN . "下")))))
+
+
 
 (define (whole-xml-create lst lang)
   `("<?xml version=\"1.0\" encoding=\"utf-8\"?>"

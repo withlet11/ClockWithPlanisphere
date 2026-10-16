@@ -39,8 +39,8 @@ import io.github.withlet11.clockwithplanisphere.LATITUDE_KEY
 import io.github.withlet11.clockwithplanisphere.LONGITUDE_KEY
 import io.github.withlet11.clockwithplanisphere.PREFERENCES_NAME
 import io.github.withlet11.clockwithplanisphere.VERTICAL_POSITION_KEY
-import io.github.withlet11.clockwithplanisphere.fragment.HorizontalPosition
-import io.github.withlet11.clockwithplanisphere.fragment.VerticalPosition
+import io.github.withlet11.clockwithplanisphere.dialogs.HorizontalPosition
+import io.github.withlet11.clockwithplanisphere.dialogs.VerticalPosition
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val preferences =

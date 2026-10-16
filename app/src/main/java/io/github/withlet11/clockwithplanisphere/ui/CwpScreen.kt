@@ -22,6 +22,7 @@
 package io.github.withlet11.clockwithplanisphere.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,11 +36,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -49,8 +48,8 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.absoluteValue
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.withlet11.clockwithplanisphere.CwpTheme
-import io.github.withlet11.clockwithplanisphere.fragment.HorizontalPosition
-import io.github.withlet11.clockwithplanisphere.fragment.VerticalPosition
+import io.github.withlet11.clockwithplanisphere.dialogs.HorizontalPosition
+import io.github.withlet11.clockwithplanisphere.dialogs.VerticalPosition
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 import java.time.ZoneId
@@ -89,8 +88,8 @@ fun CwpScreen(
     var solarTime by remember { mutableStateOf(LocalTime.now()) }
     var siderealTime by remember { mutableStateOf(LocalTime.now()) }
 
-    val textColor = Color.LightGray
-    val shadowColor = Color.Black
+    val brightness = Color(backgroundColor).run { 0.299f * red + 0.587f * green + 0.114f * blue }
+    val textColor = if (brightness < 0.5f) Color.LightGray else Color.DarkGray
 
     LaunchedEffect(drawAreaSize, isZoomed, isScreenLandScape) {
         isDrawAreaLandScape = drawAreaSize.width > drawAreaSize.height
@@ -153,7 +152,6 @@ fun CwpScreen(
                 latitude = latitude,
                 longitude = longitude,
                 textColor = textColor,
-                shadowColor = shadowColor
             )
         },
         second = {
@@ -252,7 +250,6 @@ private fun LocationAndDateInfo(
     latitude: Double,
     longitude: Double,
     textColor: Color,
-    shadowColor: Color,
 ) {
     val localDateTime = utc.withZoneSameInstant(ZoneId.systemDefault())
 
@@ -265,66 +262,48 @@ private fun LocationAndDateInfo(
             Text(
                 text = "${
                     (if (isCurrentTime.value) currentTime.value else localDateTime).format(
-                        DateTimeFormatter.ofPattern(
-                            "yyyy-MM-dd"
-                        )
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd")
                     )
                 }",
-                color = if (isCurrentTime.value) textColor else textColor.copy(alpha = 0.75f),
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    shadow = Shadow(
-                        color = shadowColor,
-                        offset = Offset.Zero,
-                        blurRadius = 2f
-                    )
-                ),
+                color = if (isCurrentTime.value) textColor else textColor.copy(alpha = 0.66f),
+                style = MaterialTheme.typography.headlineSmall
             )
 
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
                     .clickable {
                         isCurrentTime.value = !isCurrentTime.value
                         isClockHandsVisible.value = false
                     }
-                    .background(
-                        color = if (isCurrentTime.value) {
-                            textColor
-                        } else {
-                            textColor.copy(alpha = 0.5f)
-                        }
+                    .border(
+                        width = 1.dp,
+                        color = if (isCurrentTime.value) textColor else textColor.copy(alpha = 0.66f),
+                        shape = RoundedCornerShape(6.dp)
                     )
                     .padding(horizontal = 6.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "LIVE",
-                    color = if (isCurrentTime.value) {
-                        shadowColor
-                    } else {
-                        shadowColor.copy(alpha = 0.5f)
-                    },
-                    style = MaterialTheme.typography.labelMedium
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "LIVE",
+                        color = if (isCurrentTime.value) textColor else textColor.copy(alpha = 0.33f),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
         }
 
         Text(
             text = "${
                 (if (isCurrentTime.value) currentTime.value else localDateTime).format(
-                    DateTimeFormatter.ofPattern(
-                        "HH:mm:ss"
-                    )
+                    DateTimeFormatter.ofPattern("HH:mm:ss")
                 )
             }",
-            color = if (isCurrentTime.value) textColor else textColor.copy(alpha = 0.75f),
-            style = MaterialTheme.typography.displayLarge.copy(
-                shadow = Shadow(
-                    color = shadowColor,
-                    offset = Offset.Zero,
-                    blurRadius = 2f
-                )
-            ),
+            color = if (isCurrentTime.value) textColor else textColor.copy(alpha = 0.66f),
+            style = MaterialTheme.typography.displayLarge,
             fontWeight = FontWeight.SemiBold
 
         )
@@ -333,13 +312,7 @@ private fun LocationAndDateInfo(
             text = "UTC ${
                 utc.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
             }",
-            style = MaterialTheme.typography.headlineSmall.copy(
-                shadow = Shadow(
-                    color = shadowColor,
-                    offset = Offset.Zero,
-                    blurRadius = 2f
-                )
-            ),
+            style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.Monospace,
             color = textColor
         )
@@ -348,13 +321,7 @@ private fun LocationAndDateInfo(
             text = "MST ${
                 solarTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
             }",
-            style = MaterialTheme.typography.headlineSmall.copy(
-                shadow = Shadow(
-                    color = shadowColor,
-                    offset = Offset.Zero,
-                    blurRadius = 2f
-                )
-            ),
+            style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.Monospace,
             color = textColor
         )
@@ -363,26 +330,14 @@ private fun LocationAndDateInfo(
             text = "LST ${
                 siderealTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
             }",
-            style = MaterialTheme.typography.headlineSmall.copy(
-                shadow = Shadow(
-                    color = shadowColor,
-                    offset = Offset.Zero,
-                    blurRadius = 2f
-                )
-            ),
+            style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.Monospace,
             color = textColor
         )
 
         Text(
             text = "${latitude.toLatitudeString()}, ${longitude.toLongitudeString()}",
-            style = MaterialTheme.typography.bodyLarge.copy(
-                shadow = Shadow(
-                    color = shadowColor,
-                    offset = Offset.Zero,
-                    blurRadius = 2f
-                )
-            ),
+            style = MaterialTheme.typography.bodyLarge,
             fontFamily = FontFamily.Monospace,
             color = textColor
         )
