@@ -55,13 +55,8 @@ class SkyPanel(context: Context) : AbstractPanel() {
     private val rightAscensionLineColor = context.getColor(R.color.silver)
     private val rightAscensionRing = context.getColor(R.color.silver)
 
-    fun draw() {
-        draw(Canvas(bmp))
-    }
-
-    override fun draw(canvas: Canvas) {
-        super.draw(canvas)
-        canvas.run {
+    fun draw(canvas: Canvas) {
+        canvas.withSave {
             rotate(-siderealAngle * sign(tenMinuteGridStep), 0f, 0f)
             drawEquatorial()
             drawEcliptic()

@@ -27,7 +27,7 @@ import androidx.core.graphics.createBitmap
 
 abstract class AbstractPanel {
     companion object {
-        private const val PREFERRED_SIZE = 800f
+        const val PREFERRED_SIZE = 800f
         const val CENTER = PREFERRED_SIZE * 0.5f
         private const val CIRCLE_RADIUS = PREFERRED_SIZE * 0.4f
         const val BEZEL_RADIUS = 400f
@@ -40,12 +40,5 @@ abstract class AbstractPanel {
          * @return the length on the canvas
          */
         fun Float.toCanvas(): Float = this * CIRCLE_RADIUS
-    }
-
-    val bmp: Bitmap =
-        createBitmap(PREFERRED_SIZE.toInt(), PREFERRED_SIZE.toInt())
-
-    open fun draw(canvas: Canvas) {
-        canvas.translate(CENTER, CENTER)
     }
 }

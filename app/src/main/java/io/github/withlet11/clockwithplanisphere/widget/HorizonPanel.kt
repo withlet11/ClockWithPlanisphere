@@ -42,12 +42,7 @@ class HorizonPanel(context: Context) : AbstractPanel() {
     private val directionLetterColor = context.getColor(R.color.silver)
     private val siderealTimeIndicatorColor = context.getColor(R.color.yellow)
 
-    fun draw() {
-        draw(Canvas(bmp))
-    }
-
-    override fun draw(canvas: Canvas) {
-        super.draw(canvas)
+    fun draw(canvas: Canvas) {
         canvas.run {
             drawHorizon()
             drawAltitudeAndAzimuthLines()

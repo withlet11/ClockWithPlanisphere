@@ -136,12 +136,7 @@ class ClockHandsPanel(context: Context) : AbstractPanel() {
     )
      */
 
-    fun draw() {
-        draw(Canvas(bmp))
-    }
-
-    override fun draw(canvas: Canvas) {
-        super.draw(canvas)
+    fun draw(canvas: Canvas) {
         canvas.run {
             drawHourHand()
             drawMinuteHand()

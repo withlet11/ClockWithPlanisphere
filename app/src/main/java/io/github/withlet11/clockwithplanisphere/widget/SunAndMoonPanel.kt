@@ -55,12 +55,7 @@ class SunAndMoonPanel(context: Context) : AbstractPanel() {
     private val moonColor = context.getColor(R.color.pastelYellow)
     private val moonDarkSideColor = context.getColor(R.color.darkBlue)
 
-    fun draw() {
-        draw(Canvas(bmp))
-    }
-
-    override fun draw(canvas: Canvas) {
-        super.draw(canvas)
+    fun draw(canvas: Canvas) {
         canvas.run {
             withSave {
                 rotate(rotateAngleOfSun, 0f, 0f)

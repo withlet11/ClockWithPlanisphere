@@ -44,12 +44,7 @@ class ClockBasePanel(context: Context) : AbstractPanel() {
     private var offset = 0f
     private var direction = false
 
-    fun draw() {
-        draw(Canvas(bmp))
-    }
-
-    override fun draw(canvas: Canvas) {
-        super.draw(canvas)
+    fun draw(canvas: Canvas) {
         canvas.run {
             drawBackPanel()
             drawGrid()

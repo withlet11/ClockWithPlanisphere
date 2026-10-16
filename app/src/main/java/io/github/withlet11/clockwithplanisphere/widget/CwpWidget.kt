@@ -21,12 +21,11 @@
 
 package io.github.withlet11.clockwithplanisphere.widget
 
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import android.os.Build
-import android.util.Log
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.withSave
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
@@ -34,54 +33,38 @@ import androidx.glance.ImageProvider
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.updateAll
 import androidx.glance.layout.Box
 import androidx.glance.layout.fillMaxSize
+import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
+import java.util.Calendar
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import io.github.withlet11.clockwithplanisphere.MainActivity
 import io.github.withlet11.clockwithplanisphere.R
 import io.github.withlet11.clockwithplanisphere.model.NorthernSkyModel
 import io.github.withlet11.clockwithplanisphere.model.SkyViewModel
 import io.github.withlet11.clockwithplanisphere.model.SouthernSkyModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import io.github.withlet11.clockwithplanisphere.widget.AbstractPanel.Companion.CENTER
+import io.github.withlet11.clockwithplanisphere.widget.AbstractPanel.Companion.PREFERRED_SIZE
 
 class CwpWidget : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = CwpWidgetContent()
 
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        WorkManager.getInstance(context).cancelUniqueWork("CwpWidgetClockUpdate")
+    }
+
     companion object {
-        const val ACTION_UPDATE =
-            "io.github.withlet11.clockwithplanisphere.widget.CwpWidget.ACTION_UPDATE"
-        const val UPDATE_INTERVAL = 5000L // milliseconds
-
-        fun scheduleUpdate(context: Context) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val pendingIntent = getAlarmIntent(context)
-            alarmManager.cancel(pendingIntent)
-            val triggerAtMillis =
-                (System.currentTimeMillis() + 1).let { it + UPDATE_INTERVAL - it % UPDATE_INTERVAL }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-                alarmManager.set(AlarmManager.RTC, triggerAtMillis, pendingIntent)
-            } else {
-                alarmManager.setExact(AlarmManager.RTC, triggerAtMillis, pendingIntent)
-            }
-        }
-
-        private fun getAlarmIntent(context: Context): PendingIntent {
-            val intent = Intent(context, CwpWidget::class.java)
-            intent.action = ACTION_UPDATE
-            return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
-        }
-
-        fun clearUpdate(context: Context) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            alarmManager.cancel(getAlarmIntent(context))
-        }
-
         fun loadPreviousPosition(context: Context): Triple<Double, Double, Boolean> {
             var latitude: Double
             var longitude: Double
@@ -101,51 +84,39 @@ class CwpWidget : GlanceAppWidgetReceiver() {
             return Triple(latitude, longitude, isSouthernSky)
         }
     }
-
-    override fun onEnabled(context: Context) {
-        super.onEnabled(context)
-        scheduleUpdate(context)
-    }
-
-    override fun onDisabled(context: Context) {
-        clearUpdate(context)
-        super.onDisabled(context)
-    }
-
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: android.appwidget.AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        super.onUpdate(context, appWidgetManager, appWidgetIds)
-        scheduleUpdate(context)
-    }
-
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-        when (intent.action) {
-            ACTION_UPDATE -> {
-                scheduleUpdate(context)
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        CwpWidgetContent().updateAll(context)
-                    } catch (e: Exception) {
-                        Log.e("CwpWidget", "Widget update failed", e)
-                    }
-                }
-            }
-
-            Intent.ACTION_BOOT_COMPLETED -> {
-                scheduleUpdate(context)
-            }
-        }
-    }
 }
 
 class CwpWidgetContent : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        scheduleNextUpdate(context)
+
+        val bitmap = withContext(Dispatchers.Default) {
+            generateClockBitmap(context)
+        }
+
+        provideContent {
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .clickable(actionStartActivity<MainActivity>())
+            ) {
+                Image(
+                    provider = ImageProvider(bitmap),
+                    contentDescription = context.getString(R.string.app_name),
+                    modifier = GlanceModifier.fillMaxSize()
+                )
+            }
+        }
+    }
+
+    private fun generateClockBitmap(context: Context): Bitmap {
+        val widthPx = PREFERRED_SIZE.toInt()
+        val heightPx = PREFERRED_SIZE.toInt()
+        val bitmap = createBitmap(widthPx, heightPx)
+        val canvas = Canvas(bitmap)
+
         val (latitude, longitude, isSouthernSky) = CwpWidget.loadPreviousPosition(context)
         val skyViewModel =
             SkyViewModel(
@@ -189,50 +160,46 @@ class CwpWidgetContent : GlanceAppWidget() {
         sunAndMoonPanel.siderealAngle = skyViewModel.siderealAngle
 
         // Draw panels
-        clockBasePanel.draw()
-        skyPanel.draw()
-        sunAndMoonPanel.draw()
-        horizonPanel.draw()
-        clockHandsPanel.draw()
-
-        val baseBmp = clockBasePanel.bmp
-        val skyBmp = skyPanel.bmp
-        val sunMoonBmp = sunAndMoonPanel.bmp
-        val horizonBmp = horizonPanel.bmp
-        val handsBmp = clockHandsPanel.bmp
-
-        provideContent {
-            Box(
-                modifier = GlanceModifier
-                    .fillMaxSize()
-                    .clickable(actionStartActivity<MainActivity>())
-            ) {
-                Image(
-                    provider = ImageProvider(baseBmp),
-                    contentDescription = context.getString(R.string.clock_base_panel),
-                    modifier = GlanceModifier.fillMaxSize()
-                )
-                Image(
-                    provider = ImageProvider(skyBmp),
-                    contentDescription = context.getString(R.string.sky_panel),
-                    modifier = GlanceModifier.fillMaxSize()
-                )
-                Image(
-                    provider = ImageProvider(sunMoonBmp),
-                    contentDescription = context.getString(R.string.sun_and_moon_panel),
-                    modifier = GlanceModifier.fillMaxSize()
-                )
-                Image(
-                    provider = ImageProvider(horizonBmp),
-                    contentDescription = context.getString(R.string.horizon_panel),
-                    modifier = GlanceModifier.fillMaxSize()
-                )
-                Image(
-                    provider = ImageProvider(handsBmp),
-                    contentDescription = context.getString(R.string.clock_hands_panel),
-                    modifier = GlanceModifier.fillMaxSize()
-                )
-            }
+        canvas.withSave {
+            translate(CENTER, CENTER)
+            clockBasePanel.draw(canvas)
+            skyPanel.draw(canvas)
+            sunAndMoonPanel.draw(canvas)
+            horizonPanel.draw(canvas)
+            clockHandsPanel.draw(canvas)
         }
+
+        return bitmap
+    }
+
+    private fun scheduleNextUpdate(context: Context) {
+        val calendar = Calendar.getInstance()
+        val secondsUntilNextMinute = 60 - calendar.get(Calendar.SECOND)
+
+        val request = OneTimeWorkRequestBuilder<ClockUpdateWorker>()
+            .setInitialDelay(secondsUntilNextMinute.toLong(), TimeUnit.SECONDS)
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "CwpWidgetClockUpdate",
+            ExistingWorkPolicy.REPLACE,
+            request
+        )
+    }
+}
+
+class ClockUpdateWorker(
+    private val context: Context,
+    params: WorkerParameters
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        val manager = GlanceAppWidgetManager(context)
+        val glanceIds = manager.getGlanceIds(CwpWidgetContent::class.java)
+
+        glanceIds.forEach { glanceId ->
+            CwpWidgetContent().update(context, glanceId)
+        }
+        return Result.success()
     }
 }
